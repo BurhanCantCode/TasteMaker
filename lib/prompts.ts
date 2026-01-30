@@ -234,6 +234,12 @@ export function buildWebSearchPrompt(
     ? userProfile.likes.map(l => `- ${l.item} (${l.category}): ${l.rating}`).join('\n')
     : "None yet";
 
+  // Build explicit list of already-recommended items to prevent repeats
+  const alreadyRecommendedItems = userProfile.likes.map(l => l.item);
+  const alreadyRecommendedBlock = alreadyRecommendedItems.length > 0
+    ? `\n\nALREADY RECOMMENDED (DO NOT REPEAT THESE):\n${alreadyRecommendedItems.map(item => `- ${item}`).join('\n')}\n\nCRITICAL: You must NOT recommend any item from the list above. Find NEW items only.`
+    : '';
+
   const locationBlock = hasCity
     ? `\n\nLOCATION (for restaurant/location/activity only): The user is in ${city}${country ? `, ${country}` : ''}.
 For any card with category "restaurant", "location", or "activity" that is a physical place, it MUST be in ${city} only. Use web search to verify it exists there. Do NOT suggest places from other cities.`
@@ -260,7 +266,7 @@ CATEGORIES: Return a MIX of categories. Do not return only restaurants. Include 
 - band (music, artists)
 - activity (hobbies, experiences, things to do)
 
-Use the category that best fits each recommendation.${locationBlock}
+Use the category that best fits each recommendation.${locationBlock}${alreadyRecommendedBlock}
 
 USER PROFILE (${totalSignals} signals):
 
@@ -272,7 +278,7 @@ ${likesText}
 
 ${adaptBlock}
 
-TASK: Find ${batchSize} real recommendations across the categories above using web search. Match their taste profile.${hasCity ? ` For restaurant, location, or local-activity items, restrict to ${city} only.` : ''}
+TASK: Find ${batchSize} NEW real recommendations across the categories above using web search. Match their taste profile.${hasCity ? ` For restaurant, location, or local-activity items, restrict to ${city} only.` : ''} Do NOT repeat any previously recommended items.
 
 REQUIREMENTS:
 1. Use web search to confirm each recommendation is real and current
