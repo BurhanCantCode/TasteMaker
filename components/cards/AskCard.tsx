@@ -17,23 +17,26 @@ interface AskCardProps {
 
 export function AskCard({ question, onAnswer, disabled }: AskCardProps) {
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col gap-6">
-      {/* Question Badge */}
-      <div className="flex-shrink-0">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-900 text-xs font-bold uppercase tracking-wider">
-          Question
-        </span>
+    <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col justify-between">
+      {/* Top Section - Badge and Question */}
+      <div className="flex flex-col gap-8">
+        {/* Question Badge */}
+        <div className="flex-shrink-0">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-900 text-xs font-bold uppercase tracking-wider">
+            Question
+          </span>
+        </div>
+
+        {/* Question Title */}
+        <div className="flex-shrink-0">
+          <h2 className="text-2xl font-bold text-[#171717] leading-tight tracking-tight">
+            {question.title}
+          </h2>
+        </div>
       </div>
 
-      {/* Question Title */}
-      <div className="flex-1 overflow-y-auto flex items-center min-h-0">
-        <h2 className="text-3xl font-bold text-[#171717] leading-tight tracking-tight">
-          {question.title}
-        </h2>
-      </div>
-
-      {/* Input Section - Fixed at Bottom */}
-      <div className="flex-shrink-0 pt-2 border-t border-gray-100/50 input-area">
+      {/* Input Section - Fixed at bottom */}
+      <div className="flex-shrink-0 pt-6">
         {question.answerType === "yes_no" && (
           <YesNoButtons onAnswer={onAnswer} disabled={disabled} />
         )}

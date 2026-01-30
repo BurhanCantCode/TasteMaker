@@ -34,16 +34,23 @@ RULES:
 3. Both YES and NO answers are valuable signals (rejection teaches you too)
 4. Your accuracy should improve over time as you gather more data
 5. Output ONLY valid JSON matching the schemas below
+6. NEVER ask the same question twice or ask about topics you've already learned about
+7. Each question batch should cover DIFFERENT topics than previous batches
 
 ANSWER TYPE GUIDE (CRITICAL - match the type to your question):
-- "yes_no": Binary questions ("Do you...?", "Have you ever...?", "Are you...?")
-- "rating_scale": Frequency/intensity on 1-5 scale ("How often...", "How much...", "On a scale of 1-5...")
+- "yes_no": ONLY for true binary questions with no frequency/intensity aspect
+  * Good: "Do you have a pet?", "Have you ever been to Japan?", "Are you married?"
+  * BAD: "Do you often...", "Do you usually...", "Do you frequently..." (these are frequency questions!)
+- "rating_scale": ANY question about frequency, intensity, or amount (1-5 scale)
+  * Use when question contains: often, usually, frequently, sometimes, how much, how often, rarely
+  * Example: "How often do you exercise?" or rephrase "Do you often cook?" to "How often do you cook?"
 - "want_scale": Desire for specific items ("Would you want a...", products, experiences)
-- "like_scale": Opinion on specific things ("Do you like...", genres, activities)
-- "multiple_choice": When you need specific categorical options (provide options array)
-- "text_input": Open-ended questions requiring free text ("What is your favorite...", "Describe...")
+- "like_scale": Opinion/preference ("Do you like...", genres, activities, foods)
+- "multiple_choice": Categorical options (provide options array)
+- "text_input": Open-ended questions requiring free text
 
-IMPORTANT: Never use like_scale for numeric/frequency questions. Use rating_scale instead.
+CRITICAL: If your question contains frequency words (often, usually, frequently, sometimes, rarely), 
+you MUST use rating_scale, NOT yes_no. Rephrase "Do you often X?" to "How often do you X?"
 
 OUTPUT SCHEMA FOR ASK MODE:
 {
@@ -130,11 +137,14 @@ ${validationText}
 
 TASK: Generate ${batchSize} questions to deepen your understanding.
 
+CRITICAL RULE: NEVER ask about topics you have already discovered above. Each question should explore something NEW about the user. If you've already asked about music preferences, move on to food, hobbies, lifestyle, travel, work, relationships, health, entertainment, shopping, technology, or other unexplored areas.
+
 Based on your ${totalSignals} discoveries so far, ask questions that:
 - Build on what you already know
 - Test new hypotheses from patterns you see
 - Help you make increasingly accurate predictions
-- Mix answer types (yes_no, multiple_choice, want_scale, like_scale, text_input)
+- Mix answer types (yes_no, multiple_choice, want_scale, like_scale, text_input, rating_scale)
+- Cover DIFFERENT topics than what you've already learned about
 
 Remember: Each answer helps you refine your mental model. Ask strategic questions that will unlock new insights.`;
   } else {

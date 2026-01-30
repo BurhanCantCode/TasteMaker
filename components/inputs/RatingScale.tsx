@@ -11,7 +11,7 @@ export function RatingScale({ onAnswer, disabled }: RatingScaleProps) {
   const ratings = [1, 2, 3, 4, 5];
 
   return (
-    <div className="flex flex-col gap-4 w-full">
+    <div className="flex flex-col gap-3 w-full">
       {/* Rating buttons */}
       <div className="flex justify-between items-center gap-2">
         {ratings.map((rating) => (
