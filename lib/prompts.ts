@@ -202,7 +202,7 @@ Rules:
 Return ONLY the JSON, nothing else.`;
 }
 
-// Build prompt for web search recommendations (restaurants/locations)
+// Build prompt for web search recommendations (mix of categories: restaurants, products, activities, etc.)
 export function buildWebSearchPrompt(
   userProfile: UserProfile, 
   batchSize: number,
@@ -213,6 +213,8 @@ export function buildWebSearchPrompt(
   const city = location?.city || "their area";
   const country = location?.country;
   const totalSignals = userProfile.facts.length + userProfile.likes.length;
+  const hasCity = city !== "their area";
+  const stage = getProfileStage(userProfile);
   
   const factsText = userProfile.facts.length > 0
     ? userProfile.facts.map(f => `- ${f.question}: ${f.answer}`).join('\n')
@@ -222,15 +224,33 @@ export function buildWebSearchPrompt(
     ? userProfile.likes.map(l => `- ${l.item} (${l.category}): ${l.rating}`).join('\n')
     : "None yet";
 
-  const locationEmphasis = city !== "their area" 
-    ? `\n\nCRITICAL LOCATION REQUIREMENT:
-The user is in ${city}${country ? `, ${country}` : ''}.
-EVERY SINGLE recommendation MUST be a real establishment physically located in ${city}.
-Do NOT recommend places from ANY other city - not even nearby cities in the same country.
-Use web search to verify each place actually exists in ${city}.`
+  const locationBlock = hasCity
+    ? `\n\nLOCATION (for restaurant/location/activity only): The user is in ${city}${country ? `, ${country}` : ''}.
+For any card with category "restaurant", "location", or "activity" that is a physical place, it MUST be in ${city} only. Use web search to verify it exists there. Do NOT suggest places from other cities.`
     : '';
 
-  return `You are finding real restaurants and places that match this user's taste profile.${locationEmphasis}
+  const stageGuidance = stage === "discovery"
+    ? "We have few signals so far; recommend a diverse mix across categories."
+    : "We have many signals; strongly tailor categories and items to likes/dislikes and facts.";
+
+  const adaptBlock = `ADAPT TO WHAT YOU KNOW:
+- From LIKES/DISLIKES: Prefer categories where the user has given like or superlike; reduce or avoid categories where they have given dislike. If they have not seen much of a category yet, it is okay to try it when the profile supports it.
+- From FACTS: Use facts to choose which categories and types of items to recommend (e.g. demographics, interests; if they said "no X" or dislike something, avoid X-related recommendations).
+- Stage: ${stageGuidance} The more signals we have, the more specific and tailored your recommendations should be.`;
+
+  return `You are finding REAL recommendations that match this user's taste profile. Use web search to verify each item exists and is current.
+
+CATEGORIES: Return a MIX of categories. Do not return only restaurants. Include at least 2-3 different categories from:
+- restaurant (dining, cafes, bars)
+- location (shops, venues, parks, neighbourhoods)
+- product (physical products, apps, gadgets)
+- brand (brands they might like)
+- movie (films)
+- book (books)
+- band (music, artists)
+- activity (hobbies, experiences, things to do)
+
+Use the category that best fits each recommendation.${locationBlock}
 
 USER PROFILE (${totalSignals} signals):
 
@@ -240,15 +260,16 @@ ${factsText}
 THINGS THEY'VE LIKED/DISLIKED:
 ${likesText}
 
-TASK: Find ${batchSize} REAL establishments in ${city} that match their preferences.
+${adaptBlock}
 
-STRICT REQUIREMENTS:
-1. Use web search to find actual businesses
-2. Verify each place has a physical address in ${city}
-3. Only recommend currently operating establishments
-4. Match their taste profile based on the signals above
-5. If ${city} is "Karachi", do NOT suggest places from Lahore, Islamabad, or other cities
-6. If you cannot find ${batchSize} real places in ${city}, return fewer results
+TASK: Find ${batchSize} real recommendations across the categories above using web search. Match their taste profile.${hasCity ? ` For restaurant, location, or local-activity items, restrict to ${city} only.` : ''}
+
+REQUIREMENTS:
+1. Use web search to confirm each recommendation is real and current
+2. Mix categories (do not return only restaurants)
+3. Match their profile based on the signals above
+4. category must be one of: restaurant | location | product | brand | movie | book | band | activity
+5. If you cannot find ${batchSize} real items, return fewer results
 
 Return in this JSON format:
 {
@@ -257,15 +278,13 @@ Return in this JSON format:
       "type": "result",
       "content": {
         "id": "unique-id",
-        "name": "Place Name",
+        "name": "Item Name",
         "category": "restaurant",
-        "description": "Why this matches (include ${city} location in description)"
+        "description": "Why this matches (1-2 sentences)"
       }
     }
   ]
 }
-
-Use category "restaurant" for all dining/bar establishments and "location" for other places like shops, venues, parks, etc.
 
 CRITICAL: Your response must be ONLY the JSON object. Do not write any text before or after it (no "I'll search...", no explanations). Output the raw JSON only.`;
 }

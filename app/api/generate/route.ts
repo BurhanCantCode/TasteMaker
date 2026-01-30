@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if we should use web search (for result mode with location)
-    const shouldUseWebSearch = mode === "result" && locationData;
+    // Use web search for all result-mode recommendations (products, activities, restaurants, etc.)
+    const shouldUseWebSearch = mode === "result";
 
     // Anthropic web_search only supports certain country codes (e.g. US, UK). PK and others fail.
     const WEB_SEARCH_SUPPORTED_COUNTRIES = new Set(["US", "GB", "CA", "AU", "DE", "FR", "JP", "IN"]);
@@ -81,15 +81,15 @@ export async function POST(request: NextRequest) {
 
     let message;
     
-    if (shouldUseWebSearch && locationData) {
-      // Use web search for location-based recommendations
-      const searchPrompt = buildWebSearchPrompt(userProfile, batchSize, locationData);
+    if (shouldUseWebSearch) {
+      // Web search for real recommendations (mix of categories); pass location when available
+      const searchPrompt = buildWebSearchPrompt(userProfile, batchSize, locationData ?? undefined);
       
       const toolConfig = {
         type: "web_search_20250305" as const,
         name: "web_search" as const,
         max_uses: 5,
-        ...(canPassUserLocation && locationData.country
+        ...(locationData && canPassUserLocation && locationData.country
           ? {
               user_location: {
                 type: "approximate" as const,
