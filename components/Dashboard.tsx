@@ -2,7 +2,7 @@
 
 import { UserProfile } from "@/lib/types";
 import { analyzeProfile } from "@/lib/utils";
-import { Heart, X, Sparkles, ArrowRight } from "lucide-react";
+import { Heart, X, Sparkles, ArrowRight, BookOpen, ThumbsUp } from "lucide-react";
 
 interface DashboardProps {
   profile: UserProfile;
@@ -11,60 +11,66 @@ interface DashboardProps {
 
 export function Dashboard({ profile, onContinue }: DashboardProps) {
   const { categoryBreakdown, topTraits, recentActivity } = analyzeProfile(profile);
-  
+
   const totalFacts = profile.facts.length;
   const totalLikes = profile.likes.length;
   const isNewUser = totalFacts === 0 && totalLikes === 0;
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-6">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-2xl space-y-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            {isNewUser ? "Welcome to Tastemaker" : "Welcome back!"}
+        <div className="text-center space-y-3">
+          <h1 className="text-4xl font-bold tracking-tight text-[#171717]">
+            {isNewUser ? "Welcome to Tastemaker" : "Welcome back"}
           </h1>
-          <p className="text-gray-600">
-            {isNewUser 
-              ? "Let's discover your unique taste profile" 
-              : `You've answered ${totalFacts} questions`}
+          <p className="text-lg text-gray-500">
+            {isNewUser
+              ? "Let's discover your unique taste profile"
+              : "Here's what we know about you so far"}
           </p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Grid */}
         {!isNewUser && (
-          <>
-            <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
               {/* Facts Card */}
-              <div className="bg-white rounded-[24px] p-6 shadow-[0_4px_12px_rgb(0,0,0,0.06)]">
-                <div className="text-3xl font-bold text-blue-600 mb-1">
+              <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center text-center space-y-2">
+                <div className="p-3 bg-gray-50 rounded-full mb-2">
+                  <BookOpen className="w-6 h-6 text-gray-900" />
+                </div>
+                <div className="text-4xl font-bold text-gray-900">
                   {totalFacts}
                 </div>
-                <div className="text-sm text-gray-600">Facts Collected</div>
+                <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Facts</div>
               </div>
 
               {/* Likes Card */}
-              <div className="bg-white rounded-[24px] p-6 shadow-[0_4px_12px_rgb(0,0,0,0.06)]">
-                <div className="text-3xl font-bold text-pink-600 mb-1">
+              <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center text-center space-y-2">
+                <div className="p-3 bg-gray-50 rounded-full mb-2">
+                  <ThumbsUp className="w-6 h-6 text-gray-900" />
+                </div>
+                <div className="text-4xl font-bold text-gray-900">
                   {totalLikes}
                 </div>
-                <div className="text-sm text-gray-600">Preferences Rated</div>
+                <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Rated</div>
               </div>
             </div>
 
             {/* Category Breakdown */}
             {Object.keys(categoryBreakdown).length > 0 && (
-              <div className="bg-white rounded-[24px] p-6 shadow-[0_4px_12px_rgb(0,0,0,0.06)] mb-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                  Category Breakdown
+              <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                <h2 className="text-xl font-bold text-gray-900 mb-6">
+                  Taste Profile
                 </h2>
                 <div className="flex flex-wrap gap-3">
                   {Object.entries(categoryBreakdown).map(([category, count]) => (
                     <div
                       key={category}
-                      className="bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium"
+                      className="bg-gray-50 border border-gray-100 text-gray-900 px-5 py-2.5 rounded-full text-sm font-medium transition-colors hover:bg-gray-100"
                     >
-                      {category}: {count}
+                      {category} <span className="text-gray-400 ml-1">{count}</span>
                     </div>
                   ))}
                 </div>
@@ -73,15 +79,15 @@ export function Dashboard({ profile, onContinue }: DashboardProps) {
 
             {/* Top Traits */}
             {topTraits.length > 0 && (
-              <div className="bg-white rounded-[24px] p-6 shadow-[0_4px_12px_rgb(0,0,0,0.06)] mb-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                  Your Top Traits
+              <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                <h2 className="text-xl font-bold text-gray-900 mb-6">
+                  Your Traits
                 </h2>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {topTraits.map((trait, index) => (
-                    <div key={index} className="flex items-center gap-2 text-gray-700">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                      {trait}
+                    <div key={index} className="flex items-center gap-4 group">
+                      <div className="w-2 h-2 bg-black rounded-full ring-4 ring-gray-100 group-hover:ring-gray-200 transition-all" />
+                      <span className="text-gray-700 font-medium text-lg">{trait}</span>
                     </div>
                   ))}
                 </div>
@@ -90,27 +96,33 @@ export function Dashboard({ profile, onContinue }: DashboardProps) {
 
             {/* Recent Activity */}
             {recentActivity.length > 0 && (
-              <div className="bg-white rounded-[24px] p-6 shadow-[0_4px_12px_rgb(0,0,0,0.06)] mb-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                <h2 className="text-xl font-bold text-gray-900 mb-6">
                   Recent Activity
                 </h2>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {recentActivity.map((like) => (
                     <div
                       key={like.itemId}
-                      className="flex items-center gap-3 text-gray-700"
+                      className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 transition-colors hover:bg-gray-100"
                     >
                       {like.rating === "superlike" && (
-                        <Sparkles className="w-5 h-5 text-purple-500" />
+                        <div className="p-2 bg-yellow-100 rounded-full">
+                          <Sparkles className="w-4 h-4 text-yellow-600" />
+                        </div>
                       )}
                       {like.rating === "like" && (
-                        <Heart className="w-5 h-5 text-pink-500" />
+                        <div className="p-2 bg-green-100 rounded-full">
+                          <Heart className="w-4 h-4 text-green-600" />
+                        </div>
                       )}
                       {like.rating === "dislike" && (
-                        <X className="w-5 h-5 text-red-500" />
+                        <div className="p-2 bg-red-100 rounded-full">
+                          <X className="w-4 h-4 text-red-600" />
+                        </div>
                       )}
-                      <span className="flex-1">{like.item}</span>
-                      <span className="text-xs text-gray-400 capitalize">
+                      <span className="flex-1 font-medium text-gray-900">{like.item}</span>
+                      <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
                         {like.category}
                       </span>
                     </div>
@@ -118,15 +130,15 @@ export function Dashboard({ profile, onContinue }: DashboardProps) {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* Continue Button */}
         <button
           onClick={onContinue}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-5 px-8 rounded-[24px] font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
+          className="w-full bg-[#171717] text-white h-[72px] rounded-[32px] font-bold text-lg hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
         >
-          {isNewUser ? "Get Started" : "Continue Your Journey"}
+          {isNewUser ? "Start Profiling" : "Continue Journey"}
           <ArrowRight className="w-6 h-6" />
         </button>
       </div>
