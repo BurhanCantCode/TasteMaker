@@ -1,9 +1,9 @@
 // Answer types matching the spec
-export type AnswerType = 
-  | "yes_no" 
+export type AnswerType =
+  | "yes_no"
   | "want_scale"      // Want / Don't want / Already have / Really want
-  | "text_input" 
-  | "multiple_choice" 
+  | "text_input"
+  | "multiple_choice"
   | "like_scale"      // Like / Don't like / Super like
   | "rating_scale";   // 1-5 numeric scale for frequency/intensity
 
@@ -14,7 +14,8 @@ export interface Question {
   id: string;
   title: string;
   answerType: AnswerType;
-  options?: string[];  // For multiple choice
+  options?: string[];        // For multiple_choice
+  answerLabels?: string[];   // LLM-generated labels for answer buttons
 }
 
 // RESULT card item (noun prediction)
@@ -98,7 +99,7 @@ export type ProfileStage = "discovery" | "refining" | "personalized";
 // Determine stage based on profile data
 export function getProfileStage(profile: UserProfile): ProfileStage {
   const totalSignals = profile.facts.length + profile.likes.length;
-  
+
   if (totalSignals < 10) return "discovery";
   if (totalSignals < 30) return "refining";
   return "personalized";

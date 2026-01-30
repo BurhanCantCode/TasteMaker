@@ -7,11 +7,21 @@ interface LikeScaleProps {
   category?: string;
   onAnswer: (rating: string) => void;
   disabled?: boolean;
+  labels?: string[]; // LLM-generated labels override category config
 }
 
-export function LikeScale({ category = "default", onAnswer, disabled }: LikeScaleProps) {
+export function LikeScale({ category = "default", onAnswer, disabled, labels }: LikeScaleProps) {
   const config = getCategoryConfig(category);
-  
+
+  // Use LLM labels if provided, otherwise fall back to category config
+  const displayOptions = labels && labels.length > 0
+    ? labels.map((label, i) => ({
+      value: config.options[i]?.value || `option_${i}`,
+      label,
+      sentiment: config.options[i]?.sentiment || "neutral"
+    }))
+    : config.options;
+
   // Color mapping based on sentiment
   const getSentimentColors = (sentiment: string) => {
     switch (sentiment) {
@@ -30,7 +40,7 @@ export function LikeScale({ category = "default", onAnswer, disabled }: LikeScal
 
   return (
     <div className="flex flex-col gap-2 w-full">
-      {config.options.map((option) => (
+      {displayOptions.map((option) => (
         <button
           key={option.value}
           onClick={() => onAnswer(option.value)}

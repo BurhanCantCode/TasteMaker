@@ -38,19 +38,35 @@ export function AskCard({ question, onAnswer, disabled }: AskCardProps) {
       {/* Input Section - Fixed at bottom */}
       <div className="flex-shrink-0 pt-6">
         {question.answerType === "yes_no" && (
-          <YesNoButtons onAnswer={onAnswer} disabled={disabled} />
+          <YesNoButtons
+            onAnswer={onAnswer}
+            disabled={disabled}
+            labels={question.answerLabels as [string, string] | undefined}
+          />
         )}
 
         {question.answerType === "like_scale" && (
-          <LikeScale onAnswer={onAnswer} disabled={disabled} />
+          <LikeScale
+            onAnswer={onAnswer}
+            disabled={disabled}
+            labels={question.answerLabels}
+          />
         )}
 
         {question.answerType === "want_scale" && (
-          <WantScale onAnswer={onAnswer} disabled={disabled} />
+          <WantScale
+            onAnswer={onAnswer}
+            disabled={disabled}
+            labels={question.answerLabels}
+          />
         )}
 
         {question.answerType === "rating_scale" && (
-          <RatingScale onAnswer={onAnswer} disabled={disabled} />
+          <RatingScale
+            onAnswer={onAnswer}
+            disabled={disabled}
+            anchorLabels={question.answerLabels as [string, string] | undefined}
+          />
         )}
 
         {question.answerType === "multiple_choice" && question.options && (

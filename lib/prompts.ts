@@ -61,11 +61,21 @@ OUTPUT SCHEMA FOR ASK MODE:
         "id": "unique-id",
         "title": "Question text",
         "answerType": "yes_no" | "want_scale" | "text_input" | "multiple_choice" | "like_scale" | "rating_scale",
+        "answerLabels": ["Label 1", "Label 2", ...],  // REQUIRED - see below
         "options": ["Option A", "Option B"]  // only for multiple_choice
       }
     }
   ]
 }
+
+ANSWER LABELS (CRITICAL - generate labels that match your question's context):
+You MUST provide "answerLabels" for every question. Labels should feel natural for the specific question asked.
+- yes_no: Exactly 2 labels. Example: ["Yes, I have one", "No pets for me"] or ["Definitely!", "Not really"]
+- like_scale: Exactly 4 labels (negative → positive). Example: ["Not interested", "Maybe", "I like it", "Love it!"]
+- want_scale: Exactly 4 labels. Example: ["Pass", "Interested", "Want it", "Need it!"]
+- rating_scale: Exactly 2 anchor labels (low, high). Example: ["Rarely", "Very often"] or ["Not at all", "Extremely"]
+- multiple_choice: Use the "options" array instead (answerLabels not needed)
+- text_input: No labels needed (answerLabels not needed)
 
 OUTPUT SCHEMA FOR RESULT MODE:
 {
@@ -91,9 +101,9 @@ export function buildUserPrompt(
 ): string {
   const stage = getProfileStage(userProfile);
   const totalSignals = userProfile.facts.length + userProfile.likes.length;
-  
+
   // Include initial facts if provided
-  const initialContext = userProfile.initialFacts 
+  const initialContext = userProfile.initialFacts
     ? `INITIAL USER DESCRIPTION:\n${userProfile.initialFacts}\n\n`
     : "";
 
@@ -101,25 +111,25 @@ export function buildUserPrompt(
   const discoveriesText =
     userProfile.facts.length > 0
       ? userProfile.facts
-          .map((f) => {
-            if (f.positive) {
-              return `- DISCOVERED: ${f.question} → ${f.answer}`;
-            } else {
-              return `- DISCOVERED: They do NOT ${f.question.toLowerCase()} (answered: ${f.answer})`;
-            }
-          })
-          .join("\n")
+        .map((f) => {
+          if (f.positive) {
+            return `- DISCOVERED: ${f.question} → ${f.answer}`;
+          } else {
+            return `- DISCOVERED: They do NOT ${f.question.toLowerCase()} (answered: ${f.answer})`;
+          }
+        })
+        .join("\n")
       : "No discoveries yet";
 
   // Format likes as validation signals
   const validationText =
     userProfile.likes.length > 0
       ? userProfile.likes
-          .map((l) => {
-            const emoji = l.rating === "superlike" ? "⭐" : l.rating === "like" ? "✓" : "✗";
-            return `- ${emoji} ${l.item} (${l.category}): ${l.rating}`;
-          })
-          .join("\n")
+        .map((l) => {
+          const emoji = l.rating === "superlike" ? "⭐" : l.rating === "like" ? "✓" : "✗";
+          return `- ${emoji} ${l.item} (${l.category}): ${l.rating}`;
+        })
+        .join("\n")
       : "No predictions validated yet";
 
   // Stage-specific instructions
@@ -204,7 +214,7 @@ Return ONLY the JSON, nothing else.`;
 
 // Build prompt for web search recommendations (mix of categories: restaurants, products, activities, etc.)
 export function buildWebSearchPrompt(
-  userProfile: UserProfile, 
+  userProfile: UserProfile,
   batchSize: number,
   extractedLocation?: { city: string; country?: string }
 ): string {
@@ -215,11 +225,11 @@ export function buildWebSearchPrompt(
   const totalSignals = userProfile.facts.length + userProfile.likes.length;
   const hasCity = city !== "their area";
   const stage = getProfileStage(userProfile);
-  
+
   const factsText = userProfile.facts.length > 0
     ? userProfile.facts.map(f => `- ${f.question}: ${f.answer}`).join('\n')
     : "None yet";
-    
+
   const likesText = userProfile.likes.length > 0
     ? userProfile.likes.map(l => `- ${l.item} (${l.category}): ${l.rating}`).join('\n')
     : "None yet";

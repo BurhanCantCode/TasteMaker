@@ -6,9 +6,13 @@ import { X, Check } from "lucide-react";
 interface YesNoButtonsProps {
   onAnswer: (answer: "yes" | "no") => void;
   disabled?: boolean;
+  labels?: [string, string]; // [noLabel, yesLabel]
 }
 
-export function YesNoButtons({ onAnswer, disabled }: YesNoButtonsProps) {
+export function YesNoButtons({ onAnswer, disabled, labels }: YesNoButtonsProps) {
+  const noLabel = labels?.[0] || "No";
+  const yesLabel = labels?.[1] || "Yes";
+
   return (
     <div className="flex gap-4 w-full">
       <button
@@ -23,7 +27,7 @@ export function YesNoButtons({ onAnswer, disabled }: YesNoButtonsProps) {
         )}
       >
         <X className="w-5 h-5" />
-        No
+        {noLabel}
       </button>
       <button
         onClick={() => onAnswer("yes")}
@@ -37,7 +41,7 @@ export function YesNoButtons({ onAnswer, disabled }: YesNoButtonsProps) {
         )}
       >
         <Check className="w-5 h-5" />
-        Yes
+        {yesLabel}
       </button>
     </div>
   );
