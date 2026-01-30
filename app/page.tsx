@@ -12,7 +12,7 @@ import { SettingsGear } from "@/components/navigation/SettingsGear";
 import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { Question, ResultItem } from "@/lib/types";
 import { clearSummary } from "@/lib/cookies";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 export default function Home() {
   const { profile, isLoaded, addFact, addLike, setInitialFacts, setUserLocation, reset: resetProfile } = useUserProfile();
@@ -137,8 +137,18 @@ export default function Home() {
     setShowOnboarding(false);
   };
 
+  // Wait for profile to load before deciding onboarding vs dashboard vs card stack
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center gap-4 p-6">
+        <Loader2 className="w-10 h-10 text-gray-400 animate-spin" aria-hidden />
+        <p className="text-sm font-medium text-gray-500">Loading...</p>
+      </div>
+    );
+  }
+
   // Show onboarding for new users
-  if (showOnboarding && isLoaded) {
+  if (showOnboarding) {
     return (
       <Onboarding
         onComplete={handleOnboardingComplete}
@@ -148,7 +158,7 @@ export default function Home() {
   }
 
   // Show dashboard
-  if (showDashboard && isLoaded) {
+  if (showDashboard) {
     return (
       <>
         {/* Reset Button */}
