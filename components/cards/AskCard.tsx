@@ -14,18 +14,26 @@ interface AskCardProps {
   disabled?: boolean;
 }
 
+
 export function AskCard({ question, onAnswer, disabled }: AskCardProps) {
   return (
-    <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col">
+    <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col gap-6">
+      {/* Question Badge */}
+      <div className="flex-shrink-0">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-900 text-xs font-bold uppercase tracking-wider">
+          Question
+        </span>
+      </div>
+
       {/* Question Title */}
-      <div className="flex-1 flex items-center justify-center text-center px-4 min-h-0">
-        <h2 className="text-2xl font-semibold text-gray-800">
+      <div className="flex-1 overflow-y-auto flex items-center min-h-0">
+        <h2 className="text-3xl font-bold text-[#171717] leading-tight tracking-tight">
           {question.title}
         </h2>
       </div>
 
-      {/* Input Section */}
-      <div className="mt-6">
+      {/* Input Section - Fixed at Bottom */}
+      <div className="flex-shrink-0 pt-2 border-t border-gray-100/50 input-area">
         {question.answerType === "yes_no" && (
           <YesNoButtons onAnswer={onAnswer} disabled={disabled} />
         )}
@@ -46,7 +54,13 @@ export function AskCard({ question, onAnswer, disabled }: AskCardProps) {
           <MultipleChoice
             key={question.id}
             options={question.options}
-            onAnswer={onAnswer}
+            onAnswer={(ans) => {
+              if (Array.isArray(ans)) {
+                onAnswer(ans.join(","));
+              } else {
+                onAnswer(ans);
+              }
+            }}
             disabled={disabled}
             allowMultiple={true}
           />
@@ -59,13 +73,6 @@ export function AskCard({ question, onAnswer, disabled }: AskCardProps) {
             placeholder="Type your answer..."
           />
         )}
-      </div>
-
-      {/* Card Type Indicator */}
-      <div className="mt-4 text-center">
-        <span className="text-xs text-gray-400 uppercase tracking-wide">
-          Question
-        </span>
       </div>
     </div>
   );

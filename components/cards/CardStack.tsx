@@ -19,30 +19,23 @@ export function CardStack({ card, onAnswer, isLoading }: CardStackProps) {
 
   if (isLoading) {
     return (
-      <div className={`${cardContainerClass} flex items-center justify-center`}>
-        <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col">
+      <div className={cardContainerClass}>
+        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col gap-6">
           {/* Progress / Badge Skeleton */}
-          <div className="flex justify-center mb-10">
-            <Skeleton className="h-1.5 w-20 rounded-full bg-gray-100" />
+          <div className="flex-shrink-0">
+            <Skeleton className="h-6 w-20 rounded-full bg-gray-100" />
           </div>
 
           {/* Title Area */}
-          <div className="space-y-3 mb-auto px-2">
-            <Skeleton className="h-8 w-full rounded-xl" />
-            <Skeleton className="h-8 w-2/3 rounded-xl" />
-          </div>
-
-          {/* Center Visual / Content */}
-          <div className="flex-1 w-full max-h-[180px] mb-auto mx-auto my-6 p-6">
-            <div className="w-full h-full rounded-2xl bg-gray-50 border-2 border-dashed border-gray-100/50 flex items-center justify-center">
-              <Skeleton className="h-12 w-12 rounded-full opacity-50" />
-            </div>
+          <div className="flex-1 flex flex-col justify-center min-h-0 space-y-4">
+            <Skeleton className="h-10 w-full rounded-xl" />
+            <Skeleton className="h-10 w-2/3 rounded-xl" />
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-3 mt-auto">
-            <Skeleton className="h-14 w-full rounded-2xl" />
-            <Skeleton className="h-14 w-full rounded-2xl bg-gray-50" />
+          <div className="flex-shrink-0 pt-2 border-t border-gray-100/50 space-y-3">
+            <Skeleton className="h-14 w-full rounded-full" /> {/* Simulating a pill button */}
+            <Skeleton className="h-14 w-full rounded-full bg-gray-50" />
           </div>
         </div>
       </div>

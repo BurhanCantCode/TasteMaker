@@ -36,9 +36,9 @@ export default function Home() {
   // Check if user is new (no profile data at all)
   useEffect(() => {
     if (isLoaded) {
-      const isNewUser = profile.facts.length === 0 && 
-                       profile.likes.length === 0 && 
-                       !profile.initialFacts;
+      const isNewUser = profile.facts.length === 0 &&
+        profile.likes.length === 0 &&
+        !profile.initialFacts;
       setShowOnboarding(isNewUser);
     }
   }, [isLoaded, profile]);
@@ -89,7 +89,7 @@ export default function Home() {
       // Finished current batch, switch modes
       const nextMode = mode === "ask" ? "result" : "ask";
       const nextBatchSize = nextMode === "ask" ? 10 : 5; // 10 questions, 5 predictions
-      
+
       await fetchCards(profile, nextMode, nextBatchSize, systemPrompt);
     }
   };
@@ -129,7 +129,7 @@ export default function Home() {
   // Show onboarding for new users
   if (showOnboarding && isLoaded) {
     return (
-      <Onboarding 
+      <Onboarding
         onComplete={handleOnboardingComplete}
         onSkip={handleOnboardingSkip}
       />
@@ -154,8 +154,8 @@ export default function Home() {
           onSave={handleSavePrompt}
         />
 
-        <Dashboard 
-          profile={profile} 
+        <Dashboard
+          profile={profile}
           onContinue={handleContinue}
           onUpdateFacts={setInitialFacts}
         />
@@ -190,7 +190,7 @@ export default function Home() {
       />
 
       {/* Card Stack */}
-      <div className="w-full max-w-[400px]">
+      <div className="w-full max-w-[500px]">
         {error && (
           <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-[24px]">
             <p className="font-medium">Error:</p>
