@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { UserProfile } from "@/lib/types";
 import { analyzeProfile } from "@/lib/utils";
-import { Heart, X, Sparkles, ArrowRight, BookOpen, ThumbsUp } from "lucide-react";
+import { Heart, X, Sparkles, ArrowRight, BookOpen, ThumbsUp, Loader2 } from "lucide-react";
 
 interface DashboardProps {
   profile: UserProfile;
@@ -11,10 +12,41 @@ interface DashboardProps {
 
 export function Dashboard({ profile, onContinue }: DashboardProps) {
   const { categoryBreakdown, topTraits, recentActivity } = analyzeProfile(profile);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   const totalFacts = profile.facts.length;
   const totalLikes = profile.likes.length;
   const isNewUser = totalFacts === 0 && totalLikes === 0;
+
+  // Fetch AI summary when profile has enough data
+  useEffect(() => {
+    async function fetchSummary() {
+      if (totalFacts < 3 && totalLikes < 2) return;
+      
+      setSummaryLoading(true);
+      try {
+        const response = await fetch("/api/summary", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userProfile: profile }),
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.summary) {
+            setSummary(data.summary);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch summary:", error);
+      } finally {
+        setSummaryLoading(false);
+      }
+    }
+
+    fetchSummary();
+  }, [profile, totalFacts, totalLikes]);
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center p-6">
@@ -58,6 +90,23 @@ export function Dashboard({ profile, onContinue }: DashboardProps) {
               </div>
             </div>
 
+            {/* AI Summary */}
+            {(summary || summaryLoading) && (
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-blue-100">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  About You
+                </h2>
+                {summaryLoading ? (
+                  <div className="flex items-center gap-3 text-gray-500">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Analyzing your profile...</span>
+                  </div>
+                ) : (
+                  <p className="text-gray-700 leading-relaxed">{summary}</p>
+                )}
+              </div>
+            )}
+
             {/* Category Breakdown */}
             {Object.keys(categoryBreakdown).length > 0 && (
               <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
@@ -77,17 +126,17 @@ export function Dashboard({ profile, onContinue }: DashboardProps) {
               </div>
             )}
 
-            {/* Top Traits */}
+            {/* Recent Answers */}
             {topTraits.length > 0 && (
               <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">
-                  Your Traits
+                  Recent Answers
                 </h2>
                 <div className="space-y-3">
                   {topTraits.map((trait, index) => (
-                    <div key={index} className="flex items-center gap-4 group">
-                      <div className="w-2 h-2 bg-black rounded-full ring-4 ring-gray-100 group-hover:ring-gray-200 transition-all" />
-                      <span className="text-gray-700 font-medium text-lg">{trait}</span>
+                    <div key={index} className="flex items-start gap-4 group p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                      <div className="w-2 h-2 bg-black rounded-full ring-4 ring-gray-100 group-hover:ring-gray-200 transition-all mt-2 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">{trait}</span>
                     </div>
                   ))}
                 </div>
