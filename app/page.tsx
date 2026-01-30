@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useCardQueue } from "@/hooks/useCardQueue";
+import { Onboarding } from "@/components/Onboarding";
 import { Dashboard } from "@/components/Dashboard";
 import { CardStack } from "@/components/cards/CardStack";
 import { ProgressBar } from "@/components/navigation/ProgressBar";
@@ -10,10 +11,11 @@ import { ResetButton } from "@/components/navigation/ResetButton";
 import { SettingsGear } from "@/components/navigation/SettingsGear";
 import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { Question, ResultItem } from "@/lib/types";
+import { clearSummary } from "@/lib/cookies";
 import { ArrowLeft } from "lucide-react";
 
 export default function Home() {
-  const { profile, isLoaded, addFact, addLike, reset: resetProfile } = useUserProfile();
+  const { profile, isLoaded, addFact, addLike, setInitialFacts, reset: resetProfile } = useUserProfile();
   const {
     currentCard,
     isLoading,
@@ -29,6 +31,17 @@ export default function Home() {
   const [systemPrompt, setSystemPrompt] = useState<string | undefined>();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showDashboard, setShowDashboard] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Check if user is new (no profile data at all)
+  useEffect(() => {
+    if (isLoaded) {
+      const isNewUser = profile.facts.length === 0 && 
+                       profile.likes.length === 0 && 
+                       !profile.initialFacts;
+      setShowOnboarding(isNewUser);
+    }
+  }, [isLoaded, profile]);
 
   // Fetch cards when transitioning from dashboard to card stack
   useEffect(() => {
@@ -79,6 +92,7 @@ export default function Home() {
     if (confirm("Are you sure you want to reset? This will clear all your data.")) {
       resetProfile();
       resetQueue();
+      clearSummary();
       setShowDashboard(true);
     }
   };
@@ -96,6 +110,25 @@ export default function Home() {
   const handleBackToDashboard = () => {
     setShowDashboard(true);
   };
+
+  const handleOnboardingComplete = (facts: string) => {
+    setInitialFacts(facts);
+    setShowOnboarding(false);
+  };
+
+  const handleOnboardingSkip = () => {
+    setShowOnboarding(false);
+  };
+
+  // Show onboarding for new users
+  if (showOnboarding && isLoaded) {
+    return (
+      <Onboarding 
+        onComplete={handleOnboardingComplete}
+        onSkip={handleOnboardingSkip}
+      />
+    );
+  }
 
   // Show dashboard
   if (showDashboard && isLoaded) {
@@ -115,7 +148,11 @@ export default function Home() {
           onSave={handleSavePrompt}
         />
 
-        <Dashboard profile={profile} onContinue={handleContinue} />
+        <Dashboard 
+          profile={profile} 
+          onContinue={handleContinue}
+          onUpdateFacts={setInitialFacts}
+        />
       </>
     );
   }

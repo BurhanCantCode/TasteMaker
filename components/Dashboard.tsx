@@ -3,45 +3,72 @@
 import { useEffect, useState } from "react";
 import { UserProfile } from "@/lib/types";
 import { analyzeProfile } from "@/lib/utils";
-import { Heart, X, Sparkles, ArrowRight, BookOpen, ThumbsUp, Loader2 } from "lucide-react";
+import { loadSummary, saveSummary, CachedSummary } from "@/lib/cookies";
+import { FactsModal } from "./FactsModal";
+import { Heart, X, Sparkles, ArrowRight, BookOpen, ThumbsUp, Loader2, Plus } from "lucide-react";
 
 interface DashboardProps {
   profile: UserProfile;
   onContinue: () => void;
+  onUpdateFacts?: (facts: string) => void;
 }
 
-export function Dashboard({ profile, onContinue }: DashboardProps) {
+export function Dashboard({ profile, onContinue, onUpdateFacts }: DashboardProps) {
   const { categoryBreakdown, topTraits, recentActivity } = analyzeProfile(profile);
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [isFactsModalOpen, setIsFactsModalOpen] = useState(false);
 
   const totalFacts = profile.facts.length;
   const totalLikes = profile.likes.length;
   const isNewUser = totalFacts === 0 && totalLikes === 0;
 
-  // Fetch AI summary when profile has enough data
+  // Fetch AI summary only when profile has new data
   useEffect(() => {
     async function fetchSummary() {
+      // Check cached summary first
+      const cached = loadSummary();
+      
+      // Use cached if profile hasn't grown
+      if (cached && 
+          cached.factsCount === totalFacts && 
+          cached.likesCount === totalLikes) {
+        setSummary(cached.text);
+        return;
+      }
+      
+      // Need minimum data to generate summary
       if (totalFacts < 3 && totalLikes < 2) return;
       
-      setSummaryLoading(true);
-      try {
-        const response = await fetch("/api/summary", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userProfile: profile }),
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.summary) {
-            setSummary(data.summary);
+      // Only fetch if we have new data
+      if (!cached || totalFacts > cached.factsCount || totalLikes > cached.likesCount) {
+        setSummaryLoading(true);
+        try {
+          const response = await fetch("/api/summary", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userProfile: profile }),
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.summary) {
+              setSummary(data.summary);
+              
+              // Cache the new summary
+              const newCache: CachedSummary = {
+                text: data.summary,
+                factsCount: totalFacts,
+                likesCount: totalLikes,
+              };
+              saveSummary(newCache);
+            }
           }
+        } catch (error) {
+          console.error("Failed to fetch summary:", error);
+        } finally {
+          setSummaryLoading(false);
         }
-      } catch (error) {
-        console.error("Failed to fetch summary:", error);
-      } finally {
-        setSummaryLoading(false);
       }
     }
 
@@ -182,14 +209,39 @@ export function Dashboard({ profile, onContinue }: DashboardProps) {
           </div>
         )}
 
-        {/* Continue Button */}
-        <button
-          onClick={onContinue}
-          className="w-full bg-[#171717] text-white h-[72px] rounded-[32px] font-bold text-lg hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
-        >
-          {isNewUser ? "Start Profiling" : "Continue Journey"}
-          <ArrowRight className="w-6 h-6" />
-        </button>
+        {/* Actions */}
+        <div className="space-y-4">
+          {/* Share More Facts Button */}
+          {!isNewUser && onUpdateFacts && (
+            <button
+              onClick={() => setIsFactsModalOpen(true)}
+              className="w-full bg-white text-gray-700 h-[56px] rounded-[24px] font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_4px_12px_rgb(0,0,0,0.06)]"
+            >
+              <Plus className="w-5 h-5" />
+              Share more facts
+            </button>
+          )}
+
+          {/* Continue Button */}
+          <button
+            onClick={onContinue}
+            className="w-full bg-[#171717] text-white h-[72px] rounded-[32px] font-bold text-lg hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+          >
+            {isNewUser ? "Start Profiling" : "Continue Journey"}
+            <ArrowRight className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Facts Modal */}
+        <FactsModal
+          isOpen={isFactsModalOpen}
+          onClose={() => setIsFactsModalOpen(false)}
+          currentFacts={profile.initialFacts}
+          onSave={(facts) => {
+            onUpdateFacts?.(facts);
+            setIsFactsModalOpen(false);
+          }}
+        />
       </div>
     </div>
   );

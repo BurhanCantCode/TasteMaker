@@ -46,6 +46,11 @@ export function buildUserPrompt(
   batchSize: number,
   userProfile: UserProfile
 ): string {
+  // Include initial facts if provided
+  const initialContext = userProfile.initialFacts 
+    ? `USER SELF-DESCRIPTION:\n${userProfile.initialFacts}\n\n`
+    : "";
+
   const factsText =
     userProfile.facts.length > 0
       ? userProfile.facts
@@ -63,7 +68,7 @@ export function buildUserPrompt(
   if (mode === "ask") {
     return `Generate ${batchSize} questions to learn more about the user.
 
-USER FACTS SO FAR:
+${initialContext}USER FACTS SO FAR:
 ${factsText}
 
 USER LIKES SO FAR:
@@ -73,7 +78,7 @@ Generate ${batchSize} diverse questions. Mix different answer types (yes_no, mul
   } else {
     return `Based on what you know about the user, predict ${batchSize} things they would like.
 
-USER FACTS:
+${initialContext}USER FACTS:
 ${factsText}
 
 USER LIKES:

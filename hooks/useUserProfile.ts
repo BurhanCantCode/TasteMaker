@@ -55,6 +55,13 @@ export function useUserProfile() {
     }));
   }, []);
 
+  const setInitialFacts = useCallback((facts: string) => {
+    setProfile((prev) => ({
+      ...prev,
+      initialFacts: facts,
+    }));
+  }, []);
+
   const reset = useCallback(() => {
     const empty = createEmptyProfile();
     setProfile(empty);
@@ -66,6 +73,7 @@ export function useUserProfile() {
     isLoaded,
     addFact,
     addLike,
+    setInitialFacts,
     reset,
   };
 }

@@ -43,6 +43,7 @@ export interface Card {
 export interface UserProfile {
   facts: UserFact[];     // USER FACTS - from ASK cards
   likes: UserLike[];     // USER LIKES - from RESULT cards
+  initialFacts?: string; // Raw slash-separated facts user provided about themselves
 }
 
 export interface UserFact {
