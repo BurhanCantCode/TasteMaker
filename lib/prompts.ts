@@ -35,6 +35,16 @@ RULES:
 4. Your accuracy should improve over time as you gather more data
 5. Output ONLY valid JSON matching the schemas below
 
+ANSWER TYPE GUIDE (CRITICAL - match the type to your question):
+- "yes_no": Binary questions ("Do you...?", "Have you ever...?", "Are you...?")
+- "rating_scale": Frequency/intensity on 1-5 scale ("How often...", "How much...", "On a scale of 1-5...")
+- "want_scale": Desire for specific items ("Would you want a...", products, experiences)
+- "like_scale": Opinion on specific things ("Do you like...", genres, activities)
+- "multiple_choice": When you need specific categorical options (provide options array)
+- "text_input": Open-ended questions requiring free text ("What is your favorite...", "Describe...")
+
+IMPORTANT: Never use like_scale for numeric/frequency questions. Use rating_scale instead.
+
 OUTPUT SCHEMA FOR ASK MODE:
 {
   "cards": [
@@ -43,7 +53,7 @@ OUTPUT SCHEMA FOR ASK MODE:
       "content": {
         "id": "unique-id",
         "title": "Question text",
-        "answerType": "yes_no" | "want_scale" | "text_input" | "multiple_choice" | "like_scale",
+        "answerType": "yes_no" | "want_scale" | "text_input" | "multiple_choice" | "like_scale" | "rating_scale",
         "options": ["Option A", "Option B"]  // only for multiple_choice
       }
     }

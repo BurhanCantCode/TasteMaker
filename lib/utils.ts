@@ -19,6 +19,12 @@ function formatAnswer(answer: string): string {
     "dont_want": "Don't Want",
     "already_have": "Already Have",
     "really_want": "Really Want",
+    // Rating scale (1-5)
+    "1": "1 (Low)",
+    "2": "2",
+    "3": "3",
+    "4": "4",
+    "5": "5 (High)",
     // Product ratings
     "nope": "Nope",
     "interested": "Interested",

@@ -6,6 +6,7 @@ import { LikeScale } from "../inputs/LikeScale";
 import { WantScale } from "../inputs/WantScale";
 import { MultipleChoice } from "../inputs/MultipleChoice";
 import { TextInput } from "../inputs/TextInput";
+import { RatingScale } from "../inputs/RatingScale";
 
 interface AskCardProps {
   question: Question;
@@ -35,6 +36,10 @@ export function AskCard({ question, onAnswer, disabled }: AskCardProps) {
 
         {question.answerType === "want_scale" && (
           <WantScale onAnswer={onAnswer} disabled={disabled} />
+        )}
+
+        {question.answerType === "rating_scale" && (
+          <RatingScale onAnswer={onAnswer} disabled={disabled} />
         )}
 
         {question.answerType === "multiple_choice" && question.options && (

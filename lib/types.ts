@@ -4,7 +4,8 @@ export type AnswerType =
   | "want_scale"      // Want / Don't want / Already have / Really want
   | "text_input" 
   | "multiple_choice" 
-  | "like_scale";     // Like / Don't like / Super like
+  | "like_scale"      // Like / Don't like / Super like
+  | "rating_scale";   // 1-5 numeric scale for frequency/intensity
 
 export type CardType = "ask" | "result" | "interstitial";
 
