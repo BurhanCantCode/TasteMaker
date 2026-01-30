@@ -15,7 +15,7 @@ interface CardStackProps {
 
 export function CardStack({ card, onAnswer, isLoading }: CardStackProps) {
   // Common card container classes to ensure consistency
-  const cardContainerClass = "w-full max-w-[360px] h-[520px]";
+  const cardContainerClass = "w-full max-w-[500px] h-[520px]";
 
   if (isLoading) {
     return (

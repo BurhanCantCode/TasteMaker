@@ -1,13 +1,39 @@
-import { UserProfile } from "./types";
+import { UserProfile, ProfileStage, getProfileStage } from "./types";
 
-export const DEFAULT_SYSTEM_PROMPT = `You are Tastemaker, an AI that builds comprehensive user preference profiles through a guessing game.
+const STAGE_INSTRUCTIONS = {
+  discovery: `STAGE: DISCOVERY (early exploration)
+You're just getting to know this user. Focus on broad questions:
+- Demographics and lifestyle basics
+- General preferences across major categories
+- Lifestyle patterns and habits
+Aim for ~60-70% accuracy. Cast a wide net.`,
+
+  refining: `STAGE: REFINING (building detailed model)
+You have the basics. Now dig deeper:
+- Follow up on their established interests
+- Test specific hypotheses based on patterns
+- Ask about nuances and subcategories
+Aim for ~75-85% accuracy. Get more targeted.`,
+
+  personalized: `STAGE: PERSONALIZED (high precision)
+You know this person well. Get specific and creative:
+- Niche interests within their preferences
+- Novel suggestions they might not know about
+- Specific brands, products, and experiences
+Aim for ~85-95% accuracy. Be bold with your predictions.`,
+};
+
+export const DEFAULT_SYSTEM_PROMPT = `You are Tastemaker, an AI playing a sophisticated guessing game to build comprehensive user preference profiles.
+
+CORE MISSION:
+You're building a mental model of the user through progressive discovery. Each interaction should build on previous knowledge, making your questions and predictions increasingly accurate and personalized.
 
 RULES:
-1. Generate questions to learn user attributes (demographics, lifestyle, interests)
-2. Make predictions about things the user would like based on accumulated knowledge
-3. Both positive AND negative responses are valuable signals
-4. Output ONLY valid JSON matching the schema below
-5. Be creative and conversational - make it fun!
+1. You're having an ongoing conversation - remember what you've learned
+2. Start broad, then get progressively more specific as you learn more
+3. Both YES and NO answers are valuable signals (rejection teaches you too)
+4. Your accuracy should improve over time as you gather more data
+5. Output ONLY valid JSON matching the schemas below
 
 OUTPUT SCHEMA FOR ASK MODE:
 {
@@ -39,51 +65,87 @@ OUTPUT SCHEMA FOR RESULT MODE:
   ]
 }
 
-For RESULT mode, predict nouns (locations, products, brands, movies, books, bands, restaurants, activities) the user would enjoy based on their profile.`;
+For RESULT mode, predict specific things (restaurants, books, brands, apps, experiences, neighborhoods, etc.) they would enjoy based on your accumulated knowledge.`;
 
 export function buildUserPrompt(
   mode: "ask" | "result",
   batchSize: number,
   userProfile: UserProfile
 ): string {
+  const stage = getProfileStage(userProfile);
+  const totalSignals = userProfile.facts.length + userProfile.likes.length;
+  
   // Include initial facts if provided
   const initialContext = userProfile.initialFacts 
-    ? `USER SELF-DESCRIPTION:\n${userProfile.initialFacts}\n\n`
+    ? `INITIAL USER DESCRIPTION:\n${userProfile.initialFacts}\n\n`
     : "";
 
-  const factsText =
+  // Reframe facts as discoveries (what you've learned)
+  const discoveriesText =
     userProfile.facts.length > 0
       ? userProfile.facts
-          .map((f) => `- ${f.question}: ${f.answer} (${f.positive ? "positive" : "negative"})`)
+          .map((f) => {
+            if (f.positive) {
+              return `- DISCOVERED: ${f.question} → ${f.answer}`;
+            } else {
+              return `- DISCOVERED: They do NOT ${f.question.toLowerCase()} (answered: ${f.answer})`;
+            }
+          })
           .join("\n")
-      : "No facts yet";
+      : "No discoveries yet";
 
-  const likesText =
+  // Format likes as validation signals
+  const validationText =
     userProfile.likes.length > 0
       ? userProfile.likes
-          .map((l) => `- ${l.item} (${l.category}): ${l.rating}`)
+          .map((l) => {
+            const emoji = l.rating === "superlike" ? "⭐" : l.rating === "like" ? "✓" : "✗";
+            return `- ${emoji} ${l.item} (${l.category}): ${l.rating}`;
+          })
           .join("\n")
-      : "No likes yet";
+      : "No predictions validated yet";
+
+  // Stage-specific instructions
+  const stageGuidance = STAGE_INSTRUCTIONS[stage];
 
   if (mode === "ask") {
-    return `Generate ${batchSize} questions to learn more about the user.
+    return `${stageGuidance}
 
-${initialContext}USER FACTS SO FAR:
-${factsText}
+${initialContext}YOUR DISCOVERIES (${totalSignals} signals collected):
 
-USER LIKES SO FAR:
-${likesText}
+${discoveriesText}
 
-Generate ${batchSize} diverse questions. Mix different answer types (yes_no, multiple_choice, want_scale, like_scale, text_input). Ask about things that will help you understand their preferences better.`;
+PREDICTION VALIDATION:
+${validationText}
+
+TASK: Generate ${batchSize} questions to deepen your understanding.
+
+Based on your ${totalSignals} discoveries so far, ask questions that:
+- Build on what you already know
+- Test new hypotheses from patterns you see
+- Help you make increasingly accurate predictions
+- Mix answer types (yes_no, multiple_choice, want_scale, like_scale, text_input)
+
+Remember: Each answer helps you refine your mental model. Ask strategic questions that will unlock new insights.`;
   } else {
-    return `Based on what you know about the user, predict ${batchSize} things they would like.
+    return `${stageGuidance}
 
-${initialContext}USER FACTS:
-${factsText}
+${initialContext}YOUR DISCOVERIES (${totalSignals} signals collected):
 
-USER LIKES:
-${likesText}
+${discoveriesText}
 
-Generate ${batchSize} predictions across different categories (movies, books, restaurants, activities, brands, locations, etc.). Be creative and insightful based on their profile.`;
+PREDICTION VALIDATION:
+${validationText}
+
+TASK: Predict ${batchSize} things this user would enjoy.
+
+Based on your discoveries, predict across categories:
+- Restaurants, bars, cafes
+- Books, movies, music
+- Brands, products, apps
+- Neighborhoods, travel destinations
+- Activities, experiences
+
+Your predictions should reflect the depth of your ${totalSignals} discoveries. Be creative and insightful - surprise them with things they didn't know they'd like, but that fit their pattern perfectly.`;
   }
 }

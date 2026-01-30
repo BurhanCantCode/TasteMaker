@@ -85,3 +85,15 @@ export interface CardResponse {
   response: string | SwipeDirection;
   timestamp: number;
 }
+
+// Profile stage for progressive refinement
+export type ProfileStage = "discovery" | "refining" | "personalized";
+
+// Determine stage based on profile data
+export function getProfileStage(profile: UserProfile): ProfileStage {
+  const totalSignals = profile.facts.length + profile.likes.length;
+  
+  if (totalSignals < 10) return "discovery";
+  if (totalSignals < 30) return "refining";
+  return "personalized";
+}
