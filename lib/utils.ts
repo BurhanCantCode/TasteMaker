@@ -9,6 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 // Format raw answer values for display
 function formatAnswer(answer: string): string {
   const answerMap: Record<string, string> = {
+    // Original answers
     "yes": "Yes",
     "no": "No",
     "like": "Like",
@@ -18,6 +19,40 @@ function formatAnswer(answer: string): string {
     "dont_want": "Don't Want",
     "already_have": "Already Have",
     "really_want": "Really Want",
+    // Product ratings
+    "nope": "Nope",
+    "interested": "Interested",
+    "already_use": "Already use",
+    // Restaurant/Location ratings
+    "havent_been": "Haven't been",
+    "want_to_try": "Want to try",
+    "want_to_visit": "Want to visit",
+    "loved_it": "Loved it",
+    "didnt_like": "Didn't like",
+    "been_loved": "Been there - loved it",
+    "been_meh": "Been there - meh",
+    // Movie ratings
+    "skip": "Skip",
+    "want_to_watch": "Want to watch",
+    "seen_loved": "Seen it - loved it",
+    "seen_meh": "Seen it - meh",
+    // Book ratings
+    "not_for_me": "Not for me",
+    "want_to_read": "Want to read",
+    "read_loved": "Read it - loved it",
+    "read_meh": "Read it - meh",
+    // Music/Band ratings
+    "not_my_style": "Not my style",
+    "id_listen": "I'd listen",
+    "already_fan": "Already a fan",
+    "love_them": "Love them",
+    // Brand ratings
+    "curious": "Curious",
+    "already_loyal": "Already loyal",
+    // Activity ratings
+    "id_try": "I'd try it",
+    "love_doing": "Love doing this",
+    "already_do": "Already do this",
   };
   
   return answerMap[answer.toLowerCase()] || answer;

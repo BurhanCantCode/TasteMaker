@@ -1,58 +1,52 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Heart, X, Sparkles } from "lucide-react";
+import { getCategoryConfig } from "@/lib/categoryConfig";
 
 interface LikeScaleProps {
-  onAnswer: (rating: "like" | "dislike" | "superlike") => void;
+  category?: string;
+  onAnswer: (rating: string) => void;
   disabled?: boolean;
 }
 
-export function LikeScale({ onAnswer, disabled }: LikeScaleProps) {
+export function LikeScale({ category = "default", onAnswer, disabled }: LikeScaleProps) {
+  const config = getCategoryConfig(category);
+  
+  // Color mapping based on sentiment
+  const getSentimentColors = (sentiment: string) => {
+    switch (sentiment) {
+      case "negative":
+        return "hover:bg-red-100 hover:text-red-600";
+      case "neutral":
+        return "hover:bg-gray-200 hover:text-gray-700";
+      case "positive":
+        return "hover:bg-blue-100 hover:text-blue-600";
+      case "strong_positive":
+        return "hover:bg-purple-100 hover:text-purple-600";
+      default:
+        return "hover:bg-gray-200 hover:text-gray-700";
+    }
+  };
+
   return (
-    <div className="flex gap-3 w-full">
-      <button
-        onClick={() => onAnswer("dislike")}
-        disabled={disabled}
-        className={cn(
-          "flex-1 py-4 px-4 rounded-[24px] bg-gray-100 hover:bg-red-100",
-          "transition-all duration-200",
-          "flex flex-col items-center justify-center gap-1",
-          "text-gray-700 hover:text-red-600",
-          "disabled:opacity-50 disabled:cursor-not-allowed"
-        )}
-      >
-        <X className="w-6 h-6" />
-        <span className="text-xs font-medium">Dislike</span>
-      </button>
-      <button
-        onClick={() => onAnswer("like")}
-        disabled={disabled}
-        className={cn(
-          "flex-1 py-4 px-4 rounded-[24px] bg-gray-100 hover:bg-pink-100",
-          "transition-all duration-200",
-          "flex flex-col items-center justify-center gap-1",
-          "text-gray-700 hover:text-pink-600",
-          "disabled:opacity-50 disabled:cursor-not-allowed"
-        )}
-      >
-        <Heart className="w-6 h-6" />
-        <span className="text-xs font-medium">Like</span>
-      </button>
-      <button
-        onClick={() => onAnswer("superlike")}
-        disabled={disabled}
-        className={cn(
-          "flex-1 py-4 px-4 rounded-[24px] bg-gray-100 hover:bg-purple-100",
-          "transition-all duration-200",
-          "flex flex-col items-center justify-center gap-1",
-          "text-gray-700 hover:text-purple-600",
-          "disabled:opacity-50 disabled:cursor-not-allowed"
-        )}
-      >
-        <Sparkles className="w-6 h-6" />
-        <span className="text-xs font-medium">Super Like</span>
-      </button>
+    <div className="flex flex-col gap-2 w-full">
+      {config.options.map((option) => (
+        <button
+          key={option.value}
+          onClick={() => onAnswer(option.value)}
+          disabled={disabled}
+          className={cn(
+            "py-3 px-4 rounded-[20px] bg-gray-100",
+            "transition-all duration-200",
+            "flex items-center justify-center",
+            "text-gray-700 font-medium text-sm",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
+            getSentimentColors(option.sentiment)
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
     </div>
   );
 }

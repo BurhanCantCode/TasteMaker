@@ -56,9 +56,14 @@ export default function Home() {
     // Save response to profile
     if (currentCard.type === "ask") {
       const question = currentCard.content as Question;
-      const positive = ["yes", "like", "superlike", "want", "really_want"].includes(
-        answer.toLowerCase()
-      );
+      const positive = [
+        "yes", "like", "superlike", "want", "really_want",
+        "interested", "want_to_try", "loved_it", "already_use",
+        "want_to_visit", "been_loved", "want_to_watch", "seen_loved",
+        "want_to_read", "read_loved", "id_listen", "already_fan",
+        "love_them", "curious", "already_loyal", "id_try",
+        "love_doing", "already_do"
+      ].includes(answer.toLowerCase());
 
       addFact({
         questionId: question.id,
@@ -72,7 +77,7 @@ export default function Home() {
         itemId: item.id,
         item: item.name,
         category: item.category,
-        rating: answer as "like" | "dislike" | "superlike",
+        rating: answer,
       });
     }
 

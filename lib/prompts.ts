@@ -58,7 +58,7 @@ OUTPUT SCHEMA FOR RESULT MODE:
       "content": {
         "id": "unique-id",
         "name": "Item name",
-        "category": "location | product | brand | movie | book | band | restaurant | activity",
+        "category": "product | restaurant | location | movie | book | band | brand | activity",
         "description": "Brief description of why they might like this"
       }
     }

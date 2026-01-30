@@ -58,7 +58,7 @@ export interface UserLike {
   itemId: string;
   item: string;
   category: string;
-  rating: "like" | "dislike" | "superlike";
+  rating: string; // Category-specific rating values
   timestamp: number;
 }
 

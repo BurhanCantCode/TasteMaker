@@ -17,7 +17,7 @@ export function AskCard({ question, onAnswer, disabled }: AskCardProps) {
   return (
     <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col">
       {/* Question Title */}
-      <div className="flex-1 flex items-center justify-center text-center px-4">
+      <div className="flex-1 flex items-center justify-center text-center px-4 min-h-0">
         <h2 className="text-2xl font-semibold text-gray-800">
           {question.title}
         </h2>
@@ -39,9 +39,11 @@ export function AskCard({ question, onAnswer, disabled }: AskCardProps) {
 
         {question.answerType === "multiple_choice" && question.options && (
           <MultipleChoice
+            key={question.id}
             options={question.options}
             onAnswer={onAnswer}
             disabled={disabled}
+            allowMultiple={true}
           />
         )}
 
