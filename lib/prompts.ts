@@ -170,9 +170,48 @@ Your predictions should reflect the depth of your ${totalSignals} discoveries. B
   }
 }
 
+// Build prompt to extract location from user profile
+export function buildLocationExtractionPrompt(userProfile: UserProfile): string {
+  const initialFacts = userProfile.initialFacts || "";
+  const factsText = userProfile.facts.length > 0
+    ? userProfile.facts.map(f => `${f.question}: ${f.answer}`).join(', ')
+    : "";
+
+  return `Extract the user's city and country from their profile information.
+
+USER'S PROFILE DATA:
+Initial description: "${initialFacts}"
+Answers given: ${factsText || "None"}
+
+TASK: Identify which CITY the user lives in or is from.
+
+Return ONLY valid JSON in this exact format:
+{
+  "city": "City Name",
+  "country": "Country Code (2 letters, e.g., PK, US, UK)"
+}
+
+Rules:
+- Extract the most specific location mentioned
+- If they say "karachi pakistan", return {"city": "Karachi", "country": "PK"}
+- If they say "from new york", return {"city": "New York", "country": "US"}
+- Use proper capitalization for city names
+- Use ISO 2-letter country codes
+- If NO location is found, return {"city": null, "country": null}
+
+Return ONLY the JSON, nothing else.`;
+}
+
 // Build prompt for web search recommendations (restaurants/locations)
-export function buildWebSearchPrompt(userProfile: UserProfile, batchSize: number): string {
-  const city = userProfile.userLocation?.city || "their area";
+export function buildWebSearchPrompt(
+  userProfile: UserProfile, 
+  batchSize: number,
+  extractedLocation?: { city: string; country?: string }
+): string {
+  // Use extracted location OR stored location
+  const location = extractedLocation || userProfile.userLocation;
+  const city = location?.city || "their area";
+  const country = location?.country;
   const totalSignals = userProfile.facts.length + userProfile.likes.length;
   
   const factsText = userProfile.facts.length > 0
@@ -183,7 +222,15 @@ export function buildWebSearchPrompt(userProfile: UserProfile, batchSize: number
     ? userProfile.likes.map(l => `- ${l.item} (${l.category}): ${l.rating}`).join('\n')
     : "None yet";
 
-  return `You are helping find real restaurants and places in ${city} that match this user's taste profile.
+  const locationEmphasis = city !== "their area" 
+    ? `\n\nCRITICAL LOCATION REQUIREMENT:
+The user is in ${city}${country ? `, ${country}` : ''}.
+EVERY SINGLE recommendation MUST be a real establishment physically located in ${city}.
+Do NOT recommend places from ANY other city - not even nearby cities in the same country.
+Use web search to verify each place actually exists in ${city}.`
+    : '';
+
+  return `You are finding real restaurants and places that match this user's taste profile.${locationEmphasis}
 
 USER PROFILE (${totalSignals} signals):
 
@@ -193,27 +240,32 @@ ${factsText}
 THINGS THEY'VE LIKED/DISLIKED:
 ${likesText}
 
-TASK: Search for ${batchSize} REAL restaurants, cafes, bars, or places in ${city} that would match their preferences.
+TASK: Find ${batchSize} REAL establishments in ${city} that match their preferences.
 
-For each place you find:
-1. Search for actual establishments
-2. Consider their taste signals when selecting
-3. Explain WHY it matches their profile
+STRICT REQUIREMENTS:
+1. Use web search to find actual businesses
+2. Verify each place has a physical address in ${city}
+3. Only recommend currently operating establishments
+4. Match their taste profile based on the signals above
+5. If ${city} is "Karachi", do NOT suggest places from Lahore, Islamabad, or other cities
+6. If you cannot find ${batchSize} real places in ${city}, return fewer results
 
-Return results in this exact JSON format:
+Return in this JSON format:
 {
   "cards": [
     {
       "type": "result",
       "content": {
         "id": "unique-id",
-        "name": "Actual Place Name",
+        "name": "Place Name",
         "category": "restaurant",
-        "description": "Brief explanation of why this matches their taste (1-2 sentences)"
+        "description": "Why this matches (include ${city} location in description)"
       }
     }
   ]
 }
 
-Use category "restaurant" for all dining/bar establishments and "location" for other places like shops, venues, parks, etc.`;
+Use category "restaurant" for all dining/bar establishments and "location" for other places like shops, venues, parks, etc.
+
+CRITICAL: Your response must be ONLY the JSON object. Do not write any text before or after it (no "I'll search...", no explanations). Output the raw JSON only.`;
 }
