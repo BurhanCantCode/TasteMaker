@@ -25,6 +25,8 @@ function formatAnswer(answer: string): string {
     "3": "3",
     "4": "4",
     "5": "5 (High)",
+    // Universal "Not interested"
+    "not_interested": "Not interested",
     // Product ratings
     "nope": "Nope",
     "interested": "Interested",

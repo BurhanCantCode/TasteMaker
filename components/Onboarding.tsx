@@ -1,19 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, MapPin } from "lucide-react";
 
 interface OnboardingProps {
-  onComplete: (facts: string) => void;
+  onComplete: (facts: string, location: string) => void;
   onSkip: () => void;
 }
 
 export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
   const [facts, setFacts] = useState("");
+  const [location, setLocation] = useState("");
 
   const handleSubmit = () => {
-    if (facts.trim()) {
-      onComplete(facts.trim());
+    if (facts.trim() || location.trim()) {
+      onComplete(facts.trim(), location.trim());
     } else {
       onSkip();
     }
@@ -35,19 +36,40 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
           </p>
         </div>
 
-        {/* Text Area */}
-        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4">
-          <textarea
-            value={facts}
-            onChange={(e) => setFacts(e.target.value)}
-            placeholder="Male / New York City / Single / iPhone user / Rents home..."
-            className="w-full h-32 p-4 rounded-[24px] bg-gray-50 border border-gray-200 focus:border-black focus:ring-black focus:outline-none text-gray-900 placeholder:text-gray-400 resize-none transition-all duration-200"
-          />
+        {/* Input Fields */}
+        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
+          {/* Facts Textarea */}
+          <div className="space-y-4">
+            <textarea
+              value={facts}
+              onChange={(e) => setFacts(e.target.value)}
+              placeholder="Male / New York City / Single / iPhone user / Rents home..."
+              className="w-full h-32 p-4 rounded-[24px] bg-gray-50 border border-gray-200 focus:border-black focus:ring-black focus:outline-none text-gray-900 placeholder:text-gray-400 resize-none transition-all duration-200"
+            />
 
-          {/* Example Hint */}
-          <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded-xl border border-gray-100">
-            <span className="font-semibold text-gray-900 block mb-1">Example</span>
-            Male / New York City / Single / iPhone user / Rents home / No pets / No sports / Online dating / owns a Kindle
+            {/* Example Hint */}
+            <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <span className="font-semibold text-gray-900 block mb-1">Example</span>
+              Male / New York City / Single / iPhone user / Rents home / No pets / No sports / Online dating / owns a Kindle
+            </div>
+          </div>
+
+          {/* Location Input */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+              <MapPin className="w-4 h-4" />
+              What city are you in?
+            </label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g., San Francisco, CA"
+              className="w-full p-4 rounded-[24px] bg-gray-50 border border-gray-200 focus:border-black focus:ring-black focus:outline-none text-gray-900 placeholder:text-gray-400 transition-all duration-200"
+            />
+            <p className="text-xs text-gray-500 px-4">
+              Optional but helps us find local restaurants and places for you
+            </p>
           </div>
         </div>
 

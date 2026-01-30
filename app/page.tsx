@@ -15,7 +15,7 @@ import { clearSummary } from "@/lib/cookies";
 import { ArrowLeft } from "lucide-react";
 
 export default function Home() {
-  const { profile, isLoaded, addFact, addLike, setInitialFacts, reset: resetProfile } = useUserProfile();
+  const { profile, isLoaded, addFact, addLike, setInitialFacts, setUserLocation, reset: resetProfile } = useUserProfile();
   const {
     currentCard,
     isLoading,
@@ -117,8 +117,19 @@ export default function Home() {
     setShowDashboard(true);
   };
 
-  const handleOnboardingComplete = (facts: string) => {
-    setInitialFacts(facts);
+  const handleOnboardingComplete = (facts: string, location: string) => {
+    if (facts) {
+      setInitialFacts(facts);
+    }
+    if (location) {
+      // Parse location string (e.g., "San Francisco, CA" or "New York City")
+      const parts = location.split(',').map(p => p.trim());
+      if (parts.length >= 2) {
+        setUserLocation(parts[0], parts[1]);
+      } else {
+        setUserLocation(parts[0]);
+      }
+    }
     setShowOnboarding(false);
   };
 

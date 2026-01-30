@@ -45,6 +45,11 @@ export interface UserProfile {
   facts: UserFact[];     // USER FACTS - from ASK cards
   likes: UserLike[];     // USER LIKES - from RESULT cards
   initialFacts?: string; // Raw slash-separated facts user provided about themselves
+  userLocation?: {       // User's location for localized recommendations
+    city: string;
+    region?: string;
+    country?: string;
+  };
 }
 
 export interface UserFact {

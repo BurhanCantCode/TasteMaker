@@ -159,3 +159,51 @@ Based on your discoveries, predict across categories:
 Your predictions should reflect the depth of your ${totalSignals} discoveries. Be creative and insightful - surprise them with things they didn't know they'd like, but that fit their pattern perfectly.`;
   }
 }
+
+// Build prompt for web search recommendations (restaurants/locations)
+export function buildWebSearchPrompt(userProfile: UserProfile, batchSize: number): string {
+  const city = userProfile.userLocation?.city || "their area";
+  const totalSignals = userProfile.facts.length + userProfile.likes.length;
+  
+  const factsText = userProfile.facts.length > 0
+    ? userProfile.facts.map(f => `- ${f.question}: ${f.answer}`).join('\n')
+    : "None yet";
+    
+  const likesText = userProfile.likes.length > 0
+    ? userProfile.likes.map(l => `- ${l.item} (${l.category}): ${l.rating}`).join('\n')
+    : "None yet";
+
+  return `You are helping find real restaurants and places in ${city} that match this user's taste profile.
+
+USER PROFILE (${totalSignals} signals):
+
+FACTS ABOUT THEM:
+${factsText}
+
+THINGS THEY'VE LIKED/DISLIKED:
+${likesText}
+
+TASK: Search for ${batchSize} REAL restaurants, cafes, bars, or places in ${city} that would match their preferences.
+
+For each place you find:
+1. Search for actual establishments
+2. Consider their taste signals when selecting
+3. Explain WHY it matches their profile
+
+Return results in this exact JSON format:
+{
+  "cards": [
+    {
+      "type": "result",
+      "content": {
+        "id": "unique-id",
+        "name": "Actual Place Name",
+        "category": "restaurant",
+        "description": "Brief explanation of why this matches their taste (1-2 sentences)"
+      }
+    }
+  ]
+}
+
+Use category "restaurant" for all dining/bar establishments and "location" for other places like shops, venues, parks, etc.`;
+}

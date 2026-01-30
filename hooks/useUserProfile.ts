@@ -62,6 +62,13 @@ export function useUserProfile() {
     }));
   }, []);
 
+  const setUserLocation = useCallback((city: string, region?: string, country?: string) => {
+    setProfile((prev) => ({
+      ...prev,
+      userLocation: city ? { city, region, country } : undefined,
+    }));
+  }, []);
+
   const reset = useCallback(() => {
     const empty = createEmptyProfile();
     setProfile(empty);
@@ -74,6 +81,7 @@ export function useUserProfile() {
     addFact,
     addLike,
     setInitialFacts,
+    setUserLocation,
     reset,
   };
 }
