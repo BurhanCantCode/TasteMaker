@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useCardQueue } from "@/hooks/useCardQueue";
+import { Dashboard } from "@/components/Dashboard";
 import { CardStack } from "@/components/cards/CardStack";
 import { ProgressBar } from "@/components/navigation/ProgressBar";
 import { ResetButton } from "@/components/navigation/ResetButton";
 import { SettingsGear } from "@/components/navigation/SettingsGear";
 import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { Question, ResultItem } from "@/lib/types";
+import { ArrowLeft } from "lucide-react";
 
 export default function Home() {
   const { profile, isLoaded, addFact, addLike, reset: resetProfile } = useUserProfile();
@@ -26,13 +28,14 @@ export default function Home() {
 
   const [systemPrompt, setSystemPrompt] = useState<string | undefined>();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(true);
 
-  // Initial load: fetch first batch of ASK cards
+  // Fetch cards when transitioning from dashboard to card stack
   useEffect(() => {
-    if (isLoaded && !currentCard && !isLoading) {
+    if (isLoaded && !showDashboard && !currentCard && !isLoading) {
       fetchCards(profile, "ask", 10, systemPrompt);
     }
-  }, [isLoaded, currentCard, isLoading, profile, systemPrompt, fetchCards]);
+  }, [isLoaded, showDashboard, currentCard, isLoading, profile, systemPrompt, fetchCards]);
 
   const handleAnswer = async (answer: string) => {
     if (!currentCard) return;
@@ -76,6 +79,7 @@ export default function Home() {
     if (confirm("Are you sure you want to reset? This will clear all your data.")) {
       resetProfile();
       resetQueue();
+      setShowDashboard(true);
     }
   };
 
@@ -85,13 +89,51 @@ export default function Home() {
     resetQueue();
   };
 
+  const handleContinue = () => {
+    setShowDashboard(false);
+  };
+
+  const handleBackToDashboard = () => {
+    setShowDashboard(true);
+  };
+
+  // Show dashboard
+  if (showDashboard && isLoaded) {
+    return (
+      <>
+        {/* Reset Button */}
+        <ResetButton onReset={handleReset} />
+
+        {/* Settings Gear */}
+        <SettingsGear onClick={() => setIsSettingsOpen(true)} />
+
+        {/* Settings Modal */}
+        <PromptEditor
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          currentPrompt={systemPrompt}
+          onSave={handleSavePrompt}
+        />
+
+        <Dashboard profile={profile} onContinue={handleContinue} />
+      </>
+    );
+  }
+
+  // Show card stack
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
       {/* Progress Bar */}
       <ProgressBar progress={progress} />
 
-      {/* Reset Button */}
-      <ResetButton onReset={handleReset} />
+      {/* Back Button */}
+      <button
+        onClick={handleBackToDashboard}
+        className="fixed top-4 left-4 z-50 w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-blue-600 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95"
+        aria-label="Back to Dashboard"
+      >
+        <ArrowLeft className="w-5 h-5" />
+      </button>
 
       {/* Settings Gear */}
       <SettingsGear onClick={() => setIsSettingsOpen(true)} />
