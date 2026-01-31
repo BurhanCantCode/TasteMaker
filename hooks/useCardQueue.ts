@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Card, UserProfile, GenerateResponse } from "@/lib/types";
+import { Card, UserProfile, GenerateResponse, CardSession } from "@/lib/types";
+import { saveCardSession } from "@/lib/cookies";
 
 interface CardQueueState {
   cards: Card[];
@@ -60,6 +61,9 @@ export function useCardQueue() {
           mode,
           batchSize,
         }));
+
+        // Persist card session for cross-device continuity
+        saveCardSession({ mode, batchProgress: 0, batchSize });
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -72,10 +76,16 @@ export function useCardQueue() {
   );
 
   const nextCard = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      currentIndex: Math.min(prev.currentIndex + 1, prev.cards.length),
-    }));
+    setState((prev) => {
+      const newIndex = Math.min(prev.currentIndex + 1, prev.cards.length);
+      // Update card session progress
+      saveCardSession({
+        mode: prev.mode,
+        batchProgress: newIndex,
+        batchSize: prev.batchSize,
+      });
+      return { ...prev, currentIndex: newIndex };
+    });
   }, []);
 
   const reset = useCallback(() => {
@@ -96,6 +106,12 @@ export function useCardQueue() {
       ? ((state.currentIndex + 1) / state.cards.length) * 100
       : 0;
 
+  const getCardSession = useCallback((): CardSession => ({
+    mode: state.mode,
+    batchProgress: state.currentIndex,
+    batchSize: state.batchSize,
+  }), [state.mode, state.currentIndex, state.batchSize]);
+
   return {
     ...state,
     currentCard,
@@ -104,5 +120,6 @@ export function useCardQueue() {
     fetchCards,
     nextCard,
     reset,
+    getCardSession,
   };
 }
