@@ -9,7 +9,9 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
 import { useAuth } from "./AuthContext";
+import { getFirebaseDb } from "@/lib/firebase";
 import { UserProfile, CardSession } from "@/lib/types";
 import { CachedSummary, loadProfile, saveProfile, loadSummary, saveSummary, loadCardSession, saveCardSession } from "@/lib/cookies";
 import { loadProfileFromCloud, mergeProfiles, syncProfileToCloud } from "@/lib/firestore";
@@ -23,7 +25,8 @@ interface SyncContextValue {
   triggerSync: (
     profile: UserProfile,
     cardSession?: CardSession,
-    cachedSummary?: CachedSummary
+    cachedSummary?: CachedSummary,
+    phoneNumber?: string
   ) => void;
   initialSyncDone: boolean;
   mergedProfile: UserProfile | null;
@@ -175,11 +178,44 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     performInitialSync();
   }, [user]);
 
-  // Listen for online/offline events
+  // Real-time listener: pull cloud changes and merge into local so other devices' updates appear
+  useEffect(() => {
+    if (!user) return;
+    const db = getFirebaseDb();
+    if (!db) return;
+
+    const unsub = onSnapshot(doc(db, "users", user.uid), (snapshot) => {
+      if (!snapshot.exists()) return;
+      const data = snapshot.data();
+      const cloudProfile: UserProfile = {
+        facts: data.facts || [],
+        likes: data.likes || [],
+        initialFacts: data.initialFacts,
+        userLocation: data.userLocation,
+      };
+      const localProfile = loadProfile();
+      const merged = localProfile
+        ? mergeProfiles(localProfile, cloudProfile)
+        : cloudProfile;
+      saveProfile(merged);
+      if (data.cardSession) saveCardSession(data.cardSession);
+      if (data.cachedSummary) saveSummary(data.cachedSummary);
+      queueMicrotask(() => {
+        setMergedProfile(merged);
+        setMergedCardSession(data.cardSession ?? null);
+        setMergedSummary(data.cachedSummary ?? null);
+      });
+    });
+
+    return () => unsub();
+  }, [user?.uid]);
+
+  // Listen for online/offline events; on reconnect, ask app to push current state
   useEffect(() => {
     const handleOnline = () => {
       if (syncStatus === "offline") {
         setSyncStatus("idle");
+        window.dispatchEvent(new CustomEvent("tastemaker-reconnect-sync"));
       }
     };
 
@@ -200,7 +236,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     (
       profile: UserProfile,
       cardSession?: CardSession,
-      cachedSummary?: CachedSummary
+      cachedSummary?: CachedSummary,
+      phoneNumber?: string
     ) => {
       if (!debouncedSyncRef.current) return;
       if (!isOnline()) {
@@ -208,7 +245,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         return;
       }
       setSyncStatus("syncing");
-      debouncedSyncRef.current(profile, cardSession, cachedSummary);
+      debouncedSyncRef.current(profile, cardSession, cachedSummary, phoneNumber);
       // The debounced function will complete asynchronously
       // We optimistically set syncing; actual success updates happen in the debounced callback
       setTimeout(() => {

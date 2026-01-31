@@ -1,6 +1,6 @@
 import { UserProfile, CardSession } from "./types";
 import { CachedSummary } from "./cookies";
-import { syncProfileToCloud } from "./firestore";
+import { syncProfileToCloudWithMerge } from "./firestore";
 
 export function createDebouncedSync(
   uid: string,
@@ -8,19 +8,27 @@ export function createDebouncedSync(
 ): (
   profile: UserProfile,
   cardSession?: CardSession,
-  cachedSummary?: CachedSummary
+  cachedSummary?: CachedSummary,
+  phoneNumber?: string
 ) => void {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   return (
     profile: UserProfile,
     cardSession?: CardSession,
-    cachedSummary?: CachedSummary
+    cachedSummary?: CachedSummary,
+    phoneNumber?: string
   ) => {
     if (timeoutId) clearTimeout(timeoutId);
     timeoutId = setTimeout(async () => {
       try {
-        await syncProfileToCloud(uid, profile, cardSession, cachedSummary);
+        await syncProfileToCloudWithMerge(
+          uid,
+          profile,
+          cardSession,
+          cachedSummary,
+          phoneNumber
+        );
       } catch (error) {
         console.error("[Tastemaker] Debounced cloud sync failed:", error);
       }

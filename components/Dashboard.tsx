@@ -71,7 +71,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick }:
               saveSummary(newCache);
               // Sync summary to cloud if authenticated
               if (user) {
-                triggerSync(profile, undefined, newCache);
+                triggerSync(profile, undefined, newCache, user.phoneNumber ?? undefined);
               }
             }
           }

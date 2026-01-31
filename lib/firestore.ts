@@ -70,6 +70,23 @@ export async function syncProfileToCloud(
   }
 }
 
+/** Pull from cloud, merge with local, then push merged result. Prevents overwriting other devices' data. */
+export async function syncProfileToCloudWithMerge(
+  uid: string,
+  localProfile: UserProfile,
+  cardSession?: CardSession,
+  cachedSummary?: CachedSummary,
+  phoneNumber?: string
+): Promise<void> {
+  const cloudData = await loadProfileFromCloud(uid);
+  const mergedProfile = cloudData
+    ? mergeProfiles(localProfile, cloudData.profile)
+    : localProfile;
+  const session = cardSession ?? cloudData?.cardSession;
+  const summary = cachedSummary ?? cloudData?.cachedSummary;
+  await syncProfileToCloud(uid, mergedProfile, session, summary, phoneNumber);
+}
+
 export async function loadProfileFromCloud(uid: string): Promise<{
   profile: UserProfile;
   cardSession?: CardSession;

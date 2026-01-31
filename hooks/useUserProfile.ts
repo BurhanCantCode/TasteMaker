@@ -7,6 +7,8 @@ import {
   saveProfile,
   clearProfile,
   createEmptyProfile,
+  loadCardSession,
+  loadSummary,
 } from "@/lib/cookies";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSync } from "@/contexts/SyncContext";
@@ -43,10 +45,27 @@ export function useUserProfile() {
     if (isLoaded) {
       saveProfile(profile);
       if (user) {
-        triggerSync(profile);
+        triggerSync(profile, undefined, undefined, user.phoneNumber ?? undefined);
       }
     }
   }, [profile, isLoaded, user, triggerSync]);
+
+  // On reconnect, push current local state to cloud so offline edits are synced
+  useEffect(() => {
+    const handleReconnect = () => {
+      if (user && isLoaded) {
+        triggerSync(
+          profile,
+          loadCardSession() ?? undefined,
+          loadSummary() ?? undefined,
+          user.phoneNumber ?? undefined
+        );
+      }
+    };
+    window.addEventListener("tastemaker-reconnect-sync", handleReconnect);
+    return () =>
+      window.removeEventListener("tastemaker-reconnect-sync", handleReconnect);
+  }, [user, isLoaded, profile, triggerSync]);
 
   const addFact = useCallback((fact: Omit<UserFact, "timestamp">) => {
     setProfile((prev) => ({

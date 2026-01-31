@@ -172,6 +172,8 @@ export default function Home() {
           onComplete={handleOnboardingComplete}
           onSkip={handleOnboardingSkip}
           onSignInClick={() => setShowPhoneSignIn(true)}
+          isSignedIn={!!user}
+          signedInLabel={user?.phoneNumber ? "***" + user.phoneNumber.slice(-4) : undefined}
         />
         <PhoneSignIn
           isOpen={showPhoneSignIn}
