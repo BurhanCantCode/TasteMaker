@@ -1,4 +1,4 @@
-import { UserProfile } from "./types";
+import { UserProfile, CardSession } from "./types";
 
 // Use localStorage as primary storage (5MB+), with cookie as marker
 const STORAGE_KEY = "tastemaker_profile";
@@ -150,7 +150,40 @@ export function loadSummary(): CachedSummary | null {
 
 export function clearSummary(): void {
   if (typeof window === "undefined") return;
-  
+
   localStorage.removeItem(SUMMARY_STORAGE_KEY);
   document.cookie = "tastemaker_summary=; max-age=0; path=/; SameSite=Lax";
+}
+
+// Card session persistence for cross-device continuity
+const CARD_SESSION_KEY = "tastemaker_card_session";
+
+export function saveCardSession(session: CardSession): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(CARD_SESSION_KEY, JSON.stringify(session));
+  } catch (error) {
+    console.error("[Tastemaker] Failed to save card session:", error);
+  }
+}
+
+export function loadCardSession(): CardSession | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const stored = localStorage.getItem(CARD_SESSION_KEY);
+    if (stored) {
+      return JSON.parse(stored) as CardSession;
+    }
+    return null;
+  } catch (error) {
+    console.error("[Tastemaker] Failed to load card session:", error);
+    return null;
+  }
+}
+
+export function clearCardSession(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(CARD_SESSION_KEY);
 }

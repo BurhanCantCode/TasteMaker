@@ -4,17 +4,24 @@ import { useEffect, useState } from "react";
 import { UserProfile } from "@/lib/types";
 import { analyzeProfile } from "@/lib/utils";
 import { loadSummary, saveSummary, CachedSummary } from "@/lib/cookies";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSync } from "@/contexts/SyncContext";
 import { FactsModal } from "./FactsModal";
+import { AccountMenu } from "./auth/AccountMenu";
+import { SignInPrompt } from "./auth/SignInPrompt";
 import { Heart, X, Sparkles, ArrowRight, BookOpen, ThumbsUp, Loader2, Plus } from "lucide-react";
 
 interface DashboardProps {
   profile: UserProfile;
   onContinue: () => void;
   onUpdateFacts?: (facts: string) => void;
+  onSignInClick?: () => void;
 }
 
-export function Dashboard({ profile, onContinue, onUpdateFacts }: DashboardProps) {
+export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick }: DashboardProps) {
   const { categoryBreakdown, topTraits, recentActivity } = analyzeProfile(profile);
+  const { user } = useAuth();
+  const { triggerSync } = useSync();
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [isFactsModalOpen, setIsFactsModalOpen] = useState(false);
@@ -62,6 +69,10 @@ export function Dashboard({ profile, onContinue, onUpdateFacts }: DashboardProps
                 likesCount: totalLikes,
               };
               saveSummary(newCache);
+              // Sync summary to cloud if authenticated
+              if (user) {
+                triggerSync(profile, undefined, newCache);
+              }
             }
           }
         } catch (error) {
@@ -73,11 +84,18 @@ export function Dashboard({ profile, onContinue, onUpdateFacts }: DashboardProps
     }
 
     fetchSummary();
-  }, [profile, totalFacts, totalLikes]);
+  }, [profile, totalFacts, totalLikes, user, triggerSync]);
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-2xl space-y-8">
+        {/* Account Menu */}
+        {onSignInClick && (
+          <div className="flex justify-end">
+            <AccountMenu onSignInClick={onSignInClick} />
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center space-y-3">
           <h1 className="text-4xl font-bold tracking-tight text-[#171717]">
@@ -207,6 +225,11 @@ export function Dashboard({ profile, onContinue, onUpdateFacts }: DashboardProps
               </div>
             )}
           </div>
+        )}
+
+        {/* Sign-in prompt for guest users with data */}
+        {!user && onSignInClick && !isNewUser && (totalFacts >= 5 || totalLikes >= 3) && (
+          <SignInPrompt onSignInClick={onSignInClick} />
         )}
 
         {/* Actions */}

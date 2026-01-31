@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useCardQueue } from "@/hooks/useCardQueue";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSync } from "@/contexts/SyncContext";
 import { Onboarding } from "@/components/Onboarding";
 import { Dashboard } from "@/components/Dashboard";
 import { CardStack } from "@/components/cards/CardStack";
@@ -10,8 +12,10 @@ import { ProgressBar } from "@/components/navigation/ProgressBar";
 import { ResetButton } from "@/components/navigation/ResetButton";
 import { SettingsGear } from "@/components/navigation/SettingsGear";
 import { PromptEditor } from "@/components/navigation/PromptEditor";
+import { PhoneSignIn } from "@/components/auth/PhoneSignIn";
 import { Question, ResultItem } from "@/lib/types";
-import { clearSummary } from "@/lib/cookies";
+import { clearSummary, clearCardSession } from "@/lib/cookies";
+import { deleteCloudProfile } from "@/lib/firestore";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 export default function Home() {
@@ -28,20 +32,24 @@ export default function Home() {
     reset: resetQueue,
   } = useCardQueue();
 
+  const { user, isAuthLoading } = useAuth();
+  const { initialSyncDone } = useSync();
+
   const [systemPrompt, setSystemPrompt] = useState<string | undefined>();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showDashboard, setShowDashboard] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPhoneSignIn, setShowPhoneSignIn] = useState(false);
 
-  // Check if user is new (no profile data at all)
+  // Check if user is new (no profile data at all) — wait for sync to finish
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && initialSyncDone) {
       const isNewUser = profile.facts.length === 0 &&
         profile.likes.length === 0 &&
         !profile.initialFacts;
-      setShowOnboarding(isNewUser);
+      queueMicrotask(() => setShowOnboarding(isNewUser));
     }
-  }, [isLoaded, profile]);
+  }, [isLoaded, initialSyncDone, profile]);
 
   // Fetch cards when transitioning from dashboard to card stack
   useEffect(() => {
@@ -94,11 +102,16 @@ export default function Home() {
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (confirm("Are you sure you want to reset? This will clear all your data.")) {
       resetProfile();
       resetQueue();
       clearSummary();
+      clearCardSession();
+      // Also clear cloud data if authenticated
+      if (user) {
+        await deleteCloudProfile(user.uid);
+      }
       setShowDashboard(true);
     }
   };
@@ -137,8 +150,12 @@ export default function Home() {
     setShowOnboarding(false);
   };
 
-  // Wait for profile to load before deciding onboarding vs dashboard vs card stack
-  if (!isLoaded) {
+  const handleSignInSuccess = () => {
+    setShowPhoneSignIn(false);
+  };
+
+  // Wait for profile and auth to load before deciding what to show
+  if (!isLoaded || isAuthLoading || !initialSyncDone) {
     return (
       <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center gap-4 p-6">
         <Loader2 className="w-10 h-10 text-gray-400 animate-spin" aria-hidden />
@@ -150,10 +167,18 @@ export default function Home() {
   // Show onboarding for new users
   if (showOnboarding) {
     return (
-      <Onboarding
-        onComplete={handleOnboardingComplete}
-        onSkip={handleOnboardingSkip}
-      />
+      <>
+        <Onboarding
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+          onSignInClick={() => setShowPhoneSignIn(true)}
+        />
+        <PhoneSignIn
+          isOpen={showPhoneSignIn}
+          onClose={() => setShowPhoneSignIn(false)}
+          onSuccess={handleSignInSuccess}
+        />
+      </>
     );
   }
 
@@ -179,6 +204,13 @@ export default function Home() {
           profile={profile}
           onContinue={handleContinue}
           onUpdateFacts={setInitialFacts}
+          onSignInClick={() => setShowPhoneSignIn(true)}
+        />
+
+        <PhoneSignIn
+          isOpen={showPhoneSignIn}
+          onClose={() => setShowPhoneSignIn(false)}
+          onSuccess={handleSignInSuccess}
         />
       </>
     );

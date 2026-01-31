@@ -6,9 +6,10 @@ import { ArrowRight, Sparkles, MapPin } from "lucide-react";
 interface OnboardingProps {
   onComplete: (facts: string, location: string) => void;
   onSkip: () => void;
+  onSignInClick?: () => void;
 }
 
-export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
+export function Onboarding({ onComplete, onSkip, onSignInClick }: OnboardingProps) {
   const [facts, setFacts] = useState("");
   const [location, setLocation] = useState("");
 
@@ -23,6 +24,28 @@ export function Onboarding({ onComplete, onSkip }: OnboardingProps) {
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-6">
       <div className="w-full max-w-2xl space-y-8">
+        {/* Optional Sign-in Card */}
+        {onSignInClick && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-[32px] p-6 shadow-[0_4px_12px_rgb(0,0,0,0.06)] border border-blue-100">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-gray-900 mb-1">
+                  Returning user?
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Sign in to continue your taste profile
+                </p>
+              </div>
+              <button
+                onClick={onSignInClick}
+                className="flex-shrink-0 px-6 py-3 bg-[#171717] text-white text-sm font-semibold rounded-[24px] hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-[0_4px_12px_rgb(0,0,0,0.12)]"
+              >
+                Sign In
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="inline-flex p-4 bg-white shadow-sm rounded-full mb-4 ring-1 ring-gray-200">

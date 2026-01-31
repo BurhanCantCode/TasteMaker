@@ -93,6 +93,13 @@ export interface CardResponse {
   timestamp: number;
 }
 
+// Card session state for cross-device continuity
+export interface CardSession {
+  mode: "ask" | "result";
+  batchProgress: number; // cards answered in current batch
+  batchSize: number;
+}
+
 // Profile stage for progressive refinement
 export type ProfileStage = "discovery" | "refining" | "personalized";
 

@@ -8,26 +8,45 @@ import {
   clearProfile,
   createEmptyProfile,
 } from "@/lib/cookies";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSync } from "@/contexts/SyncContext";
 
 export function useUserProfile() {
   const [profile, setProfile] = useState<UserProfile>(createEmptyProfile());
   const [isLoaded, setIsLoaded] = useState(false);
+  const { user } = useAuth();
+  const { triggerSync, mergedProfile, clearMergedData } = useSync();
 
-  // Load profile from cookies on mount
+  // Load profile from localStorage on mount
   useEffect(() => {
     const loaded = loadProfile();
-    if (loaded) {
-      setProfile(loaded);
-    }
-    setIsLoaded(true);
+    queueMicrotask(() => {
+      if (loaded) {
+        setProfile(loaded);
+      }
+      setIsLoaded(true);
+    });
   }, []);
 
-  // Save profile to cookies whenever it changes
+  // Apply merged profile from cloud sync (when signing in with existing cloud data)
+  useEffect(() => {
+    if (mergedProfile) {
+      queueMicrotask(() => {
+        setProfile(mergedProfile);
+        clearMergedData();
+      });
+    }
+  }, [mergedProfile, clearMergedData]);
+
+  // Save profile to localStorage whenever it changes, and sync to cloud if authenticated
   useEffect(() => {
     if (isLoaded) {
       saveProfile(profile);
+      if (user) {
+        triggerSync(profile);
+      }
     }
-  }, [profile, isLoaded]);
+  }, [profile, isLoaded, user, triggerSync]);
 
   const addFact = useCallback((fact: Omit<UserFact, "timestamp">) => {
     setProfile((prev) => ({
