@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { UserProfile, UserFact, UserLike } from "@/lib/types";
 import {
   loadProfile,
@@ -19,6 +19,9 @@ export function useUserProfile() {
   const { user } = useAuth();
   const { triggerSync, mergedProfile, clearMergedData } = useSync();
 
+  // Track when we're applying merged data to avoid re-syncing it back
+  const isApplyingMergeRef = useRef(false);
+
   // Load profile from localStorage on mount
   useEffect(() => {
     const loaded = loadProfile();
@@ -33,18 +36,24 @@ export function useUserProfile() {
   // Apply merged profile from cloud sync (when signing in with existing cloud data)
   useEffect(() => {
     if (mergedProfile) {
+      isApplyingMergeRef.current = true;
       queueMicrotask(() => {
         setProfile(mergedProfile);
         clearMergedData();
+        // Reset flag after state update settles
+        queueMicrotask(() => {
+          isApplyingMergeRef.current = false;
+        });
       });
     }
   }, [mergedProfile, clearMergedData]);
 
   // Save profile to localStorage whenever it changes, and sync to cloud if authenticated
+  // Skip sync if we're just applying merged data from cloud (prevents infinite loop)
   useEffect(() => {
     if (isLoaded) {
       saveProfile(profile);
-      if (user) {
+      if (user && !isApplyingMergeRef.current) {
         triggerSync(profile, undefined, undefined, user.phoneNumber ?? undefined);
       }
     }

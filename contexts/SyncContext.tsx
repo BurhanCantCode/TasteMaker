@@ -183,12 +183,16 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   // Real-time listener: pull cloud changes and merge into local so other devices' updates appear
+  // Skip if this snapshot is from our own pending write to prevent sync loops
   useEffect(() => {
     if (!user) return;
     const db = getFirebaseDb();
     if (!db) return;
 
     const unsub = onSnapshot(doc(db, "users", user.uid), (snapshot) => {
+      // Skip if this is our own pending write (not yet confirmed by server)
+      if (snapshot.metadata.hasPendingWrites) return;
+
       if (!snapshot.exists()) return;
       const data = snapshot.data();
       const cloudProfile: UserProfile = {
@@ -197,7 +201,16 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         initialFacts: data.initialFacts,
         userLocation: data.userLocation,
       };
+
       const localProfile = loadProfile();
+
+      // Skip if cloud data matches local (nothing new to merge)
+      if (localProfile &&
+        localProfile.facts.length === cloudProfile.facts.length &&
+        localProfile.likes.length === cloudProfile.likes.length) {
+        return;
+      }
+
       const merged = localProfile
         ? mergeProfiles(localProfile, cloudProfile)
         : cloudProfile;
