@@ -30,7 +30,8 @@ export async function syncProfileToCloud(
   profile: UserProfile,
   cardSession?: CardSession,
   cachedSummary?: CachedSummary,
-  phoneNumber?: string
+  phoneNumber?: string,
+  overrideLastModifiedAt?: number
 ): Promise<void> {
   const db = getFirebaseDb();
   if (!db) return;
@@ -40,7 +41,7 @@ export async function syncProfileToCloud(
     const data: Record<string, unknown> = {
       facts: profile.facts,
       likes: profile.likes,
-      lastModifiedAt: Date.now(),
+      lastModifiedAt: overrideLastModifiedAt ?? Date.now(),
       lastSyncedAt: serverTimestamp(),
     };
 
@@ -76,7 +77,8 @@ export async function syncProfileToCloudWithMerge(
   localProfile: UserProfile,
   cardSession?: CardSession,
   cachedSummary?: CachedSummary,
-  phoneNumber?: string
+  phoneNumber?: string,
+  overrideLastModifiedAt?: number
 ): Promise<void> {
   const cloudData = await loadProfileFromCloud(uid);
   const mergedProfile = cloudData
@@ -84,7 +86,7 @@ export async function syncProfileToCloudWithMerge(
     : localProfile;
   const session = cardSession ?? cloudData?.cardSession;
   const summary = cachedSummary ?? cloudData?.cachedSummary;
-  await syncProfileToCloud(uid, mergedProfile, session, summary, phoneNumber);
+  await syncProfileToCloud(uid, mergedProfile, session, summary, phoneNumber, overrideLastModifiedAt);
 }
 
 export async function loadProfileFromCloud(uid: string): Promise<{

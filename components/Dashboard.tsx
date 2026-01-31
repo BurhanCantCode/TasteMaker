@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { UserProfile } from "@/lib/types";
 import { analyzeProfile } from "@/lib/utils";
 import { loadSummary, saveSummary, CachedSummary } from "@/lib/cookies";
@@ -30,38 +30,49 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick }:
   const totalLikes = profile.likes.length;
   const isNewUser = totalFacts === 0 && totalLikes === 0;
 
-  // Fetch AI summary only when profile has new data
+  // Refs to prevent sync loop when app is open on multiple devices
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+  const isFetchingRef = useRef(false);
+  const userRef = useRef(user);
+  userRef.current = user;
+
+  // Fetch AI summary only when profile data counts change
   useEffect(() => {
+    // Prevent duplicate fetches
+    if (isFetchingRef.current) return;
+
     async function fetchSummary() {
       // Check cached summary first
       const cached = loadSummary();
-      
+
       // Use cached if profile hasn't grown
-      if (cached && 
-          cached.factsCount === totalFacts && 
-          cached.likesCount === totalLikes) {
+      if (cached &&
+        cached.factsCount === totalFacts &&
+        cached.likesCount === totalLikes) {
         setSummary(cached.text);
         return;
       }
-      
+
       // Need minimum data to generate summary
       if (totalFacts < 3 && totalLikes < 2) return;
-      
+
       // Only fetch if we have new data
       if (!cached || totalFacts > cached.factsCount || totalLikes > cached.likesCount) {
+        isFetchingRef.current = true;
         setSummaryLoading(true);
         try {
           const response = await fetch("/api/summary", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userProfile: profile }),
+            body: JSON.stringify({ userProfile: profileRef.current }),
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             if (data.summary) {
               setSummary(data.summary);
-              
+
               // Cache the new summary
               const newCache: CachedSummary = {
                 text: data.summary,
@@ -70,8 +81,8 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick }:
               };
               saveSummary(newCache);
               // Sync summary to cloud if authenticated
-              if (user) {
-                triggerSync(profile, undefined, newCache, user.phoneNumber ?? undefined);
+              if (userRef.current) {
+                triggerSync(profileRef.current, undefined, newCache, userRef.current.phoneNumber ?? undefined);
               }
             }
           }
@@ -79,12 +90,13 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick }:
           console.error("Failed to fetch summary:", error);
         } finally {
           setSummaryLoading(false);
+          isFetchingRef.current = false;
         }
       }
     }
 
     fetchSummary();
-  }, [profile, totalFacts, totalLikes, user, triggerSync]);
+  }, [totalFacts, totalLikes, triggerSync]); // Only depend on stable primitives
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center p-6">

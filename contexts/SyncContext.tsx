@@ -51,6 +51,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [mergedSummary, setMergedSummary] = useState<CachedSummary | null>(null);
   const debouncedSyncRef = useRef<ReturnType<typeof createDebouncedSync> | null>(null);
   const prevUidRef = useRef<string | null>(null);
+  const lastProcessedWriteTimeRef = useRef<number>(0);
 
   // Create debounced sync function when user changes
   useEffect(() => {
@@ -183,21 +184,45 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   // Real-time listener: pull cloud changes and merge into local so other devices' updates appear
+  // Skip if this snapshot is from our own pending write to prevent sync loops
   useEffect(() => {
     if (!user) return;
     const db = getFirebaseDb();
     if (!db) return;
 
     const unsub = onSnapshot(doc(db, "users", user.uid), (snapshot) => {
+      // Skip if this is our own pending write (not yet confirmed by server)
+      if (snapshot.metadata.hasPendingWrites) return;
+
       if (!snapshot.exists()) return;
       const data = snapshot.data();
+
+      // Timestamp guard: Ignore updates that are older than or equal to the last time we wrote/processed
+      // This filters out "echoes" from our own writes and stale data
+      const remoteModifiedAt = data.lastModifiedAt as number | undefined;
+      if (remoteModifiedAt && remoteModifiedAt <= lastProcessedWriteTimeRef.current) {
+        return;
+      }
+      if (remoteModifiedAt) {
+        lastProcessedWriteTimeRef.current = remoteModifiedAt;
+      }
+
       const cloudProfile: UserProfile = {
         facts: data.facts || [],
         likes: data.likes || [],
         initialFacts: data.initialFacts,
         userLocation: data.userLocation,
       };
+
       const localProfile = loadProfile();
+
+      // Skip if cloud data matches local (nothing new to merge)
+      if (localProfile &&
+        localProfile.facts.length === cloudProfile.facts.length &&
+        localProfile.likes.length === cloudProfile.likes.length) {
+        return;
+      }
+
       const merged = localProfile
         ? mergeProfiles(localProfile, cloudProfile)
         : cloudProfile;
@@ -249,12 +274,23 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         return;
       }
       setSyncStatus("syncing");
-      debouncedSyncRef.current(profile, cardSession, cachedSummary, phoneNumber);
+
+      const now = Date.now();
+      lastProcessedWriteTimeRef.current = now;
+
+      debouncedSyncRef.current(
+        profile,
+        cardSession,
+        cachedSummary,
+        phoneNumber,
+        now
+      );
+
       // The debounced function will complete asynchronously
       // We optimistically set syncing; actual success updates happen in the debounced callback
       setTimeout(() => {
         setSyncStatus((prev) => (prev === "syncing" ? "synced" : prev));
-        setLastSyncedAt(Date.now());
+        setLastSyncedAt(now);
       }, 2500); // slightly after the 2s debounce
     },
     []
