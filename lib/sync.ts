@@ -9,7 +9,8 @@ export function createDebouncedSync(
   profile: UserProfile,
   cardSession?: CardSession,
   cachedSummary?: CachedSummary,
-  phoneNumber?: string
+  phoneNumber?: string,
+  overrideLastModifiedAt?: number
 ) => void {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -17,7 +18,8 @@ export function createDebouncedSync(
     profile: UserProfile,
     cardSession?: CardSession,
     cachedSummary?: CachedSummary,
-    phoneNumber?: string
+    phoneNumber?: string,
+    overrideLastModifiedAt?: number
   ) => {
     if (timeoutId) clearTimeout(timeoutId);
     timeoutId = setTimeout(async () => {
@@ -27,7 +29,8 @@ export function createDebouncedSync(
           profile,
           cardSession,
           cachedSummary,
-          phoneNumber
+          phoneNumber,
+          overrideLastModifiedAt
         );
       } catch (error) {
         console.error("[Tastemaker] Debounced cloud sync failed:", error);

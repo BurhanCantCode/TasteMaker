@@ -51,6 +51,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [mergedSummary, setMergedSummary] = useState<CachedSummary | null>(null);
   const debouncedSyncRef = useRef<ReturnType<typeof createDebouncedSync> | null>(null);
   const prevUidRef = useRef<string | null>(null);
+  const lastProcessedWriteTimeRef = useRef<number>(0);
 
   // Create debounced sync function when user changes
   useEffect(() => {
@@ -195,6 +196,17 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
       if (!snapshot.exists()) return;
       const data = snapshot.data();
+
+      // Timestamp guard: Ignore updates that are older than or equal to the last time we wrote/processed
+      // This filters out "echoes" from our own writes and stale data
+      const remoteModifiedAt = data.lastModifiedAt as number | undefined;
+      if (remoteModifiedAt && remoteModifiedAt <= lastProcessedWriteTimeRef.current) {
+        return;
+      }
+      if (remoteModifiedAt) {
+        lastProcessedWriteTimeRef.current = remoteModifiedAt;
+      }
+
       const cloudProfile: UserProfile = {
         facts: data.facts || [],
         likes: data.likes || [],
@@ -262,12 +274,23 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         return;
       }
       setSyncStatus("syncing");
-      debouncedSyncRef.current(profile, cardSession, cachedSummary, phoneNumber);
+
+      const now = Date.now();
+      lastProcessedWriteTimeRef.current = now;
+
+      debouncedSyncRef.current(
+        profile,
+        cardSession,
+        cachedSummary,
+        phoneNumber,
+        now
+      );
+
       // The debounced function will complete asynchronously
       // We optimistically set syncing; actual success updates happen in the debounced callback
       setTimeout(() => {
         setSyncStatus((prev) => (prev === "syncing" ? "synced" : prev));
-        setLastSyncedAt(Date.now());
+        setLastSyncedAt(now);
       }, 2500); // slightly after the 2s debounce
     },
     []
