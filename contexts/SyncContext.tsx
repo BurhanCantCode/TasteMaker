@@ -29,6 +29,7 @@ interface SyncContextValue {
     phoneNumber?: string
   ) => void;
   initialSyncDone: boolean;
+  hasPendingMerge: boolean;
   mergedProfile: UserProfile | null;
   mergedCardSession: CardSession | null;
   mergedSummary: CachedSummary | null;
@@ -44,6 +45,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   );
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const [initialSyncDone, setInitialSyncDone] = useState(false);
+  const [hasPendingMerge, setHasPendingMerge] = useState(false);
   const [mergedProfile, setMergedProfile] = useState<UserProfile | null>(null);
   const [mergedCardSession, setMergedCardSession] = useState<CardSession | null>(null);
   const [mergedSummary, setMergedSummary] = useState<CachedSummary | null>(null);
@@ -135,6 +137,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
           if (cloudData!.cardSession) {
             saveCardSession(cloudData!.cardSession);
           }
+          setHasPendingMerge(true);
           setMergedProfile(cloudData!.profile);
           setMergedCardSession(cloudData!.cardSession ?? null);
           setMergedSummary(cloudData!.cachedSummary ?? null);
@@ -161,6 +164,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
           saveCardSession(resolvedSession);
         }
 
+        setHasPendingMerge(true);
         setMergedProfile(merged);
         setMergedCardSession(resolvedSession ?? null);
         setMergedSummary(localSummary ?? cloudData!.cachedSummary ?? null);
@@ -260,6 +264,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     setMergedProfile(null);
     setMergedCardSession(null);
     setMergedSummary(null);
+    setHasPendingMerge(false);
   }, []);
 
   return (
@@ -269,6 +274,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         lastSyncedAt,
         triggerSync,
         initialSyncDone,
+        hasPendingMerge,
         mergedProfile,
         mergedCardSession,
         mergedSummary,

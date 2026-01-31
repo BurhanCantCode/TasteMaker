@@ -33,7 +33,7 @@ export default function Home() {
   } = useCardQueue();
 
   const { user, isAuthLoading } = useAuth();
-  const { initialSyncDone } = useSync();
+  const { initialSyncDone, hasPendingMerge } = useSync();
 
   const [systemPrompt, setSystemPrompt] = useState<string | undefined>();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -155,7 +155,8 @@ export default function Home() {
   };
 
   // Wait for profile and auth to load before deciding what to show
-  if (!isLoaded || isAuthLoading || !initialSyncDone) {
+  // Also wait for any pending merge from cloud sync to be applied
+  if (!isLoaded || isAuthLoading || !initialSyncDone || hasPendingMerge) {
     return (
       <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center gap-4 p-6">
         <Loader2 className="w-10 h-10 text-gray-400 animate-spin" aria-hidden />
