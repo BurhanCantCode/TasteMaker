@@ -18,7 +18,7 @@ import { PhoneSignIn } from "@/components/auth/PhoneSignIn";
 import { TabBar, Tab } from "@/components/navigation/TabBar";
 import { RecommendationInterstitialCard } from "@/components/cards/RecommendationInterstitialCard";
 import { Question, ResultItem } from "@/lib/types";
-import { clearSummary, clearCardSession } from "@/lib/cookies";
+import { clearSummary, clearCardSession, loadPendingCards, clearPendingCards } from "@/lib/cookies";
 import { deleteCloudProfile } from "@/lib/firestore";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
@@ -35,6 +35,7 @@ export default function Home() {
     fetchCards,
     nextCard,
     reset: resetQueue,
+    hydrateFromPending,
     prefetchNextBatch,
     clearPrefetch,
   } = useCardQueue();
@@ -73,12 +74,33 @@ export default function Home() {
     }
   }, [showOnboarding, isLoaded, currentCard, isLoading, profile, systemPrompt, fetchCards]);
 
-  // Fetch cards when transitioning to questions tab
+  // Restore from persisted questions (survives refresh) or fetch when transitioning to questions tab
   useEffect(() => {
-    if (isLoaded && activeTab === "questions" && !currentCard && !isLoading) {
-      fetchCards(profile, "ask", 10, systemPrompt);
+    if (!isLoaded || activeTab !== "questions" || currentCard || isLoading) return;
+
+    const pending = loadPendingCards();
+    if (pending && pending.mode === "ask" && pending.cards.length > 0) {
+      const answeredIds = new Set(profile.facts.map((f) => f.questionId));
+      let firstUnanswered = 0;
+      while (firstUnanswered < pending.cards.length) {
+        const card = pending.cards[firstUnanswered];
+        if (card.type === "ask") {
+          const q = card.content as Question;
+          if (!answeredIds.has(q.id)) break;
+        }
+        firstUnanswered++;
+      }
+      if (firstUnanswered >= pending.cards.length) {
+        clearPendingCards();
+        fetchCards(profile, "ask", 10, systemPrompt);
+      } else {
+        hydrateFromPending({ ...pending, currentIndex: firstUnanswered });
+      }
+      return;
     }
-  }, [isLoaded, activeTab, currentCard, isLoading, profile, systemPrompt, fetchCards]);
+
+    fetchCards(profile, "ask", 10, systemPrompt);
+  }, [isLoaded, activeTab, currentCard, isLoading, profile, systemPrompt, fetchCards, hydrateFromPending]);
 
   // PREFETCH: Start loading next batch when user reaches 75% of current batch
   useEffect(() => {

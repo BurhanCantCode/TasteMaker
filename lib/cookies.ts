@@ -1,4 +1,4 @@
-import { UserProfile, CardSession } from "./types";
+import { UserProfile, CardSession, PendingCardsBatch } from "./types";
 
 // Use localStorage as primary storage (5MB+), with cookie as marker
 const STORAGE_KEY = "tastemaker_profile";
@@ -158,6 +158,10 @@ export function clearSummary(): void {
 // Card session persistence for cross-device continuity
 const CARD_SESSION_KEY = "tastemaker_card_session";
 
+// Local-only: persist current question batch so it survives refresh.
+// Not synced to cloud (upload/fetch use CardSession only: mode, batchProgress, batchSize).
+const PENDING_CARDS_KEY = "tastemaker_pending_cards";
+
 export function saveCardSession(session: CardSession): void {
   if (typeof window === "undefined") return;
 
@@ -186,4 +190,32 @@ export function loadCardSession(): CardSession | null {
 export function clearCardSession(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(CARD_SESSION_KEY);
+  localStorage.removeItem(PENDING_CARDS_KEY);
+}
+
+// Persist unanswered question batch (survives refresh; local only)
+export function savePendingCards(batch: PendingCardsBatch): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(PENDING_CARDS_KEY, JSON.stringify(batch));
+  } catch (error) {
+    console.error("[Tastemaker] Failed to save pending cards:", error);
+  }
+}
+
+export function loadPendingCards(): PendingCardsBatch | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem(PENDING_CARDS_KEY);
+    if (stored) return JSON.parse(stored) as PendingCardsBatch;
+    return null;
+  } catch (error) {
+    console.error("[Tastemaker] Failed to load pending cards:", error);
+    return null;
+  }
+}
+
+export function clearPendingCards(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(PENDING_CARDS_KEY);
 }

@@ -101,6 +101,14 @@ export interface CardSession {
   batchSize: number;
 }
 
+// Local-only: persisted unanswered question batch (survives refresh)
+export interface PendingCardsBatch {
+  cards: Card[];
+  currentIndex: number;
+  mode: "ask" | "result";
+  batchSize: number;
+}
+
 // Profile stage for progressive refinement
 export type ProfileStage = "discovery" | "refining" | "personalized";
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { Card, UserProfile, GenerateResponse, CardSession } from "@/lib/types";
-import { saveCardSession } from "@/lib/cookies";
+import { Card, UserProfile, GenerateResponse, CardSession, PendingCardsBatch } from "@/lib/types";
+import { saveCardSession, savePendingCards, clearPendingCards } from "@/lib/cookies";
 
 interface CardQueueState {
   cards: Card[];
@@ -57,6 +57,9 @@ export function useCardQueue() {
         }));
 
         saveCardSession({ mode: prefetched.mode, batchProgress: 0, batchSize: prefetched.batchSize });
+        if (prefetched.mode === "ask") {
+          savePendingCards({ cards: prefetched.cards, currentIndex: 0, mode: prefetched.mode, batchSize: prefetched.batchSize });
+        }
         return;
       }
 
@@ -95,6 +98,10 @@ export function useCardQueue() {
 
         // Persist card session for cross-device continuity
         saveCardSession({ mode, batchProgress: 0, batchSize });
+        // Persist question batch so it survives refresh (ask mode only)
+        if (mode === "ask") {
+          savePendingCards({ cards: data.cards, currentIndex: 0, mode, batchSize });
+        }
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -184,19 +191,21 @@ export function useCardQueue() {
   const nextCard = useCallback(() => {
     setState((prev) => {
       const newIndex = Math.min(prev.currentIndex + 1, prev.cards.length);
-      // Update card session progress
       saveCardSession({
         mode: prev.mode,
         batchProgress: newIndex,
         batchSize: prev.batchSize,
       });
+      if (prev.mode === "ask") {
+        savePendingCards({ cards: prev.cards, currentIndex: newIndex, mode: prev.mode, batchSize: prev.batchSize });
+      }
       return { ...prev, currentIndex: newIndex };
     });
   }, []);
 
   const reset = useCallback(() => {
-    // Clear prefetch buffer and abort in-flight prefetch
     clearPrefetch();
+    clearPendingCards();
 
     setState({
       cards: [],
@@ -207,6 +216,19 @@ export function useCardQueue() {
       batchSize: 10,
     });
   }, [clearPrefetch]);
+
+  const hydrateFromPending = useCallback((batch: PendingCardsBatch) => {
+    setState((prev) => ({
+      ...prev,
+      cards: batch.cards,
+      currentIndex: batch.currentIndex,
+      mode: batch.mode,
+      batchSize: batch.batchSize,
+      isLoading: false,
+      error: null,
+    }));
+    saveCardSession({ mode: batch.mode, batchProgress: batch.currentIndex, batchSize: batch.batchSize });
+  }, []);
 
   const currentCard = state.cards[state.currentIndex] || null;
   const hasMoreCards = state.currentIndex < state.cards.length - 1;
@@ -237,6 +259,7 @@ export function useCardQueue() {
     nextCard,
     reset,
     getCardSession,
+    hydrateFromPending,
     prefetchNextBatch,
     clearPrefetch,
   };
