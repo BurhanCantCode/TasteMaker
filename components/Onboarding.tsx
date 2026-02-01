@@ -1,28 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowRight, Sparkles, MapPin, Check } from "lucide-react";
+import { ArrowRight, Sparkles, Check } from "lucide-react";
 
 interface OnboardingProps {
-  onComplete: (facts: string, location: string) => void;
-  onSkip: () => void;
+  onComplete: () => void; // Simplified - just signals ready to start
   onSignInClick?: () => void;
   isSignedIn?: boolean;
   signedInLabel?: string;
 }
 
-export function Onboarding({ onComplete, onSkip, onSignInClick, isSignedIn, signedInLabel }: OnboardingProps) {
-  const [facts, setFacts] = useState("");
-  const [location, setLocation] = useState("");
-
-  const handleSubmit = () => {
-    if (facts.trim() || location.trim()) {
-      onComplete(facts.trim(), location.trim());
-    } else {
-      onSkip();
-    }
-  };
-
+export function Onboarding({ onComplete, onSignInClick, isSignedIn, signedInLabel }: OnboardingProps) {
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-6">
       <div className="w-full max-w-2xl space-y-8">
@@ -65,72 +52,68 @@ export function Onboarding({ onComplete, onSkip, onSignInClick, isSignedIn, sign
           </div>
         )}
 
-        {/* Header */}
+        {/* Welcome Section */}
         <div className="text-center space-y-4">
           <div className="inline-flex p-4 bg-white shadow-sm rounded-full mb-4 ring-1 ring-gray-200">
             <Sparkles className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-[#171717]">
-            Tell us about yourself
+            Welcome to Tastemaker
           </h1>
           <p className="text-lg text-gray-500 max-w-xl mx-auto">
-            Share a few facts to help us understand your taste. The more we know, the better our recommendations!
+            Answer a few quick questions and we'll discover your unique taste profile together
           </p>
         </div>
 
-        {/* Input Fields */}
+        {/* Info Cards */}
         <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
-          {/* Facts Textarea */}
           <div className="space-y-4">
-            <textarea
-              value={facts}
-              onChange={(e) => setFacts(e.target.value)}
-              placeholder="Male / New York City / Single / iPhone user / Rents home..."
-              className="w-full h-32 p-4 rounded-[24px] bg-gray-50 border border-gray-200 focus:border-black focus:ring-black focus:outline-none text-gray-900 placeholder:text-gray-400 resize-none transition-all duration-200"
-            />
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-1">
+                <span className="text-sm font-bold text-gray-900">1</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Quick questions</h3>
+                <p className="text-sm text-gray-600">
+                  We'll ask about your location, preferences, and lifestyle
+                </p>
+              </div>
+            </div>
 
-            {/* Example Hint */}
-            <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <span className="font-semibold text-gray-900 block mb-1">Example</span>
-              Male / New York City / Single / iPhone user / Rents home / No pets / No sports / Online dating / owns a Kindle
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-1">
+                <span className="text-sm font-bold text-gray-900">2</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Discover your taste</h3>
+                <p className="text-sm text-gray-600">
+                  Get personalized recommendations for restaurants, products, and experiences
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-1">
+                <span className="text-sm font-bold text-gray-900">3</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Swipe and refine</h3>
+                <p className="text-sm text-gray-600">
+                  The more you interact, the better we understand your preferences
+                </p>
+              </div>
             </div>
           </div>
-
-          {/* Location Input */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-              <MapPin className="w-4 h-4" />
-              What city are you in?
-            </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g., San Francisco, CA"
-              className="w-full p-4 rounded-[24px] bg-gray-50 border border-gray-200 focus:border-black focus:ring-black focus:outline-none text-gray-900 placeholder:text-gray-400 transition-all duration-200"
-            />
-            <p className="text-xs text-gray-500 px-4">
-              Optional but helps us find local restaurants and places for you
-            </p>
-          </div>
         </div>
 
-        {/* Buttons */}
-        <div className="flex gap-4">
-          <button
-            onClick={onSkip}
-            className="flex-1 h-[72px] rounded-[32px] font-bold text-lg text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 shadow-[0_4px_12px_rgb(0,0,0,0.06)] hover:shadow-[0_6px_16px_rgb(0,0,0,0.08)] active:scale-95"
-          >
-            Skip for now
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="flex-1 bg-[#171717] text-white h-[72px] rounded-[32px] font-bold text-lg hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
-          >
-            Get Started
-            <ArrowRight className="w-6 h-6" />
-          </button>
-        </div>
+        {/* Start Button */}
+        <button
+          onClick={onComplete}
+          className="w-full bg-[#171717] text-white h-[72px] rounded-[32px] font-bold text-lg hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+        >
+          Let's Start
+          <ArrowRight className="w-6 h-6" />
+        </button>
       </div>
     </div>
   );

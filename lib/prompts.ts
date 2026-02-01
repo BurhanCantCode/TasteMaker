@@ -102,6 +102,9 @@ export function buildUserPrompt(
   const stage = getProfileStage(userProfile);
   const totalSignals = userProfile.facts.length + userProfile.likes.length;
 
+  // NEW: Detect brand new users (no facts at all)
+  const isNewUser = totalSignals === 0 && !userProfile.initialFacts;
+
   // Include initial facts if provided
   const initialContext = userProfile.initialFacts
     ? `INITIAL USER DESCRIPTION:\n${userProfile.initialFacts}\n\n`
@@ -136,6 +139,31 @@ export function buildUserPrompt(
   const stageGuidance = STAGE_INSTRUCTIONS[stage];
 
   if (mode === "ask") {
+    // NEW: Special seeding prompt for brand new users
+    if (isNewUser) {
+      return `STAGE: NEW USER ONBOARDING
+You are starting to learn about a brand new user. This replaces a manual form, so ask friendly, conversational questions.
+
+TASK: Generate ${batchSize} ESSENTIAL questions that cover core demographics and lifestyle basics.
+
+PRIORITY QUESTIONS (ask these types first):
+1. Location: "What city are you in?" (text_input, placeholder: "e.g., San Francisco, CA")
+2. Demographics: Gender identity (multiple_choice: Male, Female, Non-binary, Prefer not to say, Other)
+3. Living situation: (multiple_choice: Own my home, Rent, Living with family, Student housing, Other)
+4. Tech preference: "What type of phone do you use?" (multiple_choice: iPhone, Android, Other)
+5. Relationship status or work/lifestyle question (your choice)
+
+REQUIREMENTS:
+- Use conversational, friendly language (not formal or form-like)
+- Mix answer types appropriately (text_input for open-ended, multiple_choice for categorical)
+- Provide context-aware answerLabels for each question
+- These questions establish the baseline before deeper discovery begins
+- Make it feel like a conversation, not an interrogation
+
+Remember: This is their first impression of Tastemaker. Be warm and engaging.`;
+    }
+
+    // Existing logic for users with some data
     return `${stageGuidance}
 
 ${initialContext}YOUR DISCOVERIES (${totalSignals} signals collected):

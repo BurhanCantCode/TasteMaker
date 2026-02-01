@@ -51,6 +51,17 @@ export default function Home() {
     }
   }, [isLoaded, initialSyncDone, profile]);
 
+  // PRE-FETCH: Load first batch of questions when new user is on welcome screen
+  useEffect(() => {
+    if (showOnboarding && isLoaded && !currentCard && !isLoading) {
+      // New user on welcome screen - pre-fetch questions so they load instantly
+      const isNewUser = profile.facts.length === 0 && profile.likes.length === 0;
+      if (isNewUser) {
+        fetchCards(profile, "ask", 10, systemPrompt);
+      }
+    }
+  }, [showOnboarding, isLoaded, currentCard, isLoading, profile, systemPrompt, fetchCards]);
+
   // Fetch cards when transitioning from dashboard to card stack
   useEffect(() => {
     if (isLoaded && !showDashboard && !currentCard && !isLoading) {
@@ -64,6 +75,23 @@ export default function Home() {
     // Save response to profile
     if (currentCard.type === "ask") {
       const question = currentCard.content as Question;
+
+      // NEW: Auto-detect and parse location from text_input questions about city
+      if (question.answerType === "text_input" &&
+        (question.title.toLowerCase().includes("city") ||
+          question.title.toLowerCase().includes("where") ||
+          question.title.toLowerCase().includes("location"))) {
+        // Parse location from answer (e.g., "San Francisco, CA" or "New York")
+        const locationParts = answer.split(',').map(p => p.trim());
+        if (locationParts.length >= 2) {
+          // Has city and region/state: "San Francisco, CA"
+          setUserLocation(locationParts[0], locationParts[1]);
+        } else if (locationParts[0] && locationParts[0].length > 0) {
+          // Just city: "Tokyo" or "New York City"
+          setUserLocation(locationParts[0]);
+        }
+      }
+
       const positive = [
         "yes", "like", "superlike", "want", "really_want",
         "interested", "want_to_try", "loved_it", "already_use",
@@ -130,24 +158,10 @@ export default function Home() {
     setShowDashboard(true);
   };
 
-  const handleOnboardingComplete = (facts: string, location: string) => {
-    if (facts) {
-      setInitialFacts(facts);
-    }
-    if (location) {
-      // Parse location string (e.g., "San Francisco, CA" or "New York City")
-      const parts = location.split(',').map(p => p.trim());
-      if (parts.length >= 2) {
-        setUserLocation(parts[0], parts[1]);
-      } else {
-        setUserLocation(parts[0]);
-      }
-    }
+  const handleOnboardingComplete = () => {
+    // Questions already pre-fetched when welcome screen mounted
     setShowOnboarding(false);
-  };
-
-  const handleOnboardingSkip = () => {
-    setShowOnboarding(false);
+    setShowDashboard(false); // Skip dashboard, go straight to cards
   };
 
   const handleSignInSuccess = () => {
@@ -171,7 +185,6 @@ export default function Home() {
       <>
         <Onboarding
           onComplete={handleOnboardingComplete}
-          onSkip={handleOnboardingSkip}
           onSignInClick={() => setShowPhoneSignIn(true)}
           isSignedIn={!!user}
           signedInLabel={user?.phoneNumber ? "***" + user.phoneNumber.slice(-4) : undefined}
@@ -225,6 +238,7 @@ export default function Home() {
       {/* Progress Bar */}
       <ProgressBar progress={progress} />
 
+
       {/* Back Button */}
       <button
         onClick={handleBackToDashboard}
@@ -246,7 +260,7 @@ export default function Home() {
       />
 
       {/* Card Stack */}
-      <div className="w-full max-w-[500px]">
+      <div className="w-full min-w-[400px] max-w-[500px]">
         {error && (
           <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-[24px]">
             <p className="font-medium">Error:</p>

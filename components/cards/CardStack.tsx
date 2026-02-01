@@ -14,8 +14,8 @@ interface CardStackProps {
 }
 
 export function CardStack({ card, onAnswer, isLoading }: CardStackProps) {
-  // Common card container classes to ensure consistency
-  const cardContainerClass = "w-full max-w-[500px] h-[600px]";
+  // FIXED: Added min-width to force proper skeleton display
+  const cardContainerClass = "w-full min-w-[400px] max-w-[500px] h-[600px]";
 
   if (isLoading) {
     return (
