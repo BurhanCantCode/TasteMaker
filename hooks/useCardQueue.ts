@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Card, UserProfile, GenerateResponse, CardSession } from "@/lib/types";
 import { saveCardSession } from "@/lib/cookies";
 
@@ -9,6 +9,12 @@ interface CardQueueState {
   currentIndex: number;
   isLoading: boolean;
   error: string | null;
+  mode: "ask" | "result";
+  batchSize: number;
+}
+
+interface PrefetchedBatch {
+  cards: Card[];
   mode: "ask" | "result";
   batchSize: number;
 }
@@ -23,6 +29,10 @@ export function useCardQueue() {
     batchSize: 10,
   });
 
+  const prefetchedBatchRef = useRef<PrefetchedBatch | null>(null);
+  const isPrefetchingRef = useRef(false);
+  const prefetchAbortRef = useRef<AbortController | null>(null);
+
   const fetchCards = useCallback(
     async (
       userProfile: UserProfile,
@@ -30,6 +40,27 @@ export function useCardQueue() {
       batchSize: number = 10,
       systemPrompt?: string
     ) => {
+      // CHECK PREFETCH BUFFER FIRST
+      const prefetched = prefetchedBatchRef.current;
+      if (prefetched && prefetched.mode === mode) {
+        // Consume the prefetched batch instantly -- no loading state, no API call
+        prefetchedBatchRef.current = null;
+
+        setState((prev) => ({
+          ...prev,
+          cards: prefetched.cards,
+          currentIndex: 0,
+          isLoading: false,
+          error: null,
+          mode: prefetched.mode,
+          batchSize: prefetched.batchSize,
+        }));
+
+        saveCardSession({ mode: prefetched.mode, batchProgress: 0, batchSize: prefetched.batchSize });
+        return;
+      }
+
+      // NORMAL FETCH PATH (existing logic)
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
@@ -75,6 +106,81 @@ export function useCardQueue() {
     []
   );
 
+  const prefetchNextBatch = useCallback(
+    async (
+      userProfile: UserProfile,
+      mode: "ask" | "result",
+      batchSize: number = 10,
+      systemPrompt?: string
+    ) => {
+      // Guard: don't prefetch if already prefetching or buffer already exists
+      if (isPrefetchingRef.current || prefetchedBatchRef.current) {
+        return;
+      }
+
+      isPrefetchingRef.current = true;
+
+      // Create AbortController for this prefetch
+      const abortController = new AbortController();
+      prefetchAbortRef.current = abortController;
+
+      try {
+        const response = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userProfile,
+            batchSize,
+            mode,
+            systemPrompt,
+          }),
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+          // Silently fail -- normal fetch is the fallback
+          console.warn("[Tastemaker] Prefetch failed with status:", response.status);
+          return;
+        }
+
+        const data: GenerateResponse = await response.json();
+
+        // Only store if we haven't been cancelled/reset in the meantime
+        if (!abortController.signal.aborted) {
+          prefetchedBatchRef.current = {
+            cards: data.cards,
+            mode,
+            batchSize,
+          };
+        }
+      } catch (error) {
+        // AbortError is expected on cancellation -- not a real error
+        if (error instanceof DOMException && error.name === "AbortError") {
+          console.log("[Tastemaker] Prefetch cancelled");
+        } else {
+          console.warn("[Tastemaker] Prefetch error (will fall back to normal fetch):", error);
+        }
+      } finally {
+        isPrefetchingRef.current = false;
+        // Clear the controller ref if it's still ours
+        if (prefetchAbortRef.current === abortController) {
+          prefetchAbortRef.current = null;
+        }
+      }
+    },
+    []
+  );
+
+  const clearPrefetch = useCallback(() => {
+    // Abort any in-flight prefetch
+    if (prefetchAbortRef.current) {
+      prefetchAbortRef.current.abort();
+      prefetchAbortRef.current = null;
+    }
+    prefetchedBatchRef.current = null;
+    isPrefetchingRef.current = false;
+  }, []);
+
   const nextCard = useCallback(() => {
     setState((prev) => {
       const newIndex = Math.min(prev.currentIndex + 1, prev.cards.length);
@@ -89,6 +195,9 @@ export function useCardQueue() {
   }, []);
 
   const reset = useCallback(() => {
+    // Clear prefetch buffer and abort in-flight prefetch
+    clearPrefetch();
+
     setState({
       cards: [],
       currentIndex: 0,
@@ -97,7 +206,7 @@ export function useCardQueue() {
       mode: "ask",
       batchSize: 10,
     });
-  }, []);
+  }, [clearPrefetch]);
 
   const currentCard = state.cards[state.currentIndex] || null;
   const hasMoreCards = state.currentIndex < state.cards.length - 1;
@@ -105,6 +214,12 @@ export function useCardQueue() {
     state.cards.length > 0
       ? ((state.currentIndex + 1) / state.cards.length) * 100
       : 0;
+
+  const shouldPrefetch =
+    state.cards.length > 0 &&
+    state.currentIndex >= Math.ceil(state.cards.length * 0.75) - 1 &&
+    !isPrefetchingRef.current &&
+    !prefetchedBatchRef.current;
 
   const getCardSession = useCallback((): CardSession => ({
     mode: state.mode,
@@ -117,9 +232,12 @@ export function useCardQueue() {
     currentCard,
     hasMoreCards,
     progress,
+    shouldPrefetch,
     fetchCards,
     nextCard,
     reset,
     getCardSession,
+    prefetchNextBatch,
+    clearPrefetch,
   };
 }

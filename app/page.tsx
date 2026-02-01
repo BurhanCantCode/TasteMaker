@@ -27,9 +27,12 @@ export default function Home() {
     progress,
     mode,
     hasMoreCards,
+    shouldPrefetch,
     fetchCards,
     nextCard,
     reset: resetQueue,
+    prefetchNextBatch,
+    clearPrefetch,
   } = useCardQueue();
 
   const { user, isAuthLoading } = useAuth();
@@ -68,6 +71,15 @@ export default function Home() {
       fetchCards(profile, "ask", 10, systemPrompt);
     }
   }, [isLoaded, showDashboard, currentCard, isLoading, profile, systemPrompt, fetchCards]);
+
+  // PREFETCH: Start loading next batch when user reaches 75% of current batch
+  useEffect(() => {
+    if (shouldPrefetch && !showDashboard && !showOnboarding) {
+      const nextMode = mode === "ask" ? "result" : "ask";
+      const nextBatchSize = nextMode === "ask" ? 10 : 5;
+      prefetchNextBatch(profile, nextMode, nextBatchSize, systemPrompt);
+    }
+  }, [shouldPrefetch, showDashboard, showOnboarding, mode, profile, systemPrompt, prefetchNextBatch]);
 
   const handleAnswer = async (answer: string) => {
     if (!currentCard) return;
