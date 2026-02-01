@@ -126,7 +126,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick }:
             <div className="grid grid-cols-2 gap-6">
               {/* Facts Card */}
               <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center text-center space-y-2">
-                <div className="p-3 bg-gray-50 rounded-full mb-2">
+                <div className="w-12 h-12 flex items-center justify-center bg-gray-50 rounded-full mb-2 shrink-0">
                   <BookOpen className="w-6 h-6 text-gray-900" />
                 </div>
                 <div className="text-4xl font-bold text-gray-900">
@@ -137,7 +137,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick }:
 
               {/* Likes Card */}
               <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center text-center space-y-2">
-                <div className="p-3 bg-gray-50 rounded-full mb-2">
+                <div className="w-12 h-12 flex items-center justify-center bg-gray-50 rounded-full mb-2 shrink-0">
                   <ThumbsUp className="w-6 h-6 text-gray-900" />
                 </div>
                 <div className="text-4xl font-bold text-gray-900">
@@ -149,17 +149,22 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick }:
 
             {/* AI Summary */}
             {(summary || summaryLoading) && (
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-blue-100">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  About You
-                </h2>
+              <div className="bg-gray-50 rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                    <Sparkles className="w-4 h-4 text-[#171717]" />
+                  </div>
+                  <h2 className="text-xl font-bold text-[#171717]">
+                    About You
+                  </h2>
+                </div>
                 {summaryLoading ? (
                   <div className="flex items-center gap-3 text-gray-500">
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span>Analyzing your profile...</span>
                   </div>
                 ) : (
-                  <p className="text-gray-700 leading-relaxed">{summary}</p>
+                  <p className="text-gray-700 leading-relaxed font-medium">{summary}</p>
                 )}
               </div>
             )}
@@ -213,17 +218,17 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick }:
                       className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 transition-colors hover:bg-gray-100"
                     >
                       {like.rating === "superlike" && (
-                        <div className="p-2 bg-yellow-100 rounded-full">
+                        <div className="w-10 h-10 flex items-center justify-center bg-yellow-100 rounded-full shrink-0">
                           <Sparkles className="w-4 h-4 text-yellow-600" />
                         </div>
                       )}
                       {like.rating === "like" && (
-                        <div className="p-2 bg-green-100 rounded-full">
+                        <div className="w-10 h-10 flex items-center justify-center bg-green-100 rounded-full shrink-0">
                           <Heart className="w-4 h-4 text-green-600" />
                         </div>
                       )}
                       {like.rating === "dislike" && (
-                        <div className="p-2 bg-red-100 rounded-full">
+                        <div className="w-10 h-10 flex items-center justify-center bg-red-100 rounded-full shrink-0">
                           <X className="w-4 h-4 text-red-600" />
                         </div>
                       )}

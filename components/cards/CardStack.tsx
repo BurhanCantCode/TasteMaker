@@ -20,23 +20,23 @@ export function CardStack({ card, onAnswer, isLoading }: CardStackProps) {
   if (isLoading) {
     return (
       <div className={cardContainerClass}>
-        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col gap-6">
-          {/* Progress / Badge Skeleton */}
-          <div className="flex-shrink-0">
-            <Skeleton className="h-6 w-24 rounded-full bg-gray-200" />
+        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col items-center justify-center gap-4">
+          <div className="animate-spin text-[#171717]">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
           </div>
-
-          {/* Title Area */}
-          <div className="flex-1 flex flex-col justify-center min-h-0 space-y-4">
-            <Skeleton className="h-10 w-full rounded-xl bg-gray-200" />
-            <Skeleton className="h-10 w-3/4 rounded-xl bg-gray-200" />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex-shrink-0 pt-2 border-t border-gray-100/50 space-y-3">
-            <Skeleton className="h-12 w-full rounded-full bg-gray-200" />
-            <Skeleton className="h-12 w-full rounded-full bg-gray-200" />
-          </div>
+          <p className="text-gray-500 font-medium">Loading...</p>
         </div>
       </div>
     );

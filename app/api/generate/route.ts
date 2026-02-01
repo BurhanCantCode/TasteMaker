@@ -15,7 +15,7 @@ const anthropic = new Anthropic({
 export async function POST(request: NextRequest) {
   try {
     const body: GenerateRequest = await request.json();
-    const { userProfile, batchSize, mode, systemPrompt } = body;
+    const { userProfile, batchSize, mode, systemPrompt, categoryFilter } = body;
 
     // Validate request
     if (!mode || !batchSize) {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     
     if (shouldUseWebSearch) {
       // Web search for real recommendations (mix of categories); pass location when available
-      const searchPrompt = buildWebSearchPrompt(userProfile, batchSize, locationData ?? undefined);
+      const searchPrompt = buildWebSearchPrompt(userProfile, batchSize, locationData ?? undefined, categoryFilter);
       
       const toolConfig = {
         type: "web_search_20250305" as const,

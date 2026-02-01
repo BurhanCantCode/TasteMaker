@@ -75,6 +75,7 @@ export interface GenerateRequest {
   batchSize: number;
   mode: "ask" | "result";
   systemPrompt?: string;
+  categoryFilter?: string;  // NEW: filter results to specific category
 }
 
 export interface GenerateResponse {

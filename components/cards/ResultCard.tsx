@@ -17,7 +17,7 @@ export function ResultCard({ item, onAnswer, disabled }: ResultCardProps) {
   return (
     <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col gap-6">
       {/* Category Badge & Content Container */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto no-scrollbar mask-gradient">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto no-scrollbar">
         {/* Category Badge */}
         <div className="flex-shrink-0 mb-4">
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-900 text-xs font-bold uppercase tracking-wider">

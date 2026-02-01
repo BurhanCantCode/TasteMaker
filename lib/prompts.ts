@@ -244,7 +244,8 @@ Return ONLY the JSON, nothing else.`;
 export function buildWebSearchPrompt(
   userProfile: UserProfile,
   batchSize: number,
-  extractedLocation?: { city: string; country?: string }
+  extractedLocation?: { city: string; country?: string },
+  categoryFilter?: string
 ): string {
   // Use extracted location OR stored location
   const location = extractedLocation || userProfile.userLocation;
@@ -282,6 +283,10 @@ For any card with category "restaurant", "location", or "activity" that is a phy
 - From FACTS: Use facts to choose which categories and types of items to recommend (e.g. demographics, interests; if they said "no X" or dislike something, avoid X-related recommendations).
 - Stage: ${stageGuidance} The more signals we have, the more specific and tailored your recommendations should be.`;
 
+  const categoryFilterBlock = categoryFilter && categoryFilter !== "all"
+    ? `\n\nCATEGORY FILTER: Only recommend items in the "${categoryFilter}" category. All ${batchSize} results should be "${categoryFilter}" items.`
+    : '';
+
   return `You are finding REAL recommendations that match this user's taste profile. Use web search to verify each item exists and is current.
 
 CATEGORIES: Return a MIX of categories. Do not return only restaurants. Include at least 2-3 different categories from:
@@ -294,7 +299,7 @@ CATEGORIES: Return a MIX of categories. Do not return only restaurants. Include 
 - band (music, artists)
 - activity (hobbies, experiences, things to do)
 
-Use the category that best fits each recommendation.${locationBlock}${alreadyRecommendedBlock}
+Use the category that best fits each recommendation.${locationBlock}${categoryFilterBlock}${alreadyRecommendedBlock}
 
 USER PROFILE (${totalSignals} signals):
 

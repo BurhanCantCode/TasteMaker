@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useCardQueue } from "@/hooks/useCardQueue";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +14,8 @@ import { ResetButton } from "@/components/navigation/ResetButton";
 import { SettingsGear } from "@/components/navigation/SettingsGear";
 import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { PhoneSignIn } from "@/components/auth/PhoneSignIn";
+import { TabBar } from "@/components/navigation/TabBar";
+import { RecommendationInterstitialCard } from "@/components/cards/RecommendationInterstitialCard";
 import { Question, ResultItem } from "@/lib/types";
 import { clearSummary, clearCardSession } from "@/lib/cookies";
 import { deleteCloudProfile } from "@/lib/firestore";
@@ -37,12 +40,14 @@ export default function Home() {
 
   const { user, isAuthLoading } = useAuth();
   const { initialSyncDone, hasPendingMerge } = useSync();
+  const router = useRouter();
 
   const [systemPrompt, setSystemPrompt] = useState<string | undefined>();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showDashboard, setShowDashboard] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPhoneSignIn, setShowPhoneSignIn] = useState(false);
+  const [showInterstitial, setShowInterstitial] = useState(false);
 
   // Check if user is new (no profile data at all) — wait for sync to finish
   useEffect(() => {
@@ -73,13 +78,12 @@ export default function Home() {
   }, [isLoaded, showDashboard, currentCard, isLoading, profile, systemPrompt, fetchCards]);
 
   // PREFETCH: Start loading next batch when user reaches 75% of current batch
+  // Always prefetch "ask" mode since results are now on a separate page
   useEffect(() => {
     if (shouldPrefetch && !showDashboard && !showOnboarding) {
-      const nextMode = mode === "ask" ? "result" : "ask";
-      const nextBatchSize = nextMode === "ask" ? 10 : 5;
-      prefetchNextBatch(profile, nextMode, nextBatchSize, systemPrompt);
+      prefetchNextBatch(profile, "ask", 10, systemPrompt);
     }
-  }, [shouldPrefetch, showDashboard, showOnboarding, mode, profile, systemPrompt, prefetchNextBatch]);
+  }, [shouldPrefetch, showDashboard, showOnboarding, profile, systemPrompt, prefetchNextBatch]);
 
   const handleAnswer = async (answer: string) => {
     if (!currentCard) return;
@@ -134,11 +138,14 @@ export default function Home() {
     if (hasMoreCards) {
       nextCard();
     } else {
-      // Finished current batch, switch modes
-      const nextMode = mode === "ask" ? "result" : "ask";
-      const nextBatchSize = nextMode === "ask" ? 10 : 5; // 10 questions, 5 predictions
-
-      await fetchCards(profile, nextMode, nextBatchSize, systemPrompt);
+      // Finished current batch - check if we should show interstitial
+      // +1 because addFact hasn't flushed to state yet
+      if (profile.facts.length + 1 >= 20) {
+        setShowInterstitial(true);
+      } else {
+        // Continue with more questions
+        await fetchCards(profile, "ask", 10, systemPrompt);
+      }
     }
   };
 
@@ -178,6 +185,16 @@ export default function Home() {
 
   const handleSignInSuccess = () => {
     setShowPhoneSignIn(false);
+  };
+
+  const handleViewRecommendations = () => {
+    setShowInterstitial(false);
+    router.push("/results");
+  };
+
+  const handleKeepAnswering = () => {
+    setShowInterstitial(false);
+    fetchCards(profile, "ask", 10, systemPrompt);
   };
 
   // Wait for profile and auth to load before deciding what to show
@@ -228,19 +245,56 @@ export default function Home() {
           onSave={handleSavePrompt}
         />
 
-        <Dashboard
-          profile={profile}
-          onContinue={handleContinue}
-          onUpdateFacts={setInitialFacts}
-          onSignInClick={() => setShowPhoneSignIn(true)}
-        />
+        <div className="pb-24">
+          <Dashboard
+            profile={profile}
+            onContinue={handleContinue}
+            onUpdateFacts={setInitialFacts}
+            onSignInClick={() => setShowPhoneSignIn(true)}
+          />
+        </div>
 
         <PhoneSignIn
           isOpen={showPhoneSignIn}
           onClose={() => setShowPhoneSignIn(false)}
           onSuccess={handleSignInSuccess}
         />
+
+        <TabBar />
       </>
+    );
+  }
+
+  // Show recommendation interstitial
+  if (showInterstitial) {
+    return (
+      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
+        <ProgressBar progress={100} />
+
+        <button
+          onClick={handleBackToDashboard}
+          className="fixed top-4 left-4 z-50 w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-blue-600 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95"
+          aria-label="Back to Dashboard"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+
+        <SettingsGear onClick={() => setIsSettingsOpen(true)} />
+
+        <PromptEditor
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          currentPrompt={systemPrompt}
+          onSave={handleSavePrompt}
+        />
+
+        <div className="w-full min-w-[400px] max-w-[500px] h-[600px]">
+          <RecommendationInterstitialCard
+            onViewRecommendations={handleViewRecommendations}
+            onKeepAnswering={handleKeepAnswering}
+          />
+        </div>
+      </div>
     );
   }
 
@@ -288,10 +342,15 @@ export default function Home() {
 
         {/* Stats */}
         {isLoaded && !isLoading && (
-          <div className="mt-6 text-center text-sm text-gray-500">
+          <div className="mt-6 text-center text-sm text-gray-500 space-y-1">
             <p>
               {profile.facts.length} facts • {profile.likes.length} likes
             </p>
+            {profile.facts.length < 20 && (
+              <p className="text-xs text-gray-400">
+                {20 - profile.facts.length} more until recommendations
+              </p>
+            )}
           </div>
         )}
       </div>
