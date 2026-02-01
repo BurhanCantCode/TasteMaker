@@ -8,13 +8,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSync } from "@/contexts/SyncContext";
 import { Onboarding } from "@/components/Onboarding";
 import { Dashboard } from "@/components/Dashboard";
+import { ResultsView } from "@/components/views/ResultsView";
 import { CardStack } from "@/components/cards/CardStack";
 import { ProgressBar } from "@/components/navigation/ProgressBar";
 import { ResetButton } from "@/components/navigation/ResetButton";
 import { SettingsGear } from "@/components/navigation/SettingsGear";
 import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { PhoneSignIn } from "@/components/auth/PhoneSignIn";
-import { TabBar } from "@/components/navigation/TabBar";
+import { TabBar, Tab } from "@/components/navigation/TabBar";
 import { RecommendationInterstitialCard } from "@/components/cards/RecommendationInterstitialCard";
 import { Question, ResultItem } from "@/lib/types";
 import { clearSummary, clearCardSession } from "@/lib/cookies";
@@ -44,25 +45,27 @@ export default function Home() {
 
   const [systemPrompt, setSystemPrompt] = useState<string | undefined>();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>("me"); // Default to 'Me' (Dashboard)
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPhoneSignIn, setShowPhoneSignIn] = useState(false);
   const [showInterstitial, setShowInterstitial] = useState(false);
 
   // Check if user is new (no profile data at all) — wait for sync to finish
   useEffect(() => {
-    if (isLoaded && initialSyncDone) {
+    if (isLoaded && initialSyncDone && !hasPendingMerge) {
       const isNewUser = profile.facts.length === 0 &&
         profile.likes.length === 0 &&
         !profile.initialFacts;
-      queueMicrotask(() => setShowOnboarding(isNewUser));
+      if (isNewUser) {
+        setShowOnboarding(true);
+        setActiveTab("questions");
+      }
     }
-  }, [isLoaded, initialSyncDone, profile]);
+  }, [isLoaded, initialSyncDone, hasPendingMerge, profile]);
 
   // PRE-FETCH: Load first batch of questions when new user is on welcome screen
   useEffect(() => {
     if (showOnboarding && isLoaded && !currentCard && !isLoading) {
-      // New user on welcome screen - pre-fetch questions so they load instantly
       const isNewUser = profile.facts.length === 0 && profile.likes.length === 0;
       if (isNewUser) {
         fetchCards(profile, "ask", 10, systemPrompt);
@@ -70,40 +73,36 @@ export default function Home() {
     }
   }, [showOnboarding, isLoaded, currentCard, isLoading, profile, systemPrompt, fetchCards]);
 
-  // Fetch cards when transitioning from dashboard to card stack
+  // Fetch cards when transitioning to questions tab
   useEffect(() => {
-    if (isLoaded && !showDashboard && !currentCard && !isLoading) {
+    if (isLoaded && activeTab === "questions" && !currentCard && !isLoading) {
       fetchCards(profile, "ask", 10, systemPrompt);
     }
-  }, [isLoaded, showDashboard, currentCard, isLoading, profile, systemPrompt, fetchCards]);
+  }, [isLoaded, activeTab, currentCard, isLoading, profile, systemPrompt, fetchCards]);
 
   // PREFETCH: Start loading next batch when user reaches 75% of current batch
-  // Always prefetch "ask" mode since results are now on a separate page
   useEffect(() => {
-    if (shouldPrefetch && !showDashboard && !showOnboarding) {
-      prefetchNextBatch(profile, "ask", 10, systemPrompt);
+    if (shouldPrefetch && activeTab !== "me" && !showOnboarding) {
+      const nextMode = mode === "ask" ? "result" : "ask";
+      const nextBatchSize = 10;
+      prefetchNextBatch(profile, nextMode, nextBatchSize, systemPrompt);
     }
-  }, [shouldPrefetch, showDashboard, showOnboarding, profile, systemPrompt, prefetchNextBatch]);
+  }, [shouldPrefetch, activeTab, showOnboarding, mode, profile, systemPrompt, prefetchNextBatch]);
 
   const handleAnswer = async (answer: string) => {
     if (!currentCard) return;
 
-    // Save response to profile
     if (currentCard.type === "ask") {
       const question = currentCard.content as Question;
 
-      // NEW: Auto-detect and parse location from text_input questions about city
       if (question.answerType === "text_input" &&
         (question.title.toLowerCase().includes("city") ||
           question.title.toLowerCase().includes("where") ||
           question.title.toLowerCase().includes("location"))) {
-        // Parse location from answer (e.g., "San Francisco, CA" or "New York")
         const locationParts = answer.split(',').map(p => p.trim());
         if (locationParts.length >= 2) {
-          // Has city and region/state: "San Francisco, CA"
           setUserLocation(locationParts[0], locationParts[1]);
         } else if (locationParts[0] && locationParts[0].length > 0) {
-          // Just city: "Tokyo" or "New York City"
           setUserLocation(locationParts[0]);
         }
       }
@@ -115,7 +114,7 @@ export default function Home() {
         "want_to_read", "read_loved", "id_listen", "already_fan",
         "love_them", "curious", "already_loyal", "id_try",
         "love_doing", "already_do",
-        "3", "4", "5"  // rating scale 3-5 are positive signals
+        "3", "4", "5"
       ].includes(answer.toLowerCase());
 
       addFact({
@@ -134,81 +133,64 @@ export default function Home() {
       });
     }
 
-    // Move to next card or fetch new batch
     if (hasMoreCards) {
       nextCard();
     } else {
-      // Finished current batch - check if we should show interstitial
-      // +1 because addFact hasn't flushed to state yet
       if (profile.facts.length + 1 >= 20) {
         setShowInterstitial(true);
       } else {
-        // Continue with more questions
         await fetchCards(profile, "ask", 10, systemPrompt);
       }
     }
   };
 
-  const handleReset = async () => {
-    if (confirm("Are you sure you want to reset? This will clear all your data.")) {
-      resetProfile();
-      resetQueue();
-      clearSummary();
-      clearCardSession();
-      // Also clear cloud data if authenticated
-      if (user) {
-        await deleteCloudProfile(user.uid);
-      }
-      setShowDashboard(true);
-    }
-  };
-
-  const handleSavePrompt = (newPrompt: string) => {
-    setSystemPrompt(newPrompt);
-    // Reset and refetch with new prompt
-    resetQueue();
-  };
-
-  const handleContinue = () => {
-    setShowDashboard(false);
-  };
-
-  const handleBackToDashboard = () => {
-    setShowDashboard(true);
-  };
-
   const handleOnboardingComplete = () => {
-    // Questions already pre-fetched when welcome screen mounted
     setShowOnboarding(false);
-    setShowDashboard(false); // Skip dashboard, go straight to cards
+    setActiveTab("questions");
   };
 
   const handleSignInSuccess = () => {
     setShowPhoneSignIn(false);
+    window.location.reload();
   };
 
-  const handleViewRecommendations = () => {
-    setShowInterstitial(false);
-    router.push("/results");
+  const handleSavePrompt = (prompt: string) => {
+    setSystemPrompt(prompt);
+    resetQueue();
   };
 
-  const handleKeepAnswering = () => {
-    setShowInterstitial(false);
-    fetchCards(profile, "ask", 10, systemPrompt);
+  const handleReset = () => {
+    if (confirm("Are you sure? This will delete your local profile and preferences.")) {
+      resetProfile();
+      resetQueue();
+      clearSummary();
+      clearCardSession();
+      if (user) {
+        deleteCloudProfile(user.uid);
+      }
+      setActiveTab("me"); // Reset to dashboard/me view
+      window.location.reload();
+    }
   };
 
-  // Wait for profile and auth to load before deciding what to show
-  // Also wait for any pending merge from cloud sync to be applied
-  if (!isLoaded || isAuthLoading || !initialSyncDone || hasPendingMerge) {
+  const handleBackToDashboard = () => {
+    setActiveTab("me");
+  };
+
+  // Loading state
+  const isSyncing = !initialSyncDone || hasPendingMerge;
+  if (!isLoaded || isAuthLoading || isSyncing) {
     return (
       <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center gap-4 p-6">
-        <Loader2 className="w-10 h-10 text-gray-400 animate-spin" aria-hidden />
-        <p className="text-sm font-medium text-gray-500">Loading...</p>
+        <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
+        <p className="text-sm font-medium text-gray-500">
+          {hasPendingMerge ? "Syncing data..." : "Loading your profile..."}
+        </p>
       </div>
     );
   }
 
-  // Show onboarding for new users
+  // Welcome Screen (Modal-like)
   if (showOnboarding) {
     return (
       <>
@@ -216,7 +198,7 @@ export default function Home() {
           onComplete={handleOnboardingComplete}
           onSignInClick={() => setShowPhoneSignIn(true)}
           isSignedIn={!!user}
-          signedInLabel={user?.phoneNumber ? "***" + user.phoneNumber.slice(-4) : undefined}
+          signedInLabel={user?.phoneNumber ?? undefined}
         />
         <PhoneSignIn
           isOpen={showPhoneSignIn}
@@ -227,133 +209,101 @@ export default function Home() {
     );
   }
 
-  // Show dashboard
-  if (showDashboard) {
-    return (
-      <>
-        {/* Reset Button */}
-        <ResetButton onReset={handleReset} />
-
-        {/* Settings Gear */}
-        <SettingsGear onClick={() => setIsSettingsOpen(true)} />
-
-        {/* Settings Modal */}
-        <PromptEditor
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          currentPrompt={systemPrompt}
-          onSave={handleSavePrompt}
-        />
-
-        <div className="pb-24">
-          <Dashboard
-            profile={profile}
-            onContinue={handleContinue}
-            onUpdateFacts={setInitialFacts}
-            onSignInClick={() => setShowPhoneSignIn(true)}
-          />
-        </div>
-
-        <PhoneSignIn
-          isOpen={showPhoneSignIn}
-          onClose={() => setShowPhoneSignIn(false)}
-          onSuccess={handleSignInSuccess}
-        />
-
-        <TabBar />
-      </>
-    );
-  }
-
-  // Show recommendation interstitial
+  // Recommendation Interstitial
   if (showInterstitial) {
     return (
       <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
-        <ProgressBar progress={100} />
-
-        <button
-          onClick={handleBackToDashboard}
-          className="fixed top-4 left-4 z-50 w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-blue-600 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95"
-          aria-label="Back to Dashboard"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-
-        <SettingsGear onClick={() => setIsSettingsOpen(true)} />
-
-        <PromptEditor
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          currentPrompt={systemPrompt}
-          onSave={handleSavePrompt}
-        />
-
-        <div className="w-full min-w-[400px] max-w-[500px] h-[600px]">
+        <div className="w-full max-w-[500px] h-[600px]">
           <RecommendationInterstitialCard
-            onViewRecommendations={handleViewRecommendations}
-            onKeepAnswering={handleKeepAnswering}
+            onViewRecommendations={() => {
+              setShowInterstitial(false);
+              setActiveTab("results");
+            }}
+            onKeepAnswering={async () => {
+              setShowInterstitial(false);
+              await fetchCards(profile, "ask", 10, systemPrompt);
+            }}
           />
         </div>
       </div>
     );
   }
 
-  // Show card stack
+  // Main App View (Tabs)
   return (
-    <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
-      {/* Progress Bar */}
-      <ProgressBar progress={progress} />
+    <div className="min-h-screen bg-[#F3F4F6]">
+      <div className="pb-24">
+        {activeTab === "me" && (
+          <Dashboard
+            profile={profile}
+            onContinue={() => setActiveTab("questions")}
+            onUpdateFacts={setInitialFacts}
+            onSignInClick={!user ? () => setShowPhoneSignIn(true) : undefined}
+          />
+        )}
 
+        {activeTab === "questions" && (
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <ProgressBar progress={progress} />
 
-      {/* Back Button */}
-      <button
-        onClick={handleBackToDashboard}
-        className="fixed top-4 left-4 z-50 w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-blue-600 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95"
-        aria-label="Back to Dashboard"
-      >
-        <ArrowLeft className="w-5 h-5" />
-      </button>
+            {/* Floating Stats */}
+            {isLoaded && !isLoading && profile.facts.length >= 5 && (
+              <div className="fixed bottom-24 left-0 right-0 text-center text-sm text-gray-500 pointer-events-none z-0">
+                <p>
+                  {profile.facts.length} facts • {profile.likes.length} likes
+                </p>
+              </div>
+            )}
 
-      {/* Settings Gear */}
-      <SettingsGear onClick={() => setIsSettingsOpen(true)} />
+            {/* Back Button (to Me) */}
+            <button
+              onClick={handleBackToDashboard}
+              className="fixed top-4 left-4 z-50 w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-blue-600 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95"
+              aria-label="Back to Me"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
 
-      {/* Settings Modal */}
-      <PromptEditor
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        currentPrompt={systemPrompt}
-        onSave={handleSavePrompt}
-      />
+            <SettingsGear onClick={() => setIsSettingsOpen(true)} />
 
-      {/* Card Stack */}
-      <div className="w-full min-w-[400px] max-w-[500px]">
-        {error && (
-          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-[24px]">
-            <p className="font-medium">Error:</p>
-            <p className="text-sm">{error}</p>
+            <PromptEditor
+              isOpen={isSettingsOpen}
+              onClose={() => setIsSettingsOpen(false)}
+              currentPrompt={systemPrompt}
+              onSave={handleSavePrompt}
+            />
+
+            <div className="w-full min-w-[400px] max-w-[500px]">
+              {error && (
+                <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-[24px]">
+                  <p className="font-medium">Error:</p>
+                  <p className="text-sm">{error}</p>
+                </div>
+              )}
+
+              <CardStack
+                card={currentCard}
+                onAnswer={handleAnswer}
+                isLoading={isLoading}
+              />
+            </div>
           </div>
         )}
 
-        <CardStack
-          card={currentCard}
-          onAnswer={handleAnswer}
-          isLoading={isLoading}
-        />
-
-        {/* Stats */}
-        {isLoaded && !isLoading && (
-          <div className="mt-6 text-center text-sm text-gray-500 space-y-1">
-            <p>
-              {profile.facts.length} facts • {profile.likes.length} likes
-            </p>
-            {profile.facts.length < 20 && (
-              <p className="text-xs text-gray-400">
-                {20 - profile.facts.length} more until recommendations
-              </p>
-            )}
-          </div>
+        {activeTab === "results" && (
+          <ResultsView
+            onKeepAnswering={() => setActiveTab("questions")}
+          />
         )}
       </div>
+
+      <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+
+      <PhoneSignIn
+        isOpen={showPhoneSignIn}
+        onClose={() => setShowPhoneSignIn(false)}
+        onSuccess={handleSignInSuccess}
+      />
     </div>
   );
 }
