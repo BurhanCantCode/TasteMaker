@@ -265,17 +265,11 @@ export default function Home() {
         )}
 
         {activeTab === "questions" && (
-          <div className="min-h-screen flex items-center justify-center p-4">
-            <ProgressBar progress={progress} />
-
-            {/* Floating Stats */}
-            {isLoaded && !isLoading && profile.facts.length >= 5 && (
-              <div className="fixed bottom-24 left-0 right-0 text-center text-sm text-gray-500 pointer-events-none z-0">
-                <p>
-                  {profile.facts.length} facts • {profile.likes.length} likes
-                </p>
-              </div>
-            )}
+          <div className="fixed inset-0 bg-[#F3F4F6] flex flex-col items-center justify-center pb-32 pt-14">
+            {/* Progress Bar - Fixed at top */}
+            <div className="absolute top-0 left-0 right-0 z-10">
+              <ProgressBar progress={progress} />
+            </div>
 
             {/* Back Button (to Me) */}
             <button
@@ -295,9 +289,10 @@ export default function Home() {
               onSave={handleSavePrompt}
             />
 
-            <div className="w-full min-w-[400px] max-w-[500px]">
+            {/* Card Stack Container - Centered and contained */}
+            <div className="w-full max-w-[500px] flex-1 flex items-center justify-center px-4 overflow-visible">
               {error && (
-                <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-[24px]">
+                <div className="absolute top-20 left-4 right-4 z-20 p-4 bg-red-100 text-red-700 rounded-[24px]">
                   <p className="font-medium">Error:</p>
                   <p className="text-sm">{error}</p>
                 </div>
