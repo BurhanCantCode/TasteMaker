@@ -70,9 +70,9 @@ OUTPUT SCHEMA FOR ASK MODE:
 
 ANSWER LABELS (CRITICAL - generate labels that match your question's context):
 You MUST provide "answerLabels" for every question. Labels should feel natural for the specific question asked.
-- yes_no: Exactly 2 labels. Example: ["Yes, I have one", "No pets for me"] or ["Definitely!", "Not really"]
+- yes_no: Exactly 2 labels [NEGATIVE first, POSITIVE second]. The first label (index 0) appears on the left ✗ button, the second (index 1) appears on the right ✓ button. Example: ["No pets for me", "Yes, I have one"] or ["Not really", "Definitely!"]
 - like_scale: Exactly 4 labels (negative → positive). Example: ["Not interested", "Maybe", "I like it", "Love it!"]
-- want_scale: Exactly 4 labels. Example: ["Pass", "Interested", "Want it", "Need it!"]
+- want_scale: Exactly 4 labels in button order: [dont_want, want, already_have, really_want]. Example: ["Pass", "I'd want this", "Already have it", "Need it now!"]
 - rating_scale: Exactly 2 anchor labels (low, high). Example: ["Rarely", "Very often"] or ["Not at all", "Extremely"]
 - multiple_choice: Use the "options" array instead (answerLabels not needed)
 - text_input: No labels needed (answerLabels not needed)

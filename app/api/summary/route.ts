@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       model: "claude-haiku-4-5-20251001",
       max_tokens: 200,
       temperature: 0.7,
-      system: "You are a concise profile summarizer. Write a 2-3 sentence summary of the user based on their answers and preferences. Be insightful but brief. Don't use bullet points. Write in third person (e.g., 'This person...' or 'They...'). Focus on personality traits and interests you can infer.",
+      system: "You are a concise profile summarizer. Write a 2-3 sentence summary of the user based on their answers and preferences. Be insightful but brief. Don't use bullet points. Write in third person (e.g., 'This person...' or 'They...'). Focus on personality traits and interests you can infer.\n\nIMPORTANT: Pay close attention to the (positive) and (negative) markers after each answer. If an answer is marked (negative), the user does NOT have/like/want that thing. For example, 'A: no (negative)' for 'Do you have pets?' means they do NOT have pets. Never attribute a negative-marked answer as something the user likes or has.",
       messages: [
         {
           role: "user",

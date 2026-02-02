@@ -135,7 +135,7 @@ export default function Home() {
         "want_to_visit", "been_loved", "want_to_watch", "seen_loved",
         "want_to_read", "read_loved", "id_listen", "already_fan",
         "love_them", "curious", "already_loyal", "id_try",
-        "love_doing", "already_do",
+        "love_doing", "already_do", "already_have",
         "3", "4", "5"
       ].includes(answer.toLowerCase());
 

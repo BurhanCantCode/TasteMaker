@@ -89,6 +89,7 @@ export const DEFAULT_CONFIG: CategoryConfig = {
   header: "Prediction",
   options: [
     { value: "dislike", label: "Dislike", sentiment: "negative" },
+    { value: "neutral", label: "It's OK", sentiment: "neutral" },
     { value: "like", label: "Like", sentiment: "positive" },
     { value: "superlike", label: "Super Like", sentiment: "strong_positive" },
   ],
