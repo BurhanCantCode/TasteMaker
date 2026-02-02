@@ -28,6 +28,16 @@ const ERROR_MESSAGES: Record<string, string> = {
   "auth/missing-phone-number": "Please enter your phone number",
 };
 
+function sanitizePhoneNumber(phone: string): string {
+  // Remove ALL whitespace (including Unicode whitespace) and invisible characters
+  // Keep only: digits, +, -, (, ), and space (normalize spaces after)
+  return phone
+    .replace(/[\u200B-\u200D\uFEFF]/g, "") // Zero-width spaces
+    .replace(/\u00A0/g, " ") // Non-breaking space to regular space
+    .replace(/[\s\u00A0]+/g, " ") // Normalize all whitespace to single space
+    .trim(); // Remove leading/trailing
+}
+
 function getErrorMessage(error: unknown): string {
   if (error && typeof error === "object" && "code" in error) {
     const code = (error as { code: string }).code;
@@ -103,19 +113,24 @@ export function PhoneSignIn({ isOpen, onClose, onSuccess }: PhoneSignInProps) {
   const handleSendOtp = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!phoneNumber.trim() || !recaptchaVerifierRef.current) return;
+      const sanitizedPhone = sanitizePhoneNumber(phoneNumber);
+      if (!sanitizedPhone || !recaptchaVerifierRef.current) return;
 
       setError(null);
       setIsLoading(true);
 
       try {
         const result = await signInWithPhone(
-          phoneNumber.trim(),
+          sanitizedPhone,
           recaptchaVerifierRef.current
         );
         setConfirmationResult(result);
         setStep("otp");
       } catch (err) {
+        // Debug logging for development
+        if (process.env.NODE_ENV === "development") {
+          console.error("Firebase auth error:", err);
+        }
         setError(getErrorMessage(err));
         // Recreate reCAPTCHA after error
         const auth = getFirebaseAuth();
@@ -215,8 +230,11 @@ export function PhoneSignIn({ isOpen, onClose, onSuccess }: PhoneSignInProps) {
                       ref={phoneInputRef}
                       id="phone"
                       type="tel"
+                      autoComplete="tel"
                       value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      onChange={(e) =>
+                        setPhoneNumber(sanitizePhoneNumber(e.target.value))
+                      }
                       placeholder="+1 234 567 8900"
                       className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-[#171717] text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       disabled={isLoading}
@@ -232,7 +250,7 @@ export function PhoneSignIn({ isOpen, onClose, onSuccess }: PhoneSignInProps) {
 
                 <button
                   type="submit"
-                  disabled={isLoading || !phoneNumber.trim()}
+                  disabled={isLoading || !sanitizePhoneNumber(phoneNumber)}
                   className="w-full py-3.5 bg-[#171717] text-white font-semibold rounded-2xl hover:bg-[#2a2a2a] disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
