@@ -162,7 +162,8 @@ PRIORITY QUESTIONS (ask these types first):
 2. Demographics: Gender identity (multiple_choice: Male, Female, Non-binary, Prefer not to say, Other)
 3. Living situation: (multiple_choice: Own my home, Rent, Living with family, Student housing, Other)
 4. Tech preference: "What type of phone do you use?" (multiple_choice: iPhone, Android, Other)
-5. Relationship status or work/lifestyle question (your choice)
+5. Personality seed: "Tell me something cool about you" (text_input, placeholder: "e.g., I collect vinyl, I'm learning Japanese, I run ultramarathons..."). This is the MOST important question — their answer will drive deep personalization for everything that follows.
+6. Relationship status or work/lifestyle question (your choice)
 
 REQUIREMENTS:
 - Use conversational, friendly language (not formal or form-like)
