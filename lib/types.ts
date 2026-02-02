@@ -116,7 +116,7 @@ export type ProfileStage = "discovery" | "refining" | "personalized";
 export function getProfileStage(profile: UserProfile): ProfileStage {
   const totalSignals = profile.facts.length + profile.likes.length;
 
-  if (totalSignals < 10) return "discovery";
-  if (totalSignals < 30) return "refining";
+  if (totalSignals < 5) return "discovery";
+  if (totalSignals < 15) return "refining";
   return "personalized";
 }
