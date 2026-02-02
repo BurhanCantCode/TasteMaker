@@ -9,16 +9,17 @@ import { useSync } from "@/contexts/SyncContext";
 import { FactsModal } from "./FactsModal";
 import { AccountMenu } from "./auth/AccountMenu";
 import { SignInPrompt } from "./auth/SignInPrompt";
-import { Heart, X, Sparkles, ArrowRight, BookOpen, ThumbsUp, Loader2, Plus } from "lucide-react";
+import { Heart, X, Sparkles, ArrowRight, BookOpen, ThumbsUp, Loader2, Plus, RotateCcw } from "lucide-react";
 
 interface DashboardProps {
   profile: UserProfile;
   onContinue: () => void;
   onUpdateFacts?: (facts: string) => void;
   onSignInClick?: () => void;
+  onReset?: () => void;
 }
 
-export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick }: DashboardProps) {
+export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, onReset }: DashboardProps) {
   const { categoryBreakdown, topTraits, recentActivity } = analyzeProfile(profile);
   const { user } = useAuth();
   const { triggerSync } = useSync();
@@ -270,6 +271,18 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick }:
             {isNewUser ? "Start Profiling" : "Continue Journey"}
             <ArrowRight className="w-6 h-6" />
           </button>
+
+          {/* Start fresh - reset facts and likes to 0 */}
+          {!isNewUser && onReset && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="w-full text-gray-400 hover:text-gray-600 text-sm font-medium py-3 flex items-center justify-center gap-2 transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Start fresh
+            </button>
+          )}
         </div>
 
         {/* Facts Modal */}

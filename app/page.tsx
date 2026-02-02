@@ -261,6 +261,7 @@ export default function Home() {
             onContinue={() => setActiveTab("questions")}
             onUpdateFacts={setInitialFacts}
             onSignInClick={!user ? () => setShowPhoneSignIn(true) : undefined}
+            onReset={handleReset}
           />
         )}
 
