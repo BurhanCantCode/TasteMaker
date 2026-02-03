@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Sparkles, Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 
 interface OnboardingProps {
   onComplete: () => void; // Simplified - just signals ready to start
@@ -54,11 +54,57 @@ export function Onboarding({ onComplete, onSignInClick, isSignedIn, signedInLabe
 
         {/* Welcome Section */}
         <div className="text-center space-y-4">
-          <div className="inline-flex p-4 bg-white shadow-sm rounded-full mb-4 ring-1 ring-gray-200">
-            <Sparkles className="w-8 h-8 text-black" />
+          <div className="inline-flex mb-4">
+            <svg
+              className="w-8 h-8 text-black"
+              viewBox="0 0 32 32"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* First card (behind) */}
+              <rect
+                x="4"
+                y="6"
+                width="20"
+                height="26"
+                rx="2"
+                fill="white"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+              <rect
+                x="6"
+                y="8"
+                width="16"
+                height="22"
+                rx="1"
+                fill="currentColor"
+                opacity="0.1"
+              />
+              {/* Second card (in front) */}
+              <rect
+                x="8"
+                y="2"
+                width="20"
+                height="26"
+                rx="2"
+                fill="white"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+              <rect
+                x="10"
+                y="4"
+                width="16"
+                height="22"
+                rx="1"
+                fill="currentColor"
+                opacity="0.1"
+              />
+            </svg>
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-[#171717]">
-            Welcome to Tastemaker
+            Tastemaker Alpha
           </h1>
           <p className="text-lg text-gray-500 max-w-xl mx-auto">
             Answer a few quick questions and we'll discover your unique taste profile together
