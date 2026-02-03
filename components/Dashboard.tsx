@@ -112,7 +112,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
         {/* Header */}
         <div className="text-center space-y-3">
           <h1 className="text-4xl font-bold tracking-tight text-[#171717]">
-            {isNewUser ? "Welcome to Tastemaker" : "Welcome back"}
+            {isNewUser ? "Tastemaker Alpha" : "Welcome back"}
           </h1>
           <p className="text-lg text-gray-500">
             {isNewUser
