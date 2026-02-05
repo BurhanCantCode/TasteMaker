@@ -311,6 +311,8 @@ export default function Home() {
         {activeTab === "results" && (
           <ResultsView
             onKeepAnswering={() => setActiveTab("questions")}
+            systemPrompt={systemPrompt}
+            onSavePrompt={handleSavePrompt}
           />
         )}
       </div>

@@ -17,9 +17,11 @@ const categoryCache = new Map<string, ResultItem[]>();
 
 interface ResultsViewProps {
     onKeepAnswering: () => void;
+    systemPrompt?: string;
+    onSavePrompt: (prompt: string) => void;
 }
 
-export function ResultsView({ onKeepAnswering }: ResultsViewProps) {
+export function ResultsView({ onKeepAnswering, systemPrompt, onSavePrompt }: ResultsViewProps) {
     const { profile, isLoaded, addLike } = useUserProfile();
     const { user, isAuthLoading } = useAuth();
     const { initialSyncDone, hasPendingMerge } = useSync();
@@ -97,6 +99,7 @@ export function ResultsView({ onKeepAnswering }: ResultsViewProps) {
                     batchSize: 5,
                     mode: "result",
                     categoryFilter: category === "all" ? undefined : category,
+                    systemPrompt,
                 }),
             });
 
@@ -151,6 +154,7 @@ export function ResultsView({ onKeepAnswering }: ResultsViewProps) {
                     batchSize: 5,
                     mode: "result",
                     categoryFilter: selectedCategory === "all" ? undefined : selectedCategory,
+                    systemPrompt,
                 }),
             });
 
@@ -195,8 +199,8 @@ export function ResultsView({ onKeepAnswering }: ResultsViewProps) {
             <PromptEditor
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
-                currentPrompt={undefined}
-                onSave={() => { }}
+                currentPrompt={systemPrompt}
+                onSave={onSavePrompt}
             />
 
             <div className="max-w-2xl mx-auto p-6 space-y-8">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DEFAULT_SYSTEM_PROMPT } from "@/lib/prompts";
@@ -19,6 +19,11 @@ export function PromptEditor({
   onSave,
 }: PromptEditorProps) {
   const [prompt, setPrompt] = useState(currentPrompt || DEFAULT_SYSTEM_PROMPT);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setPrompt(currentPrompt || DEFAULT_SYSTEM_PROMPT);
+  }, [isOpen, currentPrompt]);
 
   if (!isOpen) return null;
 

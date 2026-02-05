@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
     if (shouldUseWebSearch) {
       // Web search for real recommendations (mix of categories); pass location when available
       const searchPrompt = buildWebSearchPrompt(userProfile, batchSize, locationData ?? undefined, categoryFilter);
+      const systemMessage = systemPrompt || DEFAULT_SYSTEM_PROMPT;
       
       const toolConfig = {
         type: "web_search_20250305" as const,
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
         model: "claude-sonnet-4-5-20250929",
         max_tokens: 4096,
         temperature: 0.8,
-        system: DEFAULT_SYSTEM_PROMPT,
+        system: systemMessage,
         messages: [
           {
             role: "user",
