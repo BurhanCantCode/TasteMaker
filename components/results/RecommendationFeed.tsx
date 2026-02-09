@@ -15,7 +15,7 @@ export function RecommendationFeed({ results, onRate, onLoadMore, isLoading }: R
   return (
     <div className="space-y-4">
       <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-        Your recommendations
+        Diagnostic findings
       </h2>
 
       <div className="space-y-4">
@@ -35,7 +35,7 @@ export function RecommendationFeed({ results, onRate, onLoadMore, isLoading }: R
         className="w-full bg-white text-gray-700 h-[56px] rounded-[24px] font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_4px_12px_rgb(0,0,0,0.06)] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-        {isLoading ? 'Loading...' : 'Load more recommendations'}
+        {isLoading ? 'Loading...' : 'Generate more findings'}
       </button>
     </div>
   );

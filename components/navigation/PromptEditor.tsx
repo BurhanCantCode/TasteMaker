@@ -50,7 +50,7 @@ export function PromptEditor({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-800">
-              Edit System Prompt
+              Edit Diagnostic Prompt
             </h2>
             <button
               onClick={onClose}

@@ -1,4 +1,4 @@
-import { MessageCircle, Sparkles, User } from "lucide-react";
+import { MessageCircle, Activity, User } from "lucide-react";
 
 export type Tab = "questions" | "results" | "me";
 
@@ -18,7 +18,7 @@ export function TabBar({ activeTab, onTabChange }: TabBarProps) {
             }`}
         >
           <MessageCircle className="w-6 h-6" />
-          <span className="text-xs font-medium">Questions</span>
+          <span className="text-xs font-medium">Assessment</span>
         </button>
 
         {/* Results Tab */}
@@ -27,8 +27,8 @@ export function TabBar({ activeTab, onTabChange }: TabBarProps) {
           className={`flex-1 flex flex-col items-center py-3 gap-1 transition-colors ${activeTab === "results" ? "text-[#171717]" : "text-gray-400"
             }`}
         >
-          <Sparkles className="w-6 h-6" />
-          <span className="text-xs font-medium">Results</span>
+          <Activity className="w-6 h-6" />
+          <span className="text-xs font-medium">Diagnosis</span>
         </button>
 
         {/* Me Tab */}
@@ -38,7 +38,7 @@ export function TabBar({ activeTab, onTabChange }: TabBarProps) {
             }`}
         >
           <User className="w-6 h-6" />
-          <span className="text-xs font-medium">Me</span>
+          <span className="text-xs font-medium">Profile</span>
         </button>
       </div>
     </nav>

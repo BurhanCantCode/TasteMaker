@@ -104,7 +104,7 @@ export function ResultsView({ onKeepAnswering, systemPrompt, onSavePrompt }: Res
             });
 
             if (!response.ok) {
-                throw new Error("Failed to generate recommendations");
+                throw new Error("Failed to generate diagnostic assessment");
             }
 
             const data = await response.json();
@@ -159,7 +159,7 @@ export function ResultsView({ onKeepAnswering, systemPrompt, onSavePrompt }: Res
             });
 
             if (!response.ok) {
-                throw new Error("Failed to generate recommendations");
+                throw new Error("Failed to generate diagnostic findings");
             }
 
             const data = await response.json();
@@ -187,7 +187,7 @@ export function ResultsView({ onKeepAnswering, systemPrompt, onSavePrompt }: Res
         return (
             <div className="flex flex-col items-center justify-center gap-4 py-20">
                 <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
-                <p className="text-sm font-medium text-gray-500">Loading recommendations...</p>
+                <p className="text-sm font-medium text-gray-500">Loading diagnostic assessment...</p>
             </div>
         );
     }
@@ -207,10 +207,10 @@ export function ResultsView({ onKeepAnswering, systemPrompt, onSavePrompt }: Res
                 {/* Header */}
                 <div className="text-center space-y-3 pt-8">
                     <h1 className="text-4xl font-bold tracking-tight text-[#171717]">
-                        Recommendations
+                        Diagnostic Assessment
                     </h1>
                     <p className="text-lg text-gray-500">
-                        Personalized picks based on your taste profile
+                        Preliminary insights based on your symptom profile
                     </p>
                 </div>
 
@@ -224,7 +224,7 @@ export function ResultsView({ onKeepAnswering, systemPrompt, onSavePrompt }: Res
                             {20 - totalAnswered} more questions to go
                         </h2>
                         <p className="text-lg text-gray-500">
-                            Answer more questions to unlock personalized recommendations
+                            Answer more questions to unlock your diagnostic assessment
                         </p>
                         {/* Progress bar - FIXED: Removed Gradient */}
                         <div className="w-full bg-gray-100 rounded-full h-3">
@@ -240,7 +240,7 @@ export function ResultsView({ onKeepAnswering, systemPrompt, onSavePrompt }: Res
                             onClick={onKeepAnswering}
                             className="inline-flex items-center justify-center gap-3 w-full bg-[#171717] text-white h-[72px] rounded-[32px] font-bold text-lg hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
                         >
-                            Keep Answering
+                            Continue Assessment
                             <ArrowRight className="w-6 h-6" />
                         </button>
                     </div>
@@ -273,11 +273,11 @@ export function ResultsView({ onKeepAnswering, systemPrompt, onSavePrompt }: Res
                         ) : isGenerating ? (
                             <div className="flex flex-col items-center justify-center py-12 gap-4">
                                 <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
-                                <p className="text-sm font-medium text-gray-500">Generating recommendations...</p>
+                                <p className="text-sm font-medium text-gray-500">Generating diagnostic findings...</p>
                             </div>
                         ) : selectedCategory ? (
                             <div className="bg-white rounded-[32px] p-8 text-center space-y-4">
-                                <p className="text-gray-500 text-lg">No recommendations yet. Try selecting a category.</p>
+                                <p className="text-gray-500 text-lg">No findings yet. Try selecting a category.</p>
                             </div>
                         ) : null}
                     </>

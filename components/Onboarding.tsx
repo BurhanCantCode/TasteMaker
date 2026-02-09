@@ -1,15 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface OnboardingProps {
-  onComplete: () => void; // Simplified - just signals ready to start
+  onComplete: (chiefComplaint: string) => void;
   onSignInClick?: () => void;
   isSignedIn?: boolean;
   signedInLabel?: string;
 }
 
 export function Onboarding({ onComplete, onSignInClick, isSignedIn, signedInLabel }: OnboardingProps) {
+  const [complaint, setComplaint] = useState("");
+
+  const handleSubmit = () => {
+    onComplete(complaint.trim());
+  };
+
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-6">
       <div className="w-full max-w-2xl space-y-8">
@@ -22,7 +30,7 @@ export function Onboarding({ onComplete, onSignInClick, isSignedIn, signedInLabe
                   Returning user?
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Sign in to continue your taste profile
+                  Sign in to continue your assessment
                 </p>
               </div>
               <button
@@ -54,64 +62,35 @@ export function Onboarding({ onComplete, onSignInClick, isSignedIn, signedInLabe
 
         {/* Welcome Section */}
         <div className="text-center space-y-4">
-          <div className="inline-flex mb-4">
-            <svg
-              className="w-8 h-8 text-black"
-              viewBox="0 0 32 32"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* First card (behind) */}
-              <rect
-                x="4"
-                y="6"
-                width="20"
-                height="26"
-                rx="2"
-                fill="white"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              />
-              <rect
-                x="6"
-                y="8"
-                width="16"
-                height="22"
-                rx="1"
-                fill="currentColor"
-                opacity="0.1"
-              />
-              {/* Second card (in front) */}
-              <rect
-                x="8"
-                y="2"
-                width="20"
-                height="26"
-                rx="2"
-                fill="white"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              />
-              <rect
-                x="10"
-                y="4"
-                width="16"
-                height="22"
-                rx="1"
-                fill="currentColor"
-                opacity="0.1"
-              />
-            </svg>
-          </div>
           <h1 className="text-4xl font-bold tracking-tight text-[#171717]">
-            Tastemaker Alpha
+            Diagno Alpha
           </h1>
           <p className="text-lg text-gray-500 max-w-xl mx-auto">
-            Answer a few quick questions and we'll discover your unique taste profile together
+            Tell us what's going on, and we'll ask targeted yes/no questions to assess potential conditions
           </p>
         </div>
 
-        {/* Info Cards */}
+        {/* Chief Complaint Input */}
+        <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4">
+          <h3 className="text-xl font-bold text-[#171717]">
+            What's bothering you?
+          </h3>
+          <p className="text-sm text-gray-500">
+            Describe your main symptoms or concerns in a few words. This helps us ask the right questions.
+          </p>
+          <textarea
+            value={complaint}
+            onChange={(e) => setComplaint(e.target.value)}
+            placeholder="e.g., I've had a persistent headache and dizziness for the past 3 days..."
+            className={cn(
+              "w-full h-32 p-5 rounded-[24px] bg-gray-50",
+              "border border-gray-200 focus:border-black focus:ring-black focus:outline-none",
+              "text-gray-900 placeholder:text-gray-400 text-lg resize-none transition-all duration-200"
+            )}
+          />
+        </div>
+
+        {/* How it works */}
         <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
           <div className="space-y-4">
             <div className="flex items-start gap-4">
@@ -119,9 +98,9 @@ export function Onboarding({ onComplete, onSignInClick, isSignedIn, signedInLabe
                 <span className="text-sm font-bold text-gray-900">1</span>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Quick questions</h3>
+                <h3 className="font-semibold text-gray-900 mb-1">Screening questions</h3>
                 <p className="text-sm text-gray-600">
-                  We'll ask about your location, preferences, and lifestyle
+                  20 yes/no questions across 4 rounds, each building on your previous answers
                 </p>
               </div>
             </div>
@@ -131,9 +110,9 @@ export function Onboarding({ onComplete, onSignInClick, isSignedIn, signedInLabe
                 <span className="text-sm font-bold text-gray-900">2</span>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Discover your taste</h3>
+                <h3 className="font-semibold text-gray-900 mb-1">Progressive narrowing</h3>
                 <p className="text-sm text-gray-600">
-                  Get personalized recommendations for restaurants, products, and experiences
+                  Each round gets more targeted as the AI narrows down possibilities
                 </p>
               </div>
             </div>
@@ -143,9 +122,9 @@ export function Onboarding({ onComplete, onSignInClick, isSignedIn, signedInLabe
                 <span className="text-sm font-bold text-gray-900">3</span>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Swipe and refine</h3>
+                <h3 className="font-semibold text-gray-900 mb-1">Get insights</h3>
                 <p className="text-sm text-gray-600">
-                  The more you interact, the better we understand your preferences
+                  Receive preliminary diagnostic hypotheses based on your symptom pattern
                 </p>
               </div>
             </div>
@@ -154,10 +133,16 @@ export function Onboarding({ onComplete, onSignInClick, isSignedIn, signedInLabe
 
         {/* Start Button */}
         <button
-          onClick={onComplete}
-          className="w-full bg-[#171717] text-white h-[72px] rounded-[32px] font-bold text-lg hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+          onClick={handleSubmit}
+          disabled={!complaint.trim()}
+          className={cn(
+            "w-full h-[72px] rounded-[32px] font-bold text-lg transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]",
+            complaint.trim()
+              ? "bg-[#171717] text-white hover:bg-black hover:scale-[1.02] active:scale-[0.98]"
+              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+          )}
         >
-          Let's Start
+          Begin Assessment
           <ArrowRight className="w-6 h-6" />
         </button>
       </div>

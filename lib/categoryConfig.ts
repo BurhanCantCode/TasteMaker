@@ -10,88 +10,43 @@ export interface CategoryConfig {
 }
 
 export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
-  product: {
-    header: "Suggested Product",
+  possible_diagnosis: {
+    header: "Possible Condition",
     options: [
-      { value: "not_interested", label: "Not interested", sentiment: "negative" },
-      { value: "interested", label: "I'm interested", sentiment: "neutral" },
-      { value: "want", label: "I want this", sentiment: "positive" },
-      { value: "already_use", label: "I already use this", sentiment: "strong_positive" },
+      { value: "dismiss", label: "Doesn't match", sentiment: "negative" },
+      { value: "investigate", label: "Worth investigating", sentiment: "neutral" },
+      { value: "matches", label: "Matches my symptoms", sentiment: "positive" },
+      { value: "already_diagnosed", label: "Already diagnosed", sentiment: "strong_positive" },
     ],
   },
-  restaurant: {
-    header: "Suggested Restaurant",
+  risk_factor: {
+    header: "Risk Factor",
     options: [
-      { value: "not_interested", label: "Not interested", sentiment: "negative" },
-      { value: "havent_been", label: "Haven't been", sentiment: "neutral" },
-      { value: "want_to_try", label: "Want to try", sentiment: "positive" },
-      { value: "loved_it", label: "Been there - loved it", sentiment: "strong_positive" },
+      { value: "not_relevant", label: "Not relevant", sentiment: "negative" },
+      { value: "possibly_relevant", label: "Possibly relevant", sentiment: "neutral" },
+      { value: "definitely_relevant", label: "Definitely relevant", sentiment: "positive" },
+      { value: "known_risk", label: "Known risk for me", sentiment: "strong_positive" },
     ],
   },
-  location: {
-    header: "Suggested Place",
+  red_flag: {
+    header: "Urgent Finding",
     options: [
-      { value: "not_interested", label: "Not interested", sentiment: "negative" },
-      { value: "havent_been", label: "Haven't been", sentiment: "neutral" },
-      { value: "want_to_visit", label: "Want to visit", sentiment: "positive" },
-      { value: "been_loved", label: "Been there - loved it", sentiment: "strong_positive" },
-    ],
-  },
-  movie: {
-    header: "Suggested Movie",
-    options: [
-      { value: "not_interested", label: "Not interested", sentiment: "negative" },
-      { value: "want_to_watch", label: "Want to watch", sentiment: "positive" },
-      { value: "seen_loved", label: "Seen it - loved it", sentiment: "strong_positive" },
-      { value: "seen_meh", label: "Seen it - meh", sentiment: "neutral" },
-    ],
-  },
-  book: {
-    header: "Suggested Book",
-    options: [
-      { value: "not_interested", label: "Not interested", sentiment: "negative" },
-      { value: "want_to_read", label: "Want to read", sentiment: "positive" },
-      { value: "read_loved", label: "Read it - loved it", sentiment: "strong_positive" },
-      { value: "read_meh", label: "Read it - meh", sentiment: "neutral" },
-    ],
-  },
-  band: {
-    header: "Suggested Artist",
-    options: [
-      { value: "not_interested", label: "Not interested", sentiment: "negative" },
-      { value: "id_listen", label: "I'd listen", sentiment: "neutral" },
-      { value: "already_fan", label: "Already a fan", sentiment: "positive" },
-      { value: "love_them", label: "Love them", sentiment: "strong_positive" },
-    ],
-  },
-  brand: {
-    header: "Suggested Brand",
-    options: [
-      { value: "not_interested", label: "Not interested", sentiment: "negative" },
-      { value: "curious", label: "Curious", sentiment: "neutral" },
-      { value: "already_loyal", label: "Already loyal", sentiment: "positive" },
-      { value: "love_them", label: "Love them", sentiment: "strong_positive" },
-    ],
-  },
-  activity: {
-    header: "Suggested Activity",
-    options: [
-      { value: "not_interested", label: "Not interested", sentiment: "negative" },
-      { value: "id_try", label: "I'd try it", sentiment: "neutral" },
-      { value: "love_doing", label: "Love doing this", sentiment: "positive" },
-      { value: "already_do", label: "Already do this", sentiment: "strong_positive" },
+      { value: "not_experiencing", label: "Not experiencing", sentiment: "negative" },
+      { value: "mild_concern", label: "Mild concern", sentiment: "neutral" },
+      { value: "significant_concern", label: "Significant concern", sentiment: "positive" },
+      { value: "seeking_help", label: "Seeking help", sentiment: "strong_positive" },
     ],
   },
 };
 
 // Default fallback for unknown categories
 export const DEFAULT_CONFIG: CategoryConfig = {
-  header: "Prediction",
+  header: "Diagnostic Finding",
   options: [
-    { value: "dislike", label: "Dislike", sentiment: "negative" },
-    { value: "neutral", label: "It's OK", sentiment: "neutral" },
-    { value: "like", label: "Like", sentiment: "positive" },
-    { value: "superlike", label: "Super Like", sentiment: "strong_positive" },
+    { value: "dismiss", label: "Dismiss", sentiment: "negative" },
+    { value: "note", label: "Note", sentiment: "neutral" },
+    { value: "relevant", label: "Relevant", sentiment: "positive" },
+    { value: "important", label: "Important", sentiment: "strong_positive" },
   ],
 };
 

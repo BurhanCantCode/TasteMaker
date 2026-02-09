@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tastemaker - AI-Powered Preference Profiling",
-  description: "Build your taste profile through AI-powered questions and predictions",
+  title: "Diagno Alpha - AI-Powered Diagnostic Assessment",
+  description: "Answer diagnostic questions to receive preliminary health insights",
 };
 
 export default function RootLayout({

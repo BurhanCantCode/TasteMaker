@@ -22,7 +22,7 @@ export interface Question {
 export interface ResultItem {
   id: string;
   name: string;
-  category: string;  // location, product, brand, movie, book, band, etc.
+  category: string;  // possible_diagnosis, risk_factor, red_flag
   description?: string;
   imageUrl?: string;
 }

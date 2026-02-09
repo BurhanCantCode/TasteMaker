@@ -40,7 +40,7 @@ export function FactsModal({
           {/* Header */}
           <div className="flex items-center justify-between p-8 pb-4">
             <h2 className="text-3xl font-bold tracking-tight text-[#171717]">
-              Share Facts
+              Describe Your Symptoms
             </h2>
             <button
               onClick={onClose}
@@ -53,14 +53,14 @@ export function FactsModal({
           {/* Content */}
           <div className="flex-1 p-8 pt-4 space-y-6">
             <p className="text-lg text-gray-500">
-              The AI uses these details to generate better questions and recommendations for you.
+              The AI uses these details to generate better diagnostic questions for you.
             </p>
 
             <div className="space-y-4">
               <textarea
                 value={facts}
                 onChange={(e) => setFacts(e.target.value)}
-                placeholder="Male / New York City / Single / iPhone user / Rents home..."
+                placeholder="Headache / Chest pain / Fatigue / Shortness of breath..."
                 className={cn(
                   "w-full h-48 p-5 rounded-[24px] bg-gray-50",
                   "border border-gray-200 focus:border-black focus:ring-black focus:outline-none",
@@ -71,7 +71,7 @@ export function FactsModal({
               {/* Example Hint */}
               <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded-2xl border border-gray-100">
                 <span className="font-semibold text-gray-900 block mb-1">Example</span>
-                Male / New York City / Single / iPhone user / Rents home / No pets / No sports / Online dating
+                Headache for 3 days / Fever / Cough / No chest pain / History of asthma
               </div>
             </div>
           </div>
@@ -88,7 +88,7 @@ export function FactsModal({
               onClick={handleSave}
               className="flex-1 px-8 py-5 rounded-[24px] bg-[#171717] hover:bg-black text-white font-bold text-lg transition-all shadow-[0_4px_12px_rgb(0,0,0,0.12)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              Update Profile
+              Update Symptoms
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>

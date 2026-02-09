@@ -9,67 +9,41 @@ export function cn(...inputs: ClassValue[]) {
 // Format raw answer values for display
 function formatAnswer(answer: string): string {
   const answerMap: Record<string, string> = {
-    // Original answers
+    // Yes/No answers
     "yes": "Yes",
     "no": "No",
-    "like": "Like",
-    "dislike": "Dislike",
-    "superlike": "Super Like",
-    "want": "Want",
-    "dont_want": "Don't Want",
-    "already_have": "Already Have",
-    "really_want": "Really Want",
-    // Rating scale (1-5)
-    "1": "1 (Low)",
-    "2": "2",
-    "3": "3",
-    "4": "4",
-    "5": "5 (High)",
-    // Universal "Not interested"
-    "not_interested": "Not interested",
-    // Product ratings
-    "nope": "Nope",
-    "interested": "Interested",
-    "already_use": "Already use",
-    // Restaurant/Location ratings
-    "havent_been": "Haven't been",
-    "want_to_try": "Want to try",
-    "want_to_visit": "Want to visit",
-    "loved_it": "Loved it",
-    "didnt_like": "Didn't like",
-    "been_loved": "Been there - loved it",
-    "been_meh": "Been there - meh",
-    // Movie ratings
-    "skip": "Skip",
-    "want_to_watch": "Want to watch",
-    "seen_loved": "Seen it - loved it",
-    "seen_meh": "Seen it - meh",
-    // Book ratings
-    "not_for_me": "Not for me",
-    "want_to_read": "Want to read",
-    "read_loved": "Read it - loved it",
-    "read_meh": "Read it - meh",
-    // Music/Band ratings
-    "not_my_style": "Not my style",
-    "id_listen": "I'd listen",
-    "already_fan": "Already a fan",
-    "love_them": "Love them",
-    // Brand ratings
-    "curious": "Curious",
-    "already_loyal": "Already loyal",
-    // Activity ratings
-    "id_try": "I'd try it",
-    "love_doing": "Love doing this",
-    "already_do": "Already do this",
+    // Diagnostic feedback - possible_diagnosis
+    "dismiss": "Doesn't match",
+    "investigate": "Worth investigating",
+    "matches": "Matches my symptoms",
+    "already_diagnosed": "Already diagnosed",
+    // Diagnostic feedback - risk_factor
+    "not_relevant": "Not relevant",
+    "possibly_relevant": "Possibly relevant",
+    "definitely_relevant": "Definitely relevant",
+    "known_risk": "Known risk",
+    // Diagnostic feedback - red_flag
+    "not_experiencing": "Not experiencing",
+    "mild_concern": "Mild concern",
+    "significant_concern": "Significant concern",
+    "seeking_help": "Seeking help",
+    // Fallback generic
+    "like": "Relevant",
+    "dislike": "Not relevant",
+    "superlike": "Very relevant",
   };
-  
+
   return answerMap[answer.toLowerCase()] || answer;
 }
 
 export function analyzeProfile(profile: UserProfile) {
-  // Group likes by category
+  // Group likes by category with display labels
   const categoryBreakdown = profile.likes.reduce((acc, like) => {
-    acc[like.category] = (acc[like.category] || 0) + 1;
+    const label = like.category === "possible_diagnosis" ? "Conditions"
+      : like.category === "risk_factor" ? "Risk Factors"
+      : like.category === "red_flag" ? "Red Flags"
+      : like.category;
+    acc[label] = (acc[label] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 

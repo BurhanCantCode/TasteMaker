@@ -2,27 +2,17 @@
 
 import { cn } from "@/lib/utils";
 import {
-  Utensils,     // restaurant
-  MapPin,       // location
-  Package,      // product
-  Tag,          // brand
-  Film,         // movie
-  BookOpen,     // book
-  Music,        // band
-  Zap,          // activity
-  Sparkles,     // all
+  Sparkles,       // all
+  Activity,        // possible_diagnosis
+  AlertTriangle,   // risk_factor
+  AlertCircle,     // red_flag
 } from "lucide-react";
 
 const CATEGORIES = [
   { key: "all", label: "All", icon: Sparkles },
-  { key: "restaurant", label: "Restaurants", icon: Utensils },
-  { key: "location", label: "Places", icon: MapPin },
-  { key: "product", label: "Products", icon: Package },
-  { key: "brand", label: "Brands", icon: Tag },
-  { key: "movie", label: "Movies", icon: Film },
-  { key: "book", label: "Books", icon: BookOpen },
-  { key: "band", label: "Music", icon: Music },
-  { key: "activity", label: "Activities", icon: Zap },
+  { key: "possible_diagnosis", label: "Conditions", icon: Activity },
+  { key: "risk_factor", label: "Risk Factors", icon: AlertTriangle },
+  { key: "red_flag", label: "Red Flags", icon: AlertCircle },
 ];
 
 interface CategoryPickerProps {
@@ -34,9 +24,9 @@ export function CategoryPicker({ selectedCategory, onSelect }: CategoryPickerPro
   return (
     <div className="space-y-4">
       <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-        What are you looking for?
+        View diagnostic findings
       </h2>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {CATEGORIES.map(({ key, label, icon: Icon }) => (
           <button
             key={key}

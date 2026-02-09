@@ -39,19 +39,19 @@ export async function POST(request: NextRequest) {
       model: "claude-haiku-4-5-20251001",
       max_tokens: 200,
       temperature: 0.7,
-      system: "You are a concise profile summarizer. Write a 2-3 sentence summary of the user based on their answers and preferences. Be insightful but brief. Don't use bullet points. Write in third person (e.g., 'This person...' or 'They...'). Focus on personality traits and interests you can infer.\n\nIMPORTANT: Pay close attention to the (positive) and (negative) markers after each answer. If an answer is marked (negative), the user does NOT have/like/want that thing. For example, 'A: no (negative)' for 'Do you have pets?' means they do NOT have pets. Never attribute a negative-marked answer as something the user likes or has.",
+      system: "You are a clinical summary generator for a diagnostic assessment tool. Write a 2-3 sentence summary of the patient's reported symptoms and clinical findings. Be concise and medically informative. Don't use bullet points. Write in third person (e.g., 'The patient reports...' or 'Based on responses...'). Focus on symptom patterns and potential areas of concern.\n\nIMPORTANT: Pay close attention to the (positive) and (negative) markers. If marked (positive), the patient confirmed YES to that symptom/question. If marked (negative), they answered NO — the symptom is absent. Accurately reflect which symptoms are present and absent.\n\nThis is not a medical diagnosis. Frame findings as observations, not conclusions.",
       messages: [
         {
           role: "user",
-          content: `Summarize this user based on their profile:
+          content: `Summarize this patient's clinical profile based on their diagnostic interview:
 
-FACTS ABOUT THEM:
+CLINICAL FINDINGS:
 ${factsText || "None yet"}
 
-THINGS THEY'VE RATED:
+CONDITIONS REVIEWED:
 ${likesText || "None yet"}
 
-Write a brief, insightful 2-3 sentence summary.`,
+Write a brief, clinically informative 2-3 sentence summary. This is not a diagnosis — frame as observations and patterns noted.`,
         },
       ],
     });

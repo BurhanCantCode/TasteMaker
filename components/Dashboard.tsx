@@ -9,7 +9,7 @@ import { useSync } from "@/contexts/SyncContext";
 import { FactsModal } from "./FactsModal";
 import { AccountMenu } from "./auth/AccountMenu";
 import { SignInPrompt } from "./auth/SignInPrompt";
-import { Heart, X, Sparkles, ArrowRight, BookOpen, ThumbsUp, Loader2, Plus, RotateCcw } from "lucide-react";
+import { Heart, X, Sparkles, ArrowRight, BookOpen, ThumbsUp, Loader2, Plus, RotateCcw, AlertTriangle } from "lucide-react";
 
 interface DashboardProps {
   profile: UserProfile;
@@ -112,12 +112,12 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
         {/* Header */}
         <div className="text-center space-y-3">
           <h1 className="text-4xl font-bold tracking-tight text-[#171717]">
-            {isNewUser ? "Tastemaker Alpha" : "Welcome back"}
+            {isNewUser ? "Diagno Alpha" : "Your Health Profile"}
           </h1>
           <p className="text-lg text-gray-500">
             {isNewUser
-              ? "Let's discover your unique taste profile"
-              : "Here's what we know about you so far"}
+              ? "Let's begin your diagnostic assessment"
+              : "Here's your clinical summary so far"}
           </p>
         </div>
 
@@ -133,7 +133,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
                 <div className="text-4xl font-bold text-gray-900">
                   {totalFacts}
                 </div>
-                <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Facts</div>
+                <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Symptoms</div>
               </div>
 
               {/* Likes Card */}
@@ -144,7 +144,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
                 <div className="text-4xl font-bold text-gray-900">
                   {totalLikes}
                 </div>
-                <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Rated</div>
+                <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Reviewed</div>
               </div>
             </div>
 
@@ -156,13 +156,13 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
                     <Sparkles className="w-4 h-4 text-[#171717]" />
                   </div>
                   <h2 className="text-xl font-bold text-[#171717]">
-                    About You
+                    Clinical Summary
                   </h2>
                 </div>
                 {summaryLoading ? (
                   <div className="flex items-center gap-3 text-gray-500">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Analyzing your profile...</span>
+                    <span>Analyzing your symptoms...</span>
                   </div>
                 ) : (
                   <p className="text-gray-700 leading-relaxed font-medium">{summary}</p>
@@ -174,7 +174,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
             {Object.keys(categoryBreakdown).length > 0 && (
               <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">
-                  Taste Profile
+                  Symptom Categories
                 </h2>
                 <div className="flex flex-wrap gap-3">
                   {Object.entries(categoryBreakdown).map(([category, count]) => (
@@ -193,7 +193,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
             {topTraits.length > 0 && (
               <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">
-                  Recent Answers
+                  Recent Responses
                 </h2>
                 <div className="space-y-3">
                   {topTraits.map((trait, index) => (
@@ -210,7 +210,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
             {recentActivity.length > 0 && (
               <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">
-                  Recent Activity
+                  Conditions Reviewed
                 </h2>
                 <div className="space-y-4">
                   {recentActivity.map((like) => (
@@ -259,7 +259,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
               className="w-full bg-white text-gray-700 h-[56px] rounded-[24px] font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_4px_12px_rgb(0,0,0,0.06)]"
             >
               <Plus className="w-5 h-5" />
-              Share more facts
+              Add more symptoms
             </button>
           )}
 
@@ -268,7 +268,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
             onClick={onContinue}
             className="w-full bg-[#171717] text-white h-[72px] rounded-[32px] font-bold text-lg hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
           >
-            {isNewUser ? "Start Profiling" : "Continue Journey"}
+            {isNewUser ? "Begin Assessment" : "Continue Assessment"}
             <ArrowRight className="w-6 h-6" />
           </button>
 
@@ -280,7 +280,7 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
               className="w-full text-gray-400 hover:text-gray-600 text-sm font-medium py-3 flex items-center justify-center gap-2 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
-              Start fresh
+              Start new assessment
             </button>
           )}
         </div>

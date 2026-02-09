@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useCardQueue } from "@/hooks/useCardQueue";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,7 +10,6 @@ import { Dashboard } from "@/components/Dashboard";
 import { ResultsView } from "@/components/views/ResultsView";
 import { CardStack } from "@/components/cards/CardStack";
 import { ProgressBar } from "@/components/navigation/ProgressBar";
-import { ResetButton } from "@/components/navigation/ResetButton";
 import { SettingsGear } from "@/components/navigation/SettingsGear";
 import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { PhoneSignIn } from "@/components/auth/PhoneSignIn";
@@ -23,26 +21,21 @@ import { deleteCloudProfile } from "@/lib/firestore";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 export default function Home() {
-  const { profile, isLoaded, addFact, addLike, setInitialFacts, setUserLocation, reset: resetProfile } = useUserProfile();
+  const { profile, isLoaded, addFact, addLike, setInitialFacts, reset: resetProfile } = useUserProfile();
   const {
     currentCard,
     isLoading,
     error,
     progress,
-    mode,
     hasMoreCards,
-    shouldPrefetch,
     fetchCards,
     nextCard,
     reset: resetQueue,
     hydrateFromPending,
-    prefetchNextBatch,
-    clearPrefetch,
   } = useCardQueue();
 
   const { user, isAuthLoading } = useAuth();
   const { initialSyncDone, hasPendingMerge } = useSync();
-  const router = useRouter();
 
   const [systemPrompt, setSystemPrompt] = useState<string | undefined>();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -64,19 +57,9 @@ export default function Home() {
     }
   }, [isLoaded, initialSyncDone, hasPendingMerge, profile]);
 
-  // PRE-FETCH: Load first batch of questions when new user is on welcome screen
-  useEffect(() => {
-    if (showOnboarding && isLoaded && !currentCard && !isLoading) {
-      const isNewUser = profile.facts.length === 0 && profile.likes.length === 0;
-      if (isNewUser) {
-        fetchCards(profile, "ask", 10, systemPrompt);
-      }
-    }
-  }, [showOnboarding, isLoaded, currentCard, isLoading, profile, systemPrompt, fetchCards]);
-
   // Restore from persisted questions (survives refresh) or fetch when transitioning to questions tab
   useEffect(() => {
-    if (!isLoaded || activeTab !== "questions" || currentCard || isLoading) return;
+    if (!isLoaded || activeTab !== "questions" || currentCard || isLoading || showOnboarding) return;
 
     const pending = loadPendingCards();
     if (pending && pending.mode === "ask" && pending.cards.length > 0) {
@@ -92,24 +75,15 @@ export default function Home() {
       }
       if (firstUnanswered >= pending.cards.length) {
         clearPendingCards();
-        fetchCards(profile, "ask", 10, systemPrompt);
+        fetchCards(profile, "ask", 5, systemPrompt);
       } else {
         hydrateFromPending({ ...pending, currentIndex: firstUnanswered });
       }
       return;
     }
 
-    fetchCards(profile, "ask", 10, systemPrompt);
-  }, [isLoaded, activeTab, currentCard, isLoading, profile, systemPrompt, fetchCards, hydrateFromPending]);
-
-  // PREFETCH: Start loading next batch when user reaches 75% of current batch
-  useEffect(() => {
-    if (shouldPrefetch && activeTab !== "me" && !showOnboarding) {
-      const nextMode = mode === "ask" ? "result" : "ask";
-      const nextBatchSize = 10;
-      prefetchNextBatch(profile, nextMode, nextBatchSize, systemPrompt);
-    }
-  }, [shouldPrefetch, activeTab, showOnboarding, mode, profile, systemPrompt, prefetchNextBatch]);
+    fetchCards(profile, "ask", 5, systemPrompt);
+  }, [isLoaded, activeTab, currentCard, isLoading, showOnboarding, profile, systemPrompt, fetchCards, hydrateFromPending]);
 
   const handleAnswer = async (answer: string) => {
     if (!currentCard) return;
@@ -117,27 +91,7 @@ export default function Home() {
     if (currentCard.type === "ask") {
       const question = currentCard.content as Question;
 
-      if (question.answerType === "text_input" &&
-        (question.title.toLowerCase().includes("city") ||
-          question.title.toLowerCase().includes("where") ||
-          question.title.toLowerCase().includes("location"))) {
-        const locationParts = answer.split(',').map(p => p.trim());
-        if (locationParts.length >= 2) {
-          setUserLocation(locationParts[0], locationParts[1]);
-        } else if (locationParts[0] && locationParts[0].length > 0) {
-          setUserLocation(locationParts[0]);
-        }
-      }
-
-      const positive = [
-        "yes", "like", "superlike", "want", "really_want",
-        "interested", "want_to_try", "loved_it", "already_use",
-        "want_to_visit", "been_loved", "want_to_watch", "seen_loved",
-        "want_to_read", "read_loved", "id_listen", "already_fan",
-        "love_them", "curious", "already_loyal", "id_try",
-        "love_doing", "already_do", "already_have",
-        "3", "4", "5"
-      ].includes(answer.toLowerCase());
+      const positive = answer.toLowerCase() === "yes";
 
       addFact({
         questionId: question.id,
@@ -158,15 +112,20 @@ export default function Home() {
     if (hasMoreCards) {
       nextCard();
     } else {
+      // After each batch of 5, check if we've reached 20 total
       if (profile.facts.length + 1 >= 20) {
         setShowInterstitial(true);
       } else {
-        await fetchCards(profile, "ask", 10, systemPrompt);
+        // Fetch next batch of 5 with updated context
+        await fetchCards(profile, "ask", 5, systemPrompt);
       }
     }
   };
 
-  const handleOnboardingComplete = () => {
+  const handleOnboardingComplete = (chiefComplaint: string) => {
+    if (chiefComplaint) {
+      setInitialFacts(chiefComplaint);
+    }
     setShowOnboarding(false);
     setActiveTab("questions");
   };
@@ -182,7 +141,7 @@ export default function Home() {
   };
 
   const handleReset = () => {
-    if (confirm("Are you sure? This will delete your local profile and preferences.")) {
+    if (confirm("Are you sure? This will delete your assessment data and start fresh.")) {
       resetProfile();
       resetQueue();
       clearSummary();
@@ -243,7 +202,7 @@ export default function Home() {
             }}
             onKeepAnswering={async () => {
               setShowInterstitial(false);
-              await fetchCards(profile, "ask", 10, systemPrompt);
+              await fetchCards(profile, "ask", 5, systemPrompt);
             }}
           />
         </div>
