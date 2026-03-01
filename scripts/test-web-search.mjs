@@ -44,7 +44,7 @@ console.log("--- Calling Anthropic with web_search (no user_location, like PK) -
 
 try {
   const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-5-20250929",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 2048,
     temperature: 0.3,
     messages: [{ role: "user", content: userPrompt }],

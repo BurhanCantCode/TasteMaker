@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const userMessage = buildUserPrompt(mode, batchSize, userProfile);
 
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-5-20250929",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 4096,
       temperature: 0.8,
       system: systemMessage,
