@@ -17,6 +17,13 @@ interface PrefetchedBatch {
   cards: Card[];
   mode: "ask" | "result";
   batchSize: number;
+  factsCountAtPrefetch: number;
+  likesCountAtPrefetch: number;
+}
+
+interface PrefetchOptions {
+  force?: boolean;
+  reason?: string;
 }
 
 export function useCardQueue() {
@@ -31,7 +38,8 @@ export function useCardQueue() {
 
   const prefetchedBatchRef = useRef<PrefetchedBatch | null>(null);
   const isPrefetchingRef = useRef(false);
-  const prefetchAbortRef = useRef<AbortController | null>(null);
+  const prefetchGenerationRef = useRef(0);
+  const prefetchPromiseRef = useRef<Promise<void> | null>(null);
 
   const fetchCards = useCallback(
     async (
@@ -41,9 +49,47 @@ export function useCardQueue() {
       systemPrompt?: string
     ) => {
       // CHECK PREFETCH BUFFER FIRST
-      const prefetched = prefetchedBatchRef.current;
-      if (prefetched && prefetched.mode === mode) {
+      let prefetched = prefetchedBatchRef.current;
+
+      // If no buffer but a prefetch is in-flight, wait for it before falling back.
+      // Ask 10-card batches get a longer wait window because generation can be slower.
+      if (!prefetched && prefetchPromiseRef.current) {
+        try {
+          const prefetchWaitMs =
+            mode === "ask" && batchSize >= 10 ? 45000 : 8000;
+          console.info(
+            `[Tastemaker] Waiting for pre-generation to finish (mode=${mode}, batch=${batchSize}, timeout=${prefetchWaitMs}ms)`
+          );
+          const timeoutPromise = new Promise<void>((_, reject) =>
+            setTimeout(() => reject(new Error("prefetch_timeout")), prefetchWaitMs)
+          );
+          await Promise.race([prefetchPromiseRef.current, timeoutPromise]);
+          // Re-check buffer after awaiting
+          prefetched = prefetchedBatchRef.current;
+        } catch {
+          // Timeout or error — fall through to normal fetch
+          console.warn(
+            `[Tastemaker] Pre-generation wait timed out; falling back to direct fetch (mode=${mode}, batch=${batchSize})`
+          );
+          prefetched = null;
+        }
+      }
+
+      // Keep 10-card transitions instant: allow up to half-batch fact drift.
+      const maxFactDrift =
+        mode === "ask" && batchSize >= 10 ? Math.ceil(batchSize / 2) : 2;
+
+      const isFresh =
+        prefetched &&
+        prefetched.mode === mode &&
+        prefetched.batchSize === batchSize &&
+        userProfile.facts.length - prefetched.factsCountAtPrefetch <= maxFactDrift;
+
+      if (prefetched && isFresh) {
         // Consume the prefetched batch instantly -- no loading state, no API call
+        console.info(
+          `[Tastemaker] Using pre-generated batch instantly (${prefetched.cards.length} cards, mode=${prefetched.mode}, batch=${prefetched.batchSize})`
+        );
         prefetchedBatchRef.current = null;
 
         setState((prev) => ({
@@ -114,78 +160,107 @@ export function useCardQueue() {
   );
 
   const prefetchNextBatch = useCallback(
-    async (
+    (
       userProfile: UserProfile,
       mode: "ask" | "result",
       batchSize: number = 10,
-      systemPrompt?: string
+      systemPrompt?: string,
+      options?: PrefetchOptions
     ) => {
-      // Guard: don't prefetch if already prefetching or buffer already exists
-      if (isPrefetchingRef.current || prefetchedBatchRef.current) {
-        return;
-      }
+      const force = options?.force ?? false;
 
-      isPrefetchingRef.current = true;
-
-      // Create AbortController for this prefetch
-      const abortController = new AbortController();
-      prefetchAbortRef.current = abortController;
-
-      try {
-        const response = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userProfile,
-            batchSize,
-            mode,
-            systemPrompt,
-          }),
-          signal: abortController.signal,
-        });
-
-        if (!response.ok) {
-          // Silently fail -- normal fetch is the fallback
-          console.warn("[Tastemaker] Prefetch failed with status:", response.status);
+      if (force) {
+        // Increment generation — any in-flight request's result will be discarded (not aborted)
+        prefetchGenerationRef.current += 1;
+        prefetchedBatchRef.current = null;
+      } else {
+        // Guard: don't prefetch if already prefetching or buffer already exists
+        if (isPrefetchingRef.current) {
+          console.info(
+            `[Tastemaker] Pre-generation skipped (${options?.reason ?? "auto"}): already in progress`
+          );
           return;
         }
-
-        const data: GenerateResponse = await response.json();
-
-        // Only store if we haven't been cancelled/reset in the meantime
-        if (!abortController.signal.aborted) {
-          prefetchedBatchRef.current = {
-            cards: data.cards,
-            mode,
-            batchSize,
-          };
-        }
-      } catch (error) {
-        // AbortError is expected on cancellation -- not a real error
-        if (error instanceof DOMException && error.name === "AbortError") {
-          console.log("[Tastemaker] Prefetch cancelled");
-        } else {
-          console.warn("[Tastemaker] Prefetch error (will fall back to normal fetch):", error);
-        }
-      } finally {
-        isPrefetchingRef.current = false;
-        // Clear the controller ref if it's still ours
-        if (prefetchAbortRef.current === abortController) {
-          prefetchAbortRef.current = null;
+        if (prefetchedBatchRef.current) {
+          console.info(
+            `[Tastemaker] Pre-generation skipped (${options?.reason ?? "auto"}): next batch already ready`
+          );
+          return;
         }
       }
+
+      const reason = options?.reason ?? "auto";
+      const thisGeneration = prefetchGenerationRef.current;
+      isPrefetchingRef.current = true;
+      const startedAt = Date.now();
+      console.info(
+        `[Tastemaker] Pre-generation started (${reason}) -> mode=${mode}, batch=${batchSize}, facts=${userProfile.facts.length}, likes=${userProfile.likes.length}`
+      );
+
+      const promise = (async () => {
+        try {
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userProfile,
+              batchSize,
+              mode,
+              systemPrompt,
+            }),
+            // No AbortController — request always completes
+          });
+
+          if (!response.ok) {
+            console.warn(
+              `[Tastemaker] Pre-generation failed (${reason}) with status: ${response.status}`
+            );
+            return;
+          }
+
+          const data: GenerateResponse = await response.json();
+
+          // Only store result if this generation is still current
+          if (prefetchGenerationRef.current === thisGeneration) {
+            prefetchedBatchRef.current = {
+              cards: data.cards,
+              mode,
+              batchSize,
+              factsCountAtPrefetch: userProfile.facts.length,
+              likesCountAtPrefetch: userProfile.likes.length,
+            };
+            console.info(
+              `[Tastemaker] Pre-generation completed (${reason}) -> ${data.cards.length} cards ready in ${Date.now() - startedAt}ms`
+            );
+          } else {
+            console.info(
+              `[Tastemaker] Pre-generation result discarded (${reason}): newer generation exists`
+            );
+          }
+        } catch (error) {
+          console.warn(
+            `[Tastemaker] Pre-generation error (${reason}) (will fall back to normal fetch):`,
+            error
+          );
+        } finally {
+          if (prefetchGenerationRef.current === thisGeneration) {
+            isPrefetchingRef.current = false;
+            prefetchPromiseRef.current = null;
+          }
+        }
+      })();
+
+      prefetchPromiseRef.current = promise;
     },
     []
   );
 
   const clearPrefetch = useCallback(() => {
-    // Abort any in-flight prefetch
-    if (prefetchAbortRef.current) {
-      prefetchAbortRef.current.abort();
-      prefetchAbortRef.current = null;
-    }
+    // Invalidate any in-flight prefetch via generation (no HTTP abort)
+    prefetchGenerationRef.current += 1;
     prefetchedBatchRef.current = null;
     isPrefetchingRef.current = false;
+    prefetchPromiseRef.current = null;
   }, []);
 
   const nextCard = useCallback(() => {

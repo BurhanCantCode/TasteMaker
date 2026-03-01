@@ -1,5 +1,14 @@
 import { UserProfile, ProfileStage, getProfileStage } from "./types";
 
+const ASK_FACT_CONTEXT_LIMIT = 80;
+const ASK_LIKE_CONTEXT_LIMIT = 40;
+const RESULT_FACT_CONTEXT_LIMIT = 120;
+const RESULT_LIKE_CONTEXT_LIMIT = 60;
+
+function getRecentContext<T>(items: T[], limit: number): T[] {
+  return items.length > limit ? items.slice(-limit) : items;
+}
+
 const STAGE_INSTRUCTIONS = {
   discovery: `STAGE: DISCOVERY (building initial profile)
 You're getting to know this user. Ask foundational questions BUT:
@@ -113,6 +122,20 @@ export function buildUserPrompt(
   const stage = getProfileStage(userProfile);
   const totalSignals = userProfile.facts.length + userProfile.likes.length;
 
+  const factsForPrompt = mode === "ask"
+    ? getRecentContext(userProfile.facts, ASK_FACT_CONTEXT_LIMIT)
+    : getRecentContext(userProfile.facts, RESULT_FACT_CONTEXT_LIMIT);
+  const likesForPrompt = mode === "ask"
+    ? getRecentContext(userProfile.likes, ASK_LIKE_CONTEXT_LIMIT)
+    : getRecentContext(userProfile.likes, RESULT_LIKE_CONTEXT_LIMIT);
+
+  const hasWindowedContext =
+    factsForPrompt.length < userProfile.facts.length ||
+    likesForPrompt.length < userProfile.likes.length;
+  const contextWindowNote = hasWindowedContext
+    ? `\nCONTEXT WINDOW: Recent ${factsForPrompt.length}/${userProfile.facts.length} facts and ${likesForPrompt.length}/${userProfile.likes.length} likes shown below for speed.\n`
+    : "";
+
   // NEW: Detect brand new users (no facts at all)
   const isNewUser = totalSignals === 0 && !userProfile.initialFacts;
 
@@ -123,8 +146,8 @@ export function buildUserPrompt(
 
   // Reframe facts as discoveries (what you've learned)
   const discoveriesText =
-    userProfile.facts.length > 0
-      ? userProfile.facts
+    factsForPrompt.length > 0
+      ? factsForPrompt
         .map((f) => {
           if (f.positive) {
             return `- DISCOVERED: ${f.question} → ${f.answer}`;
@@ -137,8 +160,8 @@ export function buildUserPrompt(
 
   // Format likes as validation signals
   const validationText =
-    userProfile.likes.length > 0
-      ? userProfile.likes
+    likesForPrompt.length > 0
+      ? likesForPrompt
         .map((l) => {
           const emoji = l.rating === "superlike" ? "⭐" : l.rating === "like" ? "✓" : "✗";
           return `- ${emoji} ${l.item} (${l.category}): ${l.rating}`;
@@ -178,7 +201,7 @@ Remember: This is their first impression of Tastemaker. Be warm and engaging.`;
     // Existing logic for users with some data
     return `${stageGuidance}
 
-${initialContext}YOUR DISCOVERIES (${totalSignals} signals collected):
+${initialContext}${contextWindowNote}YOUR DISCOVERIES (${totalSignals} signals collected):
 
 ${discoveriesText}
 
@@ -205,7 +228,7 @@ Your goal: make the user think "wow, this really gets me." Generic survey questi
   } else {
     return `${stageGuidance}
 
-${initialContext}YOUR DISCOVERIES (${totalSignals} signals collected):
+${initialContext}${contextWindowNote}YOUR DISCOVERIES (${totalSignals} signals collected):
 
 ${discoveriesText}
 

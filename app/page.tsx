@@ -17,27 +17,28 @@ import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { PhoneSignIn } from "@/components/auth/PhoneSignIn";
 import { TabBar, Tab } from "@/components/navigation/TabBar";
 import { RecommendationInterstitialCard } from "@/components/cards/RecommendationInterstitialCard";
-import { Question, ResultItem } from "@/lib/types";
+import { Question, ResultItem, UserProfile } from "@/lib/types";
 import { clearSummary, clearCardSession, loadPendingCards, clearPendingCards } from "@/lib/cookies";
+import { getAskBatchSize } from "@/lib/batching";
 import { deleteCloudProfile } from "@/lib/firestore";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 export default function Home() {
   const { profile, isLoaded, addFact, addLike, setInitialFacts, setUserLocation, reset: resetProfile } = useUserProfile();
   const {
+    cards,
+    currentIndex,
     currentCard,
     isLoading,
     error,
     progress,
     mode,
     hasMoreCards,
-    shouldPrefetch,
     fetchCards,
     nextCard,
     reset: resetQueue,
     hydrateFromPending,
     prefetchNextBatch,
-    clearPrefetch,
   } = useCardQueue();
 
   const { user, isAuthLoading } = useAuth();
@@ -69,7 +70,7 @@ export default function Home() {
     if (showOnboarding && isLoaded && !currentCard && !isLoading) {
       const isNewUser = profile.facts.length === 0 && profile.likes.length === 0;
       if (isNewUser) {
-        fetchCards(profile, "ask", 10, systemPrompt);
+        fetchCards(profile, "ask", getAskBatchSize(profile.facts.length), systemPrompt);
       }
     }
   }, [showOnboarding, isLoaded, currentCard, isLoading, profile, systemPrompt, fetchCards]);
@@ -92,24 +93,29 @@ export default function Home() {
       }
       if (firstUnanswered >= pending.cards.length) {
         clearPendingCards();
-        fetchCards(profile, "ask", 10, systemPrompt);
+        fetchCards(profile, "ask", getAskBatchSize(profile.facts.length), systemPrompt);
       } else {
         hydrateFromPending({ ...pending, currentIndex: firstUnanswered });
       }
       return;
     }
 
-    fetchCards(profile, "ask", 10, systemPrompt);
+    fetchCards(profile, "ask", getAskBatchSize(profile.facts.length), systemPrompt);
   }, [isLoaded, activeTab, currentCard, isLoading, profile, systemPrompt, fetchCards, hydrateFromPending]);
 
-  // PREFETCH: Start loading next batch when user reaches 75% of current batch
+  // Prefetch orchestration for ASK mode — single mid-batch trigger, never force
   useEffect(() => {
-    if (shouldPrefetch && activeTab !== "me" && !showOnboarding) {
-      const nextMode = mode === "ask" ? "result" : "ask";
-      const nextBatchSize = 10;
-      prefetchNextBatch(profile, nextMode, nextBatchSize, systemPrompt);
+    if (activeTab !== "questions" || mode !== "ask" || cards.length === 0) return;
+    if (showInterstitial || showOnboarding) return;
+
+    const halfBatch = Math.ceil(cards.length / 2);
+    if (currentIndex >= halfBatch) {
+      const predictedFacts = profile.facts.length + (cards.length - currentIndex);
+      const nextBatchSize = getAskBatchSize(predictedFacts);
+      // Non-force: skipped if already prefetching or buffer exists
+      prefetchNextBatch(profile, "ask", nextBatchSize, systemPrompt, { reason: "mid-batch-auto" });
     }
-  }, [shouldPrefetch, activeTab, showOnboarding, mode, profile, systemPrompt, prefetchNextBatch]);
+  }, [activeTab, mode, cards.length, currentIndex, profile, systemPrompt, prefetchNextBatch, showInterstitial, showOnboarding]);
 
   const handleAnswer = async (answer: string) => {
     if (!currentCard) return;
@@ -158,10 +164,59 @@ export default function Home() {
     if (hasMoreCards) {
       nextCard();
     } else {
-      if (profile.facts.length + 1 >= 20) {
+      const factsAfterThis = profile.facts.length + 1;
+      // After each batch, check if we've reached 20 total
+      if (factsAfterThis >= 20) {
         setShowInterstitial(true);
+        // Kick off prefetch now so it's ready when "Keep Answering" is clicked
+        const projectedProfile: UserProfile = {
+          ...profile,
+          facts: [
+            ...profile.facts,
+            ...(currentCard.type === "ask"
+              ? [{
+                  questionId: (currentCard.content as Question).id,
+                  question: (currentCard.content as Question).title,
+                  answer,
+                  positive: [
+                    "yes", "like", "superlike", "want", "really_want",
+                    "interested", "want_to_try", "loved_it", "already_use",
+                    "want_to_visit", "been_loved", "want_to_watch", "seen_loved",
+                    "want_to_read", "read_loved", "id_listen", "already_fan",
+                    "love_them", "curious", "already_loyal", "id_try",
+                    "love_doing", "already_do", "already_have",
+                    "3", "4", "5"
+                  ].includes(answer.toLowerCase()),
+                }]
+              : []),
+          ],
+        };
+        // Do not force here: preserve any ready prefetched batch for instant "Keep Answering".
+        // If there's no buffer yet, this will still start a prefetch with projected latest context.
+        prefetchNextBatch(
+          projectedProfile,
+          "ask",
+          getAskBatchSize(factsAfterThis),
+          systemPrompt,
+          { reason: "post-batch-interstitial" }
+        );
       } else {
-        await fetchCards(profile, "ask", 10, systemPrompt);
+        // Build a projected profile with the just-answered fact so generation has fresh context
+        const nextProfile: UserProfile = {
+          ...profile,
+          facts: [
+            ...profile.facts,
+            ...(currentCard.type === "ask"
+              ? [{
+                  questionId: (currentCard.content as Question).id,
+                  question: (currentCard.content as Question).title,
+                  answer,
+                  positive: answer.toLowerCase() === "yes",
+                }]
+              : []),
+          ],
+        };
+        await fetchCards(nextProfile, "ask", getAskBatchSize(factsAfterThis), systemPrompt);
       }
     }
   };
@@ -243,7 +298,11 @@ export default function Home() {
             }}
             onKeepAnswering={async () => {
               setShowInterstitial(false);
-              await fetchCards(profile, "ask", 10, systemPrompt);
+              // Interstitial only appears once user reaches 20+, so always resume with 10-card batches.
+              // This avoids a one-tick stale profile count causing a 5-card request and missing the prefetch.
+              const resumeFactsCount = Math.max(profile.facts.length, 20);
+              const resumeBatchSize = getAskBatchSize(resumeFactsCount);
+              await fetchCards(profile, "ask", resumeBatchSize, systemPrompt);
             }}
           />
         </div>

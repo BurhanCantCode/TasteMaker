@@ -43,9 +43,9 @@ export function MultipleChoice({
   };
 
   return (
-    <div className="flex flex-col gap-3 w-full">
+    <div className="flex flex-col gap-3 w-full min-h-0">
       {/* Scrollable options container */}
-      <div className="flex flex-col gap-2 w-full max-h-[220px] overflow-y-auto pr-2 -mr-2">
+      <div className="flex flex-col gap-2 w-full min-h-0 max-h-[220px] overflow-y-auto pr-2 -mr-2">
         {options.map((option, index) => {
           const isSelected = selectedOptions.has(option);
           return (

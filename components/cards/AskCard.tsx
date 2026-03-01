@@ -17,9 +17,9 @@ interface AskCardProps {
 
 export function AskCard({ question, onAnswer, disabled }: AskCardProps) {
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col justify-between">
+    <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col overflow-hidden">
       {/* Top Section - Badge and Question */}
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-8 flex-1 min-h-0 overflow-y-auto pr-1">
         {/* Question Badge */}
         <div className="flex-shrink-0">
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-900 text-xs font-bold uppercase tracking-wider">
