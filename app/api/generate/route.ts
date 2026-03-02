@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       
       try {
         const extractionResponse = await anthropic.messages.create({
-          model: "claude-haiku-4-5-20251001",
+          model: "claude-sonnet-4-6",
           max_tokens: 200,
           temperature: 0,
           messages: [{ role: "user", content: extractionPrompt }],
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       };
 
       message = await anthropic.messages.create({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6",
         max_tokens: 4096,
         temperature: 0.8,
         system: systemMessage,
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
       const userMessage = buildUserPrompt(mode, batchSize, userProfile);
 
       message = await anthropic.messages.create({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6",
         max_tokens: 4096,
         temperature: 0.8,
         system: systemMessage,
