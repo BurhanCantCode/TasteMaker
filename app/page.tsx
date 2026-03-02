@@ -187,6 +187,7 @@ export default function Home() {
                     "love_doing", "already_do", "already_have",
                     "3", "4", "5"
                   ].includes(answer.toLowerCase()),
+                  timestamp: Date.now(),
                 }]
               : []),
           ],
@@ -212,6 +213,7 @@ export default function Home() {
                   question: (currentCard.content as Question).title,
                   answer,
                   positive: answer.toLowerCase() === "yes",
+                  timestamp: Date.now(),
                 }]
               : []),
           ],
