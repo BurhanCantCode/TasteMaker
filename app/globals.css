@@ -1,20 +1,7 @@
 @import "tailwindcss";
 
-@theme {
-  --animate-shimmer: shimmer 2s infinite;
-  
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
-}
-
 :root {
-  --background: #F3F4F6;
+  --background: #f3f4f6;
   --foreground: #171717;
 }
 
@@ -26,8 +13,4 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }

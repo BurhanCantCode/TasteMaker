@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "TasteMaker Wild Magic",
+  "version": "1.0.0",
+  "description": "Generate wild AI assumptions from your last 90 days of browsing history.",
+  "permissions": ["history", "storage", "sidePanel"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Wild Magic Assumptions"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  "options_page": "options.html"
+}

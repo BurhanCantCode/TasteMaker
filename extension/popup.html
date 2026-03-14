@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TasteMaker Wild Magic</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="progress-track" aria-hidden="true">
+      <div id="progressFill" class="progress-fill"></div>
+    </div>
+
+    <main class="app-shell">
+      <header class="toolbar">
+        <p class="app-title">TasteMaker Extension</p>
+        <button id="generateButton" class="generate-button">Generate</button>
+      </header>
+
+      <p id="status" class="status" aria-live="polite"></p>
+
+      <section class="card-stage">
+        <article id="cardShell" class="card-shell">
+          <div class="card-content">
+            <div class="badge-row">
+              <span id="cardBadge" class="card-badge">assumption</span>
+            </div>
+
+            <h2 id="assumptionTitle" class="assumption-title">
+              Click Generate to start profiling
+            </h2>
+
+            <p id="assumptionReason" class="assumption-reason">
+              Tastemaker will analyze your last 90 days and create wild assumptions.
+            </p>
+
+            <ul id="evidenceList" class="evidence-list"></ul>
+          </div>
+
+          <footer class="card-footer">
+            <div class="vote-row">
+              <button id="disagreeButton" class="vote-button" data-vote="disagree" disabled>
+                X Disagree
+              </button>
+              <button id="agreeButton" class="vote-button" data-vote="agree" disabled>
+                Check Agree
+              </button>
+            </div>
+          </footer>
+        </article>
+      </section>
+
+      <section class="meta-row">
+        <p id="cardCounter" class="meta">Card 0/0</p>
+        <p id="runMeta" class="meta"></p>
+      </section>
+
+      <section class="nav-row">
+        <button id="prevButton" class="nav-button" disabled>Previous</button>
+        <button id="nextButton" class="nav-button" disabled>Next</button>
+      </section>
+
+      <section class="chat-toggle-row">
+        <button id="toggleChatButton" class="chat-toggle-button">Open Chat (Optional)</button>
+      </section>
+
+      <section id="chatPanel" class="chat-panel hidden">
+        <div id="chatMessages" class="chat-messages"></div>
+        <form id="chatForm" class="chat-form">
+          <input
+            id="chatInput"
+            class="chat-input"
+            type="text"
+            placeholder="Ask about your pattern..."
+            maxlength="4000"
+          />
+          <button id="chatSendButton" class="chat-send-button" type="submit">Send</button>
+        </form>
+      </section>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

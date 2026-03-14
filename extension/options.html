@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TasteMaker Extension Options</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        background: #f8f7f3;
+        color: #171717;
+        padding: 28px;
+      }
+      .panel {
+        max-width: 560px;
+        background: #fff;
+        border: 1px solid #e7e6dc;
+        border-radius: 14px;
+        padding: 18px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 22px;
+      }
+      p {
+        margin: 0 0 16px;
+        color: #66675c;
+      }
+      label {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      input {
+        margin-top: 8px;
+        width: 100%;
+        border: 1px solid #d7d6cc;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 14px;
+      }
+      button {
+        margin-top: 14px;
+        border: none;
+        border-radius: 10px;
+        background: #0f766e;
+        color: #fff;
+        padding: 10px 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 10px;
+        font-size: 12px;
+        color: #66675c;
+      }
+      code {
+        background: #f4f5f0;
+        padding: 2px 4px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="panel">
+      <h1>TasteMaker Extension Options</h1>
+      <p>Set the backend base URL used by the popup when calling assumptions APIs.</p>
+
+      <label for="apiBaseUrl">API Base URL</label>
+      <input id="apiBaseUrl" type="url" placeholder="http://localhost:3000" />
+
+      <button id="saveButton">Save</button>
+      <p id="status"></p>
+
+      <p>
+        Endpoints called:
+        <code>/api/assumptions/generate</code>
+        and
+        <code>/api/assumptions/feedback</code>
+      </p>
+    </section>
+
+    <script src="options.js"></script>
+  </body>
+</html>
