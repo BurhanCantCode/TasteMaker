@@ -1,24 +1,28 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { extractHistoryFeatures } from "./history";
-import { getLearningContext, persistGeneratedRun } from "./db";
+import { getLearningContext, getRecentAssumptionRecords, persistGeneratedRun } from "./db";
 import {
   AssumptionCard,
   AssumptionEvidence,
   AssumptionsGenerateRequest,
   AssumptionsGenerateResponse,
   HistoryFeatureSummary,
+  RecentAssumptionRecord,
 } from "./types";
 
 const MODEL = "claude-sonnet-4-6";
 const PROMPT_VERSION = "wild_magic_v1";
-const ASSUMPTION_BATCH_SIZE = 10;
+export const DEFAULT_ASSUMPTION_BATCH_SIZE = 10;
+export const MAX_ASSUMPTION_BATCH_SIZE = 10;
 const MAX_PROMPT_EVIDENCE = 220;
+const MAX_RECENT_ASSUMPTIONS = 40;
+const NEAR_DUPLICATE_JACCARD_THRESHOLD = 0.7;
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(batchSize: number): string {
   return `You are an elite behavioral inference engine.
 
 Goal:
@@ -29,7 +33,7 @@ You must still ground each assumption in actual observed evidence. Creativity is
 Output constraints:
 - Return ONLY valid JSON.
 - Top-level shape must be: { "assumptions": [...] }
-- Produce exactly 10 assumptions.
+- Produce exactly ${batchSize} assumptions.
 - Each assumption must include exactly 2 evidence entries.
 - confidence must be a float between 0 and 1.
 - tags should be short lowercase descriptors.
@@ -45,26 +49,39 @@ Quality constraints:
 - Assumptions should be specific and vivid, not generic.
 - Prefer latent intent and behavior patterns over literal restatement.
 - Avoid repeating the same behavioral theme across many cards.
+- Do not restate or lightly paraphrase any assumption in the avoid-list.
 - Keep each assumption to 1 sentence.
 - Keep each reason to 1-2 sentences.`;
 }
 
 function buildUserPrompt(params: {
   request: AssumptionsGenerateRequest;
+  batchSize: number;
   featureSummary: HistoryFeatureSummary;
   learningContext: { positivePatterns: string[]; negativePatterns: string[] };
+  recentAssumptions: RecentAssumptionRecord[];
 }): string {
-  const { request, featureSummary, learningContext } = params;
+  const { request, batchSize, featureSummary, learningContext, recentAssumptions } = params;
 
   const evidenceForPrompt = featureSummary.evidenceCatalog.slice(0, MAX_PROMPT_EVIDENCE);
+  const recentAssumptionsForPrompt = recentAssumptions
+    .slice(0, MAX_RECENT_ASSUMPTIONS)
+    .map((entry) => ({
+      assumption: entry.assumption,
+      tags: entry.tags,
+    }));
 
   return `USER ID: ${request.userId}
 WINDOW DAYS: ${request.windowDays ?? 90}
 RAW HISTORY COUNT: ${request.history.length}
+BATCH SIZE: ${batchSize}
 
 LEARNING CONTEXT:
 - Positive patterns (reinforce): ${learningContext.positivePatterns.join(", ") || "none"}
 - Negative patterns (down-rank): ${learningContext.negativePatterns.join(", ") || "none"}
+
+RECENT ASSUMPTIONS TO AVOID REPEATING:
+${JSON.stringify(recentAssumptionsForPrompt, null, 2)}
 
 FEATURE SUMMARY (computed from entire history):
 ${JSON.stringify(
@@ -86,7 +103,7 @@ EVIDENCE CATALOG (from real events):
 ${JSON.stringify(evidenceForPrompt, null, 2)}
 
 TASK:
-Generate exactly ${ASSUMPTION_BATCH_SIZE} assumptions.
+Generate exactly ${batchSize} assumptions.
 
 RESPONSE SCHEMA:
 {
@@ -204,7 +221,7 @@ function normalizeEvidence(rawEvidence: unknown): [AssumptionEvidence, Assumptio
   return [mapped[0], mapped[1]];
 }
 
-function normalizeAssumptions(parsed: unknown): AssumptionCard[] {
+function normalizeAssumptions(parsed: unknown, expectedCount: number): AssumptionCard[] {
   if (!parsed || typeof parsed !== "object") {
     throw new Error("Model response is not an object");
   }
@@ -213,14 +230,14 @@ function normalizeAssumptions(parsed: unknown): AssumptionCard[] {
     throw new Error("Model response missing assumptions array");
   }
 
-  if (parsed.assumptions.length < ASSUMPTION_BATCH_SIZE) {
-    throw new Error("Model returned fewer than 10 assumptions");
+  if (parsed.assumptions.length < expectedCount) {
+    throw new Error(`Model returned fewer than ${expectedCount} assumptions`);
   }
 
   const cards: AssumptionCard[] = [];
   const seenIds = new Set<string>();
 
-  for (let index = 0; index < ASSUMPTION_BATCH_SIZE; index += 1) {
+  for (let index = 0; index < expectedCount; index += 1) {
     const item = parsed.assumptions[index];
 
     if (!item || typeof item !== "object") {
@@ -269,12 +286,137 @@ function normalizeAssumptions(parsed: unknown): AssumptionCard[] {
   return cards;
 }
 
-export function validateAndNormalizeAssumptionsPayload(parsed: unknown): AssumptionCard[] {
-  return normalizeAssumptions(parsed);
+function normalizeAssumptionText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenizeNormalizedText(normalizedText: string): Set<string> {
+  return new Set(normalizedText.split(" ").filter((token) => token.length > 0));
+}
+
+function normalizeTagSet(tags: string[]): Set<string> {
+  return new Set(
+    tags
+      .map((tag) => tag.toLowerCase().trim())
+      .filter((tag) => tag.length > 0)
+  );
+}
+
+function jaccardSimilarity(left: Set<string>, right: Set<string>): number {
+  if (left.size === 0 || right.size === 0) {
+    return 0;
+  }
+
+  let intersection = 0;
+  for (const token of left) {
+    if (right.has(token)) {
+      intersection += 1;
+    }
+  }
+
+  const union = left.size + right.size - intersection;
+  return union === 0 ? 0 : intersection / union;
+}
+
+function hasTagOverlap(left: Set<string>, right: Set<string>): boolean {
+  for (const tag of left) {
+    if (right.has(tag)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+interface DuplicateCandidate {
+  assumption: string;
+  normalizedAssumption: string;
+  tags: string[];
+  tokenSet: Set<string>;
+  tagSet: Set<string>;
+  sourceLabel: string;
+}
+
+function toDuplicateCandidate(
+  assumption: string,
+  tags: string[],
+  sourceLabel: string
+): DuplicateCandidate {
+  const normalizedAssumption = normalizeAssumptionText(assumption);
+  return {
+    assumption,
+    normalizedAssumption,
+    tags,
+    tokenSet: tokenizeNormalizedText(normalizedAssumption),
+    tagSet: normalizeTagSet(tags),
+    sourceLabel,
+  };
+}
+
+export function findAssumptionDuplicateConflicts(
+  assumptions: Pick<AssumptionCard, "assumption" | "tags">[],
+  recentAssumptions: RecentAssumptionRecord[] = []
+): string[] {
+  const seen = recentAssumptions.map((entry) =>
+    toDuplicateCandidate(entry.assumption, entry.tags, "recent assumption")
+  );
+  const conflicts: string[] = [];
+
+  for (const [index, card] of assumptions.entries()) {
+    const candidate = toDuplicateCandidate(card.assumption, card.tags, `generated assumption ${index + 1}`);
+
+    for (const existing of seen) {
+      if (candidate.normalizedAssumption && candidate.normalizedAssumption === existing.normalizedAssumption) {
+        conflicts.push(`"${card.assumption}" repeats ${existing.sourceLabel} "${existing.assumption}"`);
+        break;
+      }
+
+      const similarity = jaccardSimilarity(candidate.tokenSet, existing.tokenSet);
+      if (
+        similarity >= NEAR_DUPLICATE_JACCARD_THRESHOLD &&
+        hasTagOverlap(candidate.tagSet, existing.tagSet)
+      ) {
+        conflicts.push(
+          `"${card.assumption}" is too similar to ${existing.sourceLabel} "${existing.assumption}"`
+        );
+        break;
+      }
+    }
+
+    seen.push(candidate);
+  }
+
+  return conflicts;
+}
+
+export function assertAssumptionBatchIsUnique(
+  assumptions: Pick<AssumptionCard, "assumption" | "tags">[],
+  recentAssumptions: RecentAssumptionRecord[] = []
+): void {
+  const conflicts = findAssumptionDuplicateConflicts(assumptions, recentAssumptions);
+
+  if (conflicts.length > 0) {
+    throw new Error(`Duplicate assumptions detected: ${conflicts.join("; ")}`);
+  }
+}
+
+export function validateAndNormalizeAssumptionsPayload(
+  parsed: unknown,
+  expectedCount: number = DEFAULT_ASSUMPTION_BATCH_SIZE,
+  recentAssumptions: RecentAssumptionRecord[] = []
+): AssumptionCard[] {
+  const cards = normalizeAssumptions(parsed, expectedCount);
+  assertAssumptionBatchIsUnique(cards, recentAssumptions);
+  return cards;
 }
 
 async function requestClaudeAssumptions(params: {
   prompt: string;
+  batchSize: number;
   repairHint?: string;
   temperature: number;
 }): Promise<string> {
@@ -282,7 +424,7 @@ async function requestClaudeAssumptions(params: {
     model: MODEL,
     max_tokens: 4096,
     temperature: params.temperature,
-    system: buildSystemPrompt(),
+    system: buildSystemPrompt(params.batchSize),
     messages: [
       {
         role: "user",
@@ -306,6 +448,14 @@ async function requestClaudeAssumptions(params: {
   return textBlock.text;
 }
 
+export function normalizeRequestedBatchSize(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return DEFAULT_ASSUMPTION_BATCH_SIZE;
+  }
+
+  return Math.max(1, Math.min(MAX_ASSUMPTION_BATCH_SIZE, Math.floor(value)));
+}
+
 export async function generateWildMagicAssumptions(
   request: AssumptionsGenerateRequest
 ): Promise<AssumptionsGenerateResponse> {
@@ -314,9 +464,19 @@ export async function generateWildMagicAssumptions(
   }
 
   const windowDays = request.windowDays ?? 90;
+  const batchSize = normalizeRequestedBatchSize(request.batchSize);
   const featureSummary = extractHistoryFeatures(request.history, windowDays);
-  const learningContext = await getLearningContext(request.userId);
-  const prompt = buildUserPrompt({ request, featureSummary, learningContext });
+  const [learningContext, recentAssumptions] = await Promise.all([
+    getLearningContext(request.userId),
+    getRecentAssumptionRecords(request.userId, MAX_RECENT_ASSUMPTIONS),
+  ]);
+  const prompt = buildUserPrompt({
+    request,
+    batchSize,
+    featureSummary,
+    learningContext,
+    recentAssumptions,
+  });
 
   let lastError: Error | null = null;
   let cards: AssumptionCard[] | null = null;
@@ -326,16 +486,17 @@ export async function generateWildMagicAssumptions(
     try {
       const rawText = await requestClaudeAssumptions({
         prompt,
+        batchSize,
         temperature,
         repairHint:
           lastError && attemptIndex > 0
-            ? `Your previous output failed validation: ${lastError.message}. Return corrected JSON.`
+            ? `Your previous output failed validation: ${lastError.message}. Replace only the conflicting assumptions and return corrected JSON.`
             : undefined,
       });
 
       const jsonPayload = extractJsonPayload(rawText);
       const parsed = JSON.parse(jsonPayload) as unknown;
-      cards = normalizeAssumptions(parsed);
+      cards = validateAndNormalizeAssumptionsPayload(parsed, batchSize, recentAssumptions);
       break;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error("Unknown generation error");

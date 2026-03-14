@@ -6,6 +6,7 @@ import {
   LearningContext,
   LearningPatternWeight,
   LearningSummary,
+  RecentAssumptionRecord,
 } from "./types";
 
 let pool: Pool | null = null;
@@ -448,6 +449,38 @@ export async function getLearningContext(userId: string): Promise<LearningContex
       .slice(0, 8)
       .map((pattern) => pattern.patternKey),
   };
+}
+
+export async function getRecentAssumptionRecords(
+  userId: string,
+  limit: number = 40
+): Promise<RecentAssumptionRecord[]> {
+  await ensureAssumptionsTables();
+
+  const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
+
+  return withClient(async (client) => {
+    const result = await client.query<{
+      assumption_text: string;
+      tags: string[];
+    }>(
+      `
+      SELECT ai.assumption_text, ai.tags
+      FROM assumption_items ai
+      INNER JOIN assumption_runs ar
+        ON ar.run_id = ai.run_id
+      WHERE ar.user_id = $1
+      ORDER BY ar.generated_at DESC, ai.created_at DESC
+      LIMIT $2
+    `,
+      [userId, safeLimit]
+    );
+
+    return result.rows.map((row) => ({
+      assumption: row.assumption_text,
+      tags: Array.isArray(row.tags) ? row.tags : [],
+    }));
+  });
 }
 
 export async function getChatContextSnapshot(

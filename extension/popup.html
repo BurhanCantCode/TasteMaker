@@ -7,75 +7,154 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div class="progress-track" aria-hidden="true">
+    <div id="progressTrack" class="progress-track" aria-hidden="true">
       <div id="progressFill" class="progress-fill"></div>
     </div>
 
     <main class="app-shell">
-      <header class="toolbar">
-        <p class="app-title">TasteMaker Extension</p>
-        <button id="generateButton" class="generate-button">Generate</button>
-      </header>
-
-      <p id="status" class="status" aria-live="polite"></p>
-
-      <section class="card-stage">
-        <article id="cardShell" class="card-shell">
-          <div class="card-content">
-            <div class="badge-row">
-              <span id="cardBadge" class="card-badge">assumption</span>
-            </div>
-
-            <h2 id="assumptionTitle" class="assumption-title">
-              Click Generate to start profiling
-            </h2>
-
-            <p id="assumptionReason" class="assumption-reason">
-              Tastemaker will analyze your last 90 days and create wild assumptions.
-            </p>
-
-            <ul id="evidenceList" class="evidence-list"></ul>
+      <section id="introScreen" class="intro-screen">
+        <article class="intro-card">
+          <p class="intro-eyebrow">TasteMaker Wild Magic</p>
+          <h1 class="intro-title">Generate sharp assumptions from the way you browse.</h1>
+          <p class="intro-body">
+            This extension reads the last 90 days of your Chrome history, finds patterns,
+            and turns them into bold behavioral reads you can agree or disagree with.
+          </p>
+          <div class="intro-list">
+            <p class="intro-list-item">Uses your local browsing history only after you click <strong>Generate</strong>.</p>
+            <p class="intro-list-item">Builds a live queue of assumptions you can rate card by card.</p>
+            <p class="intro-list-item">Keeps warming the next batch while you keep answering.</p>
           </div>
-
-          <footer class="card-footer">
-            <div class="vote-row">
-              <button id="disagreeButton" class="vote-button" data-vote="disagree" disabled>
-                X Disagree
-              </button>
-              <button id="agreeButton" class="vote-button" data-vote="agree" disabled>
-                Check Agree
-              </button>
-            </div>
-          </footer>
+          <button id="introGenerateButton" class="intro-generate-button" type="button">
+            <span class="button-spinner" aria-hidden="true"></span>
+            <span class="button-label">Generate</span>
+          </button>
+          <p id="introStatus" class="intro-status"></p>
         </article>
       </section>
 
-      <section class="meta-row">
-        <p id="cardCounter" class="meta">Card 0/0</p>
-        <p id="runMeta" class="meta"></p>
-      </section>
+      <section id="experienceShell" class="experience-shell hidden">
+        <section id="assumptionsPage" class="experience-page">
+          <header class="toolbar">
+            <div class="toolbar-copy">
+              <p class="app-title">TasteMaker Wild Magic</p>
+              <p class="app-subtitle">Behavioral reads from your recent browser trail</p>
+            </div>
 
-      <section class="nav-row">
-        <button id="prevButton" class="nav-button" disabled>Previous</button>
-        <button id="nextButton" class="nav-button" disabled>Next</button>
-      </section>
+            <button id="generateButton" class="generate-button" type="button">
+              <span class="button-spinner" aria-hidden="true"></span>
+              <span class="button-label">Generate</span>
+            </button>
+          </header>
 
-      <section class="chat-toggle-row">
-        <button id="toggleChatButton" class="chat-toggle-button">Open Chat (Optional)</button>
-      </section>
+          <section class="status-rail" aria-live="polite">
+            <div class="status-copy">
+              <p id="status" class="status"></p>
+              <p id="queueSummary" class="queue-summary"></p>
+            </div>
 
-      <section id="chatPanel" class="chat-panel hidden">
-        <div id="chatMessages" class="chat-messages"></div>
-        <form id="chatForm" class="chat-form">
-          <input
-            id="chatInput"
-            class="chat-input"
-            type="text"
-            placeholder="Ask about your pattern..."
-            maxlength="4000"
-          />
-          <button id="chatSendButton" class="chat-send-button" type="submit">Send</button>
-        </form>
+            <button
+              id="prefetchRetryButton"
+              class="retry-button hidden"
+              type="button"
+            >
+              Retry next 5
+            </button>
+          </section>
+
+          <div id="activityChips" class="activity-chips"></div>
+
+          <section class="card-stage">
+            <article id="cardShell" class="card-shell">
+              <div id="cardSkeleton" class="card-skeleton hidden" aria-hidden="true">
+                <div class="skeleton-chip"></div>
+                <div class="skeleton-line skeleton-line-lg"></div>
+                <div class="skeleton-line skeleton-line-md"></div>
+                <div class="skeleton-list">
+                  <div class="skeleton-tile"></div>
+                  <div class="skeleton-tile"></div>
+                </div>
+              </div>
+
+              <div class="card-content">
+                <div class="badge-row">
+                  <span id="cardBadge" class="card-badge">assumption</span>
+                </div>
+
+                <h2 id="assumptionTitle" class="assumption-title">
+                  Click Generate to start profiling
+                </h2>
+
+                <p id="assumptionReason" class="assumption-reason">
+                  TasteMaker will analyze your last 90 days and create wild assumptions.
+                </p>
+
+                <ul id="evidenceList" class="evidence-list"></ul>
+              </div>
+
+              <footer class="card-footer">
+                <div class="vote-row">
+                  <button id="disagreeButton" class="vote-button" data-vote="disagree" disabled>
+                    Disagree
+                  </button>
+                  <button id="agreeButton" class="vote-button" data-vote="agree" disabled>
+                    Agree
+                  </button>
+                </div>
+              </footer>
+            </article>
+          </section>
+
+          <section class="meta-row">
+            <p id="cardCounter" class="meta">Card 0/0</p>
+            <p id="runMeta" class="meta"></p>
+          </section>
+
+          <section class="nav-row">
+            <button id="prevButton" class="nav-button" type="button" disabled>Previous</button>
+            <button id="nextButton" class="nav-button" type="button" disabled>Next</button>
+          </section>
+
+          <section class="chat-toggle-row">
+            <button id="toggleChatButton" class="chat-toggle-button" type="button">
+              Open Chat Page
+            </button>
+          </section>
+        </section>
+
+        <section id="chatPage" class="experience-page hidden">
+          <header class="chat-page-header">
+            <button id="backToCardsButton" class="back-button" type="button">
+              Back to Cards
+            </button>
+            <div class="chat-page-copy">
+              <p class="app-title">TasteMaker Chat</p>
+              <p class="chat-page-subtitle">Ask for explanations, summaries, and pattern callouts.</p>
+            </div>
+          </header>
+
+          <section class="chat-page-shell">
+            <div class="chat-page-note">
+              I’ll answer from your current assumption queue and recent profile history.
+            </div>
+
+            <div id="chatMessages" class="chat-messages chat-messages-page"></div>
+
+            <form id="chatForm" class="chat-form chat-form-page">
+              <input
+                id="chatInput"
+                class="chat-input"
+                type="text"
+                placeholder="Ask about the current pattern..."
+                maxlength="4000"
+              />
+              <button id="chatSendButton" class="chat-send-button" type="submit">
+                <span class="button-spinner" aria-hidden="true"></span>
+                <span class="button-label">Send</span>
+              </button>
+            </form>
+          </section>
+        </section>
       </section>
     </main>
 

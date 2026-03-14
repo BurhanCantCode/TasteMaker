@@ -60,6 +60,7 @@ export interface AssumptionCard {
 export interface AssumptionsGenerateRequest {
   userId: string;
   windowDays?: number;
+  batchSize?: number;
   history: HistoryEvent[];
   clientContext?: Record<string, unknown>;
 }
@@ -108,6 +109,11 @@ export interface LearningSummary {
 export interface LearningContext {
   positivePatterns: string[];
   negativePatterns: string[];
+}
+
+export interface RecentAssumptionRecord {
+  assumption: string;
+  tags: string[];
 }
 
 export interface PersistedRun {

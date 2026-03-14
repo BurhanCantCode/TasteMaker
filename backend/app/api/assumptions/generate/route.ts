@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateWildMagicAssumptions } from "@/lib/assumptions/service";
+import {
+  generateWildMagicAssumptions,
+  normalizeRequestedBatchSize,
+} from "@/lib/assumptions/service";
 import { AssumptionsGenerateRequest, HistoryEvent } from "@/lib/assumptions/types";
 
 const MAX_HISTORY_EVENTS = 20_000;
@@ -14,6 +17,10 @@ export async function OPTIONS() {
     status: 204,
     headers: CORS_HEADERS,
   });
+}
+
+export function normalizeGenerateBatchSize(value: unknown): number {
+  return normalizeRequestedBatchSize(value);
 }
 
 function normalizeHistory(history: unknown): HistoryEvent[] {
@@ -93,6 +100,7 @@ export async function POST(request: NextRequest) {
         typeof body.windowDays === "number" && body.windowDays > 0
           ? Math.floor(body.windowDays)
           : 90,
+      batchSize: normalizeGenerateBatchSize(body.batchSize),
       history,
       clientContext:
         body.clientContext && typeof body.clientContext === "object"

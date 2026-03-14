@@ -1,25 +1,39 @@
 const STORAGE_KEYS = {
   USER_ID: "wm_user_id",
   API_BASE_URL: "wm_api_base_url",
-  LAST_RUN: "wm_last_run",
+  LAST_SESSION: "wm_last_run",
   PENDING_FEEDBACK: "wm_pending_feedback",
   CHAT_HISTORY: "wm_chat_history",
 };
 
 const DEFAULT_API_BASE_URL = "http://localhost:3000";
 const WINDOW_DAYS = 90;
+const INITIAL_BATCH_SIZE = 10;
+const PREFETCH_BATCH_SIZE = 5;
+const PREFETCH_THRESHOLD = 5;
 const MAX_HISTORY_RESULTS = 100000;
 const FEEDBACK_TIMEOUT_MS = 6000;
 const CHAT_TIMEOUT_MS = 25000;
 const GENERATE_TIMEOUT_MS = 120000;
 const HISTORY_CACHE_WINDOW_MS = 3 * 60 * 1000;
-const FINAL_SYNC_MAX_WAIT_MS = 1800;
-const MAX_CARDS_PER_RUN = 10;
+const PREFETCH_READY_RESET_MS = 2200;
 
 const elements = {
+  progressTrack: document.getElementById("progressTrack"),
+  introScreen: document.getElementById("introScreen"),
+  introStatus: document.getElementById("introStatus"),
+  introGenerateButton: document.getElementById("introGenerateButton"),
+  experienceShell: document.getElementById("experienceShell"),
+  assumptionsPage: document.getElementById("assumptionsPage"),
+  chatPage: document.getElementById("chatPage"),
   generateButton: document.getElementById("generateButton"),
   status: document.getElementById("status"),
+  queueSummary: document.getElementById("queueSummary"),
+  activityChips: document.getElementById("activityChips"),
   progressFill: document.getElementById("progressFill"),
+  prefetchRetryButton: document.getElementById("prefetchRetryButton"),
+  cardShell: document.getElementById("cardShell"),
+  cardSkeleton: document.getElementById("cardSkeleton"),
   cardBadge: document.getElementById("cardBadge"),
   assumptionTitle: document.getElementById("assumptionTitle"),
   assumptionReason: document.getElementById("assumptionReason"),
@@ -31,7 +45,7 @@ const elements = {
   prevButton: document.getElementById("prevButton"),
   nextButton: document.getElementById("nextButton"),
   toggleChatButton: document.getElementById("toggleChatButton"),
-  chatPanel: document.getElementById("chatPanel"),
+  backToCardsButton: document.getElementById("backToCardsButton"),
   chatMessages: document.getElementById("chatMessages"),
   chatForm: document.getElementById("chatForm"),
   chatInput: document.getElementById("chatInput"),
@@ -40,18 +54,30 @@ const elements = {
 
 let userId = null;
 let apiBaseUrl = DEFAULT_API_BASE_URL;
-let currentRun = null;
-let busy = false;
-let chatOpen = false;
+let currentSession = null;
+let activePage = "assumptions";
 let chatHistory = [];
-let feedbackSyncPromise = null;
-let autoRegenerateInFlight = false;
 let historyCache = null;
 let queueLock = Promise.resolve();
+let feedbackSyncPromise = null;
+let feedbackSyncState = "idle";
+let feedbackSyncError = "";
 let voteActionInFlight = false;
+let manualGenerationInFlight = false;
+let manualGenerationPhase = "idle";
+let chatThinking = false;
+let initializationInFlight = false;
+let primaryStatusMessage = "";
+let showSkeletonCard = false;
+let activeSessionToken = 0;
+let requestTokenCounter = 0;
+let activeManualRequestToken = 0;
+let activePrefetchRequestToken = 0;
+let prefetchReadyTimer = null;
 
-function setStatus(message) {
-  elements.status.textContent = message;
+function setPrimaryStatus(message) {
+  primaryStatusMessage = message;
+  renderStatusRail();
 }
 
 function setProgress(percent) {
@@ -59,19 +85,8 @@ function setProgress(percent) {
   elements.progressFill.style.width = `${safe}%`;
 }
 
-function setBusy(isBusy) {
-  busy = isBusy;
-  elements.generateButton.disabled = isBusy;
-  elements.chatSendButton.disabled = isBusy;
-
-  const disableVotes =
-    isBusy ||
-    !currentRun ||
-    !Array.isArray(currentRun.assumptions) ||
-    currentRun.assumptions.length === 0;
-
-  elements.disagreeButton.disabled = disableVotes;
-  elements.agreeButton.disabled = disableVotes;
+function shouldShowIntroScreen() {
+  return !currentSession && !manualGenerationInFlight;
 }
 
 function storageGet(keys) {
@@ -223,80 +238,226 @@ async function requeuePendingFeedbackBatch(batch) {
   });
 }
 
-async function flushPendingFeedbackQueue() {
-  let fullySynced = true;
-
-  while (true) {
-    const batch = await dequeuePendingFeedbackBatch();
-    if (!batch) {
-      break;
-    }
-
-    try {
-      await sendFeedback(batch.userId, batch.runId, batch.feedback, true);
-    } catch {
-      await requeuePendingFeedbackBatch(batch);
-      fullySynced = false;
-      break;
-    }
-  }
-
-  return fullySynced;
+function normalizeAssumptionText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-async function syncPendingFeedbackInBackground() {
-  if (feedbackSyncPromise) {
-    return feedbackSyncPromise;
-  }
-
-  feedbackSyncPromise = (async () => {
-    try {
-      return await flushPendingFeedbackQueue();
-    } finally {
-      feedbackSyncPromise = null;
-    }
-  })();
-
-  return feedbackSyncPromise;
+function getVoteKey(card) {
+  return `${card.runId}:${card.id}`;
 }
 
-function normalizeRun(run) {
+function isStoredVote(value) {
+  return value === "agree" || value === "disagree";
+}
+
+function normalizeEvidenceEntry(entry) {
+  if (!entry || typeof entry !== "object") {
+    return null;
+  }
+
+  const signal = typeof entry.signal === "string" ? entry.signal.trim() : "";
+  const source = typeof entry.source === "string" ? entry.source.trim() : "";
+  const eventId = typeof entry.eventId === "string" ? entry.eventId.trim() : undefined;
+
+  if (!signal || !source) {
+    return null;
+  }
+
+  return {
+    signal,
+    source,
+    eventId,
+  };
+}
+
+function normalizeQueuedCard(card, fallbackRunId, fallbackGeneratedAt) {
+  if (!card || typeof card !== "object") {
+    return null;
+  }
+
+  const id = typeof card.id === "string" ? card.id.trim() : "";
+  const assumption = typeof card.assumption === "string" ? card.assumption.trim() : "";
+  const reason = typeof card.reason === "string" ? card.reason.trim() : "";
+
+  if (!id || !assumption || !reason) {
+    return null;
+  }
+
+  const evidence = Array.isArray(card.evidence)
+    ? card.evidence.map(normalizeEvidenceEntry).filter(Boolean).slice(0, 2)
+    : [];
+
+  return {
+    id,
+    runId:
+      typeof card.runId === "string" && card.runId.trim().length > 0
+        ? card.runId.trim()
+        : fallbackRunId,
+    generatedAt:
+      typeof card.generatedAt === "string" && card.generatedAt.trim().length > 0
+        ? card.generatedAt
+        : fallbackGeneratedAt,
+    assumption,
+    reason,
+    evidence,
+    confidence:
+      typeof card.confidence === "number" && Number.isFinite(card.confidence)
+        ? Math.max(0, Math.min(1, card.confidence))
+        : 0.5,
+    tags: Array.isArray(card.tags)
+      ? Array.from(
+          new Set(
+            card.tags
+              .map((tag) => (typeof tag === "string" ? tag.trim().toLowerCase() : ""))
+              .filter((tag) => tag.length > 0)
+          )
+        ).slice(0, 6)
+      : [],
+  };
+}
+
+function buildSessionFromLegacyRun(run) {
   if (!run || typeof run !== "object" || !Array.isArray(run.assumptions)) {
     return null;
   }
 
-  const assumptions = run.assumptions.filter(
-    (item) => item && typeof item === "object" && typeof item.id === "string"
-  ).slice(0, MAX_CARDS_PER_RUN);
+  const runId = typeof run.runId === "string" ? run.runId : crypto.randomUUID();
+  const generatedAt =
+    typeof run.generatedAt === "string" ? run.generatedAt : new Date().toISOString();
+  const cards = run.assumptions
+    .map((card) => normalizeQueuedCard(card, runId, generatedAt))
+    .filter(Boolean);
 
-  if (assumptions.length === 0) {
+  if (cards.length === 0) {
     return null;
   }
 
-  const maxIndex = assumptions.length - 1;
-  const requestedIndex =
+  const votes = {};
+  for (const card of cards) {
+    const legacyVote = run.votes && typeof run.votes === "object" ? run.votes[card.id] : null;
+    if (isStoredVote(legacyVote)) {
+      votes[getVoteKey(card)] = legacyVote;
+    }
+  }
+
+  const requestedCursor =
     typeof run.currentIndex === "number" && Number.isFinite(run.currentIndex)
       ? Math.floor(run.currentIndex)
       : 0;
 
   return {
-    runId: typeof run.runId === "string" ? run.runId : crypto.randomUUID(),
-    generatedAt:
-      typeof run.generatedAt === "string" ? run.generatedAt : new Date().toISOString(),
-    assumptions,
-    votes: run.votes && typeof run.votes === "object" ? run.votes : {},
-    currentIndex: Math.max(0, Math.min(maxIndex, requestedIndex)),
+    sessionId: crypto.randomUUID(),
+    createdAt: generatedAt,
+    updatedAt: new Date().toISOString(),
+    cursor: Math.max(0, Math.min(cards.length - 1, requestedCursor)),
+    cards,
+    votes,
+    prefetchState: "idle",
+    prefetchError: "",
   };
 }
 
-async function saveLastRun() {
-  if (!currentRun) return;
-  await storageSet({ [STORAGE_KEYS.LAST_RUN]: currentRun });
+function normalizeSession(rawSession) {
+  if (!rawSession || typeof rawSession !== "object") {
+    return null;
+  }
+
+  if (Array.isArray(rawSession.assumptions)) {
+    return buildSessionFromLegacyRun(rawSession);
+  }
+
+  if (!Array.isArray(rawSession.cards)) {
+    return null;
+  }
+
+  const sessionId =
+    typeof rawSession.sessionId === "string" && rawSession.sessionId.trim().length > 0
+      ? rawSession.sessionId
+      : crypto.randomUUID();
+
+  const cards = rawSession.cards
+    .map((card) =>
+      normalizeQueuedCard(
+        card,
+        typeof card?.runId === "string" ? card.runId : crypto.randomUUID(),
+        typeof card?.generatedAt === "string" ? card.generatedAt : new Date().toISOString()
+      )
+    )
+    .filter(Boolean);
+
+  if (cards.length === 0) {
+    return null;
+  }
+
+  const requestedCursor =
+    typeof rawSession.cursor === "number" && Number.isFinite(rawSession.cursor)
+      ? Math.floor(rawSession.cursor)
+      : 0;
+
+  const votes = {};
+  if (rawSession.votes && typeof rawSession.votes === "object") {
+    for (const [key, value] of Object.entries(rawSession.votes)) {
+      if (typeof key === "string" && isStoredVote(value)) {
+        votes[key] = value;
+      }
+    }
+  }
+
+  const prefetchState =
+    rawSession.prefetchState === "error" || rawSession.prefetchState === "ready"
+      ? rawSession.prefetchState
+      : "idle";
+
+  return {
+    sessionId,
+    createdAt:
+      typeof rawSession.createdAt === "string"
+        ? rawSession.createdAt
+        : cards[0].generatedAt,
+    updatedAt:
+      typeof rawSession.updatedAt === "string"
+        ? rawSession.updatedAt
+        : new Date().toISOString(),
+    cursor: Math.max(0, Math.min(cards.length - 1, requestedCursor)),
+    cards,
+    votes,
+    prefetchState,
+    prefetchError:
+      prefetchState === "error" && typeof rawSession.prefetchError === "string"
+        ? rawSession.prefetchError
+        : "",
+  };
 }
 
-async function loadLastRun() {
-  const data = await storageGet([STORAGE_KEYS.LAST_RUN]);
-  return normalizeRun(data[STORAGE_KEYS.LAST_RUN]);
+function serializeSession(session) {
+  if (!session) {
+    return null;
+  }
+
+  return {
+    ...session,
+    prefetchState: session.prefetchState === "loading" ? "idle" : session.prefetchState,
+  };
+}
+
+async function saveLastSession() {
+  if (!currentSession) {
+    await storageSet({ [STORAGE_KEYS.LAST_SESSION]: null });
+    return;
+  }
+
+  await storageSet({
+    [STORAGE_KEYS.LAST_SESSION]: serializeSession(currentSession),
+  });
+}
+
+async function loadLastSession() {
+  const data = await storageGet([STORAGE_KEYS.LAST_SESSION]);
+  return normalizeSession(data[STORAGE_KEYS.LAST_SESSION]);
 }
 
 async function loadChatHistory() {
@@ -321,24 +482,39 @@ async function saveChatHistory() {
   await storageSet({ [STORAGE_KEYS.CHAT_HISTORY]: chatHistory.slice(-40) });
 }
 
-function getAnsweredCount(run) {
-  if (!run || !Array.isArray(run.assumptions)) return 0;
+function getCurrentCard() {
+  if (!currentSession || !Array.isArray(currentSession.cards) || currentSession.cards.length === 0) {
+    return null;
+  }
 
-  return run.assumptions.reduce((count, assumption) => {
-    const vote = run.votes?.[assumption.id];
-    return vote === "agree" || vote === "disagree" ? count + 1 : count;
+  return currentSession.cards[currentSession.cursor] || null;
+}
+
+function getRatedCount(session) {
+  if (!session || !Array.isArray(session.cards)) {
+    return 0;
+  }
+
+  return session.cards.reduce((count, card) => {
+    const vote = session.votes?.[getVoteKey(card)];
+    return isStoredVote(vote) ? count + 1 : count;
   }, 0);
 }
 
-function allCardsVoted() {
-  if (!currentRun || !Array.isArray(currentRun.assumptions)) {
-    return false;
+function getRemainingCount(session) {
+  if (!session || !Array.isArray(session.cards)) {
+    return 0;
   }
 
-  return currentRun.assumptions.every((assumption) => {
-    const vote = currentRun.votes?.[assumption.id];
-    return vote === "agree" || vote === "disagree";
-  });
+  return Math.max(0, session.cards.length - getRatedCount(session));
+}
+
+function getSourceRunCount(session) {
+  if (!session || !Array.isArray(session.cards)) {
+    return 0;
+  }
+
+  return new Set(session.cards.map((card) => card.runId)).size;
 }
 
 function setVoteButtons(activeVote) {
@@ -351,7 +527,7 @@ function renderEvidenceList(evidence) {
 
   if (!Array.isArray(evidence) || evidence.length === 0) {
     const empty = document.createElement("li");
-    empty.innerHTML = '<span class="evidence-signal">No evidence available.</span>';
+    empty.innerHTML = '<span class="evidence-signal">Fresh intuition only. No evidence returned.</span>';
     elements.evidenceList.append(empty);
     return;
   }
@@ -374,55 +550,52 @@ function renderEvidenceList(evidence) {
 
 function renderEmptyCard() {
   elements.cardBadge.textContent = "assumption";
-  elements.assumptionTitle.textContent = "Click Generate to start profiling";
+  elements.assumptionTitle.textContent = "Generate a fresh queue of assumptions";
   elements.assumptionReason.textContent =
-    "Tastemaker will analyze your last 90 days and create wild assumptions.";
+    "TasteMaker reads your last 90 days of browsing history, then turns it into sharp behavioral assumptions you can rate.";
   elements.evidenceList.innerHTML = "";
   elements.cardCounter.textContent = "Card 0/0";
   elements.runMeta.textContent = "";
   setVoteButtons(null);
   setProgress(0);
-  elements.prevButton.disabled = true;
-  elements.nextButton.disabled = true;
-  elements.disagreeButton.disabled = true;
-  elements.agreeButton.disabled = true;
+}
+
+function triggerCardAdvanceAnimation() {
+  elements.cardShell.classList.remove("card-advance");
+  void elements.cardShell.offsetWidth;
+  elements.cardShell.classList.add("card-advance");
 }
 
 function renderCurrentCard() {
-  if (!currentRun || !Array.isArray(currentRun.assumptions) || currentRun.assumptions.length === 0) {
+  const card = getCurrentCard();
+  elements.cardShell.classList.toggle("show-skeleton", showSkeletonCard);
+  elements.cardSkeleton.classList.toggle("hidden", !showSkeletonCard);
+
+  if (!card) {
     renderEmptyCard();
+    syncControlStates();
     return;
   }
 
-  const assumption = currentRun.assumptions[currentRun.currentIndex];
-  if (!assumption) {
-    renderEmptyCard();
-    return;
-  }
-
-  const badge = Array.isArray(assumption.tags) && assumption.tags[0]
-    ? String(assumption.tags[0]).replace(/_/g, " ")
-    : "assumption";
+  const badge =
+    Array.isArray(card.tags) && card.tags[0]
+      ? String(card.tags[0]).replace(/_/g, " ")
+      : "assumption";
+  const ratedCount = getRatedCount(currentSession);
+  const total = currentSession.cards.length;
+  const progress = total > 0 ? (ratedCount / total) * 100 : 0;
+  const currentVote = currentSession.votes?.[getVoteKey(card)] || null;
+  const confidenceText = `${Math.round(card.confidence * 100)}% confidence`;
 
   elements.cardBadge.textContent = badge;
-  elements.assumptionTitle.textContent = assumption.assumption || "Untitled assumption";
-  elements.assumptionReason.textContent = assumption.reason || "No reason provided.";
-  renderEvidenceList(assumption.evidence);
-
-  const total = currentRun.assumptions.length;
-  const answered = getAnsweredCount(currentRun);
-  const progress = total > 0 ? (answered / total) * 100 : 0;
-
-  elements.cardCounter.textContent = `Card ${currentRun.currentIndex + 1}/${total}`;
-  elements.runMeta.textContent = `Run ${currentRun.runId.slice(0, 8)} • ${answered}/${total} rated`;
+  elements.assumptionTitle.textContent = card.assumption;
+  elements.assumptionReason.textContent = card.reason;
+  renderEvidenceList(card.evidence);
+  elements.cardCounter.textContent = `Card ${currentSession.cursor + 1}/${total}`;
+  elements.runMeta.textContent = `${confidenceText} • source ${card.runId.slice(0, 8)}`;
+  setVoteButtons(currentVote);
   setProgress(progress);
-
-  setVoteButtons(currentRun.votes?.[assumption.id]);
-
-  elements.prevButton.disabled = busy || currentRun.currentIndex === 0;
-  elements.nextButton.disabled = busy || currentRun.currentIndex >= total - 1;
-  elements.disagreeButton.disabled = busy;
-  elements.agreeButton.disabled = busy;
+  syncControlStates();
 }
 
 function renderChatMessages() {
@@ -431,7 +604,10 @@ function renderChatMessages() {
   if (!Array.isArray(chatHistory) || chatHistory.length === 0) {
     const starter = document.createElement("div");
     starter.className = "chat-message assistant";
-    starter.textContent = "Ask anything about your assumptions or pattern.";
+    const paragraph = document.createElement("p");
+    paragraph.textContent =
+      "Ask why a card showed up, what pattern stands out, or what changed between runs.";
+    starter.append(paragraph);
     elements.chatMessages.append(starter);
     return;
   }
@@ -439,26 +615,325 @@ function renderChatMessages() {
   for (const message of chatHistory) {
     const bubble = document.createElement("div");
     bubble.className = `chat-message ${message.role}`;
-    bubble.textContent = message.content;
+    renderFormattedChatMessage(bubble, message.content);
     elements.chatMessages.append(bubble);
   }
 
   elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 }
 
-function renderChatPanelState() {
-  elements.chatPanel.classList.toggle("hidden", !chatOpen);
-  elements.toggleChatButton.textContent = chatOpen
-    ? "Hide Chat"
-    : "Open Chat (Optional)";
+function isBulletListLine(line) {
+  return /^[-*]\s+/.test(line.trim());
 }
 
-function getCurrentAssumption() {
-  if (!currentRun || !Array.isArray(currentRun.assumptions)) {
-    return null;
+function isOrderedListLine(line) {
+  return /^\d+\.\s+/.test(line.trim());
+}
+
+function isHeadingOnlyLine(line) {
+  return /^\*\*.+\*\*:?\s*$/.test(line.trim());
+}
+
+function appendInlineChatContent(container, text) {
+  const tokens = String(text).split(/(\*\*[^*][\s\S]*?\*\*:?|`[^`\n]+`)/g);
+
+  for (const token of tokens) {
+    if (!token) {
+      continue;
+    }
+
+    if (token.startsWith("**")) {
+      const match = token.match(/^\*\*([\s\S]+?)\*\*(.*)$/);
+      if (match) {
+        const strong = document.createElement("strong");
+        strong.textContent = match[1];
+        container.append(strong);
+        if (match[2]) {
+          container.append(document.createTextNode(match[2]));
+        }
+        continue;
+      }
+    }
+
+    if (token.startsWith("**") && token.endsWith("**")) {
+      const strong = document.createElement("strong");
+      strong.textContent = token.slice(2, -2);
+      container.append(strong);
+      continue;
+    }
+
+    if (token.startsWith("`") && token.endsWith("`")) {
+      const code = document.createElement("code");
+      code.textContent = token.slice(1, -1);
+      container.append(code);
+      continue;
+    }
+
+    container.append(document.createTextNode(token));
+  }
+}
+
+function appendParagraph(container, lines, isHeading = false) {
+  const paragraph = document.createElement("p");
+  if (isHeading) {
+    paragraph.className = "chat-message-heading";
   }
 
-  return currentRun.assumptions[currentRun.currentIndex] || null;
+  lines.forEach((line, index) => {
+    appendInlineChatContent(paragraph, line);
+    if (index < lines.length - 1) {
+      paragraph.append(document.createElement("br"));
+    }
+  });
+
+  container.append(paragraph);
+}
+
+function appendList(container, lines, ordered = false) {
+  const list = document.createElement(ordered ? "ol" : "ul");
+
+  for (const line of lines) {
+    const item = document.createElement("li");
+    const trimmed = line.trim().replace(ordered ? /^\d+\.\s+/ : /^[-*]\s+/, "");
+    appendInlineChatContent(item, trimmed);
+    list.append(item);
+  }
+
+  container.append(list);
+}
+
+function renderFormattedChatMessage(container, content) {
+  const normalized = String(content || "").replace(/\r\n/g, "\n").trim();
+
+  if (!normalized) {
+    const emptyParagraph = document.createElement("p");
+    emptyParagraph.textContent = "";
+    container.append(emptyParagraph);
+    return;
+  }
+
+  const lines = normalized.split("\n");
+  let index = 0;
+
+  while (index < lines.length) {
+    const rawLine = lines[index];
+    const trimmedLine = rawLine.trim();
+
+    if (!trimmedLine) {
+      index += 1;
+      continue;
+    }
+
+    if (isHeadingOnlyLine(trimmedLine)) {
+      appendParagraph(container, [trimmedLine], true);
+      index += 1;
+      continue;
+    }
+
+    if (isBulletListLine(trimmedLine) || isOrderedListLine(trimmedLine)) {
+      const ordered = isOrderedListLine(trimmedLine);
+      const listLines = [];
+
+      while (index < lines.length) {
+        const candidate = lines[index].trim();
+        if (!candidate) {
+          break;
+        }
+
+        if ((ordered && isOrderedListLine(candidate)) || (!ordered && isBulletListLine(candidate))) {
+          listLines.push(candidate);
+          index += 1;
+          continue;
+        }
+
+        break;
+      }
+
+      appendList(container, listLines, ordered);
+      continue;
+    }
+
+    const paragraphLines = [];
+
+    while (index < lines.length) {
+      const candidate = lines[index].trim();
+      if (!candidate) {
+        break;
+      }
+
+      if (isHeadingOnlyLine(candidate) || isBulletListLine(candidate) || isOrderedListLine(candidate)) {
+        break;
+      }
+
+      paragraphLines.push(candidate);
+      index += 1;
+    }
+
+    appendParagraph(container, paragraphLines);
+  }
+}
+
+function renderExperiencePage() {
+  const showChatPage = activePage === "chat";
+  elements.assumptionsPage.classList.toggle("hidden", showChatPage);
+  elements.chatPage.classList.toggle("hidden", !showChatPage);
+}
+
+function buildIntroStatus() {
+  if (!shouldShowIntroScreen()) {
+    return "";
+  }
+
+  if (
+    primaryStatusMessage.startsWith("Could not") ||
+    primaryStatusMessage.startsWith("Initialization failed") ||
+    primaryStatusMessage.startsWith("No history found")
+  ) {
+    return primaryStatusMessage;
+  }
+
+  return "Nothing is analyzed until you click Generate.";
+}
+
+function renderLayoutMode() {
+  const showIntro = shouldShowIntroScreen();
+  if (showIntro) {
+    activePage = "assumptions";
+  }
+  elements.introScreen.classList.toggle("hidden", !showIntro);
+  elements.experienceShell.classList.toggle("hidden", showIntro);
+  elements.progressTrack.classList.toggle("hidden", showIntro);
+}
+
+function renderIntroScreen() {
+  elements.introStatus.textContent = buildIntroStatus();
+  if (shouldShowIntroScreen()) {
+    setProgress(0);
+  }
+}
+
+function buildQueueSummary() {
+  if (manualGenerationInFlight) {
+    return manualGenerationPhase === "collecting"
+      ? "Pulling browsing history and assembling a fresh queue."
+      : "Fresh queue in progress. Current voting is paused until the new stack lands.";
+  }
+
+  if (!currentSession || currentSession.cards.length === 0) {
+    return "No active queue yet.";
+  }
+
+  const ratedCount = getRatedCount(currentSession);
+  const remainingCount = getRemainingCount(currentSession);
+  const sourceRuns = getSourceRunCount(currentSession);
+  const parts = [
+    `${ratedCount} rated`,
+    `${remainingCount} left`,
+    `${sourceRuns} run${sourceRuns === 1 ? "" : "s"}`,
+  ];
+
+  if (currentSession.prefetchState === "loading") {
+    parts.push("next 5 loading");
+  } else if (currentSession.prefetchState === "ready") {
+    parts.push("next 5 ready");
+  } else if (currentSession.prefetchState === "error") {
+    parts.push("next 5 stalled");
+  }
+
+  if (feedbackSyncState === "loading") {
+    parts.push("feedback syncing");
+  }
+
+  return parts.join(" • ");
+}
+
+function buildActivityChips() {
+  const chips = [];
+
+  if (initializationInFlight) {
+    chips.push({ label: "Booting extension", tone: "active" });
+  }
+
+  if (manualGenerationPhase === "collecting") {
+    chips.push({ label: "Collecting history", tone: "active" });
+  }
+
+  if (manualGenerationPhase === "generating") {
+    chips.push({ label: `Generating ${INITIAL_BATCH_SIZE}`, tone: "active" });
+  }
+
+  if (currentSession?.prefetchState === "loading") {
+    chips.push({ label: `Warming next ${PREFETCH_BATCH_SIZE}`, tone: "active" });
+  } else if (currentSession?.prefetchState === "ready") {
+    chips.push({ label: `Next ${PREFETCH_BATCH_SIZE} ready`, tone: "success" });
+  } else if (currentSession?.prefetchState === "error") {
+    chips.push({ label: "Prefetch needs retry", tone: "error" });
+  }
+
+  if (feedbackSyncState === "loading") {
+    chips.push({ label: "Syncing feedback", tone: "active" });
+  } else if (feedbackSyncState === "error") {
+    chips.push({ label: "Feedback queued locally", tone: "error" });
+  }
+
+  if (chatThinking) {
+    chips.push({ label: "Chat thinking", tone: "active" });
+  }
+
+  return chips;
+}
+
+function renderStatusRail() {
+  elements.status.textContent = primaryStatusMessage;
+  elements.queueSummary.textContent = buildQueueSummary();
+
+  const chips = buildActivityChips();
+  elements.activityChips.innerHTML = "";
+  for (const chip of chips) {
+    const node = document.createElement("span");
+    node.className = "activity-chip";
+    node.dataset.tone = chip.tone;
+    node.textContent = chip.label;
+    elements.activityChips.append(node);
+  }
+
+  const showRetry =
+    currentSession &&
+    currentSession.prefetchState === "error" &&
+    !manualGenerationInFlight;
+  elements.prefetchRetryButton.classList.toggle("hidden", !showRetry);
+  elements.prefetchRetryButton.disabled = !showRetry;
+}
+
+function syncControlStates() {
+  const card = getCurrentCard();
+  const hasCards = !!card;
+  const blockingCardActions = initializationInFlight || manualGenerationInFlight || voteActionInFlight;
+
+  elements.generateButton.disabled = initializationInFlight || manualGenerationInFlight;
+  elements.generateButton.classList.toggle("is-loading", manualGenerationInFlight);
+  elements.introGenerateButton.disabled = initializationInFlight || manualGenerationInFlight;
+  elements.introGenerateButton.classList.toggle("is-loading", manualGenerationInFlight);
+  elements.chatSendButton.disabled = chatThinking;
+  elements.chatSendButton.classList.toggle("is-loading", chatThinking);
+  elements.disagreeButton.disabled = !hasCards || blockingCardActions;
+  elements.agreeButton.disabled = !hasCards || blockingCardActions;
+  elements.prevButton.disabled = !hasCards || blockingCardActions || currentSession.cursor === 0;
+  elements.nextButton.disabled =
+    !hasCards ||
+    blockingCardActions ||
+    currentSession.cursor >= currentSession.cards.length - 1;
+  elements.toggleChatButton.disabled = !currentSession || manualGenerationInFlight || initializationInFlight;
+  elements.backToCardsButton.disabled = manualGenerationInFlight || initializationInFlight;
+  elements.chatInput.disabled = chatThinking;
+}
+
+function renderAll() {
+  renderLayoutMode();
+  renderIntroScreen();
+  renderStatusRail();
+  renderCurrentCard();
+  renderExperiencePage();
 }
 
 async function collectLast90DaysHistory() {
@@ -493,9 +968,9 @@ async function collectLast90DaysHistory() {
     .filter((item) => item.url.length > 0);
 }
 
-async function getHistoryForGeneration(auto = false) {
+async function getHistoryForGeneration(useCache = false) {
   if (
-    auto &&
+    useCache &&
     historyCache &&
     Array.isArray(historyCache.items) &&
     Date.now() - historyCache.collectedAt < HISTORY_CACHE_WINDOW_MS
@@ -511,7 +986,7 @@ async function getHistoryForGeneration(auto = false) {
   return items;
 }
 
-async function sendFeedback(userIdValue, runId, feedbackEntries, silent = false) {
+async function sendFeedback(userIdValue, runId, feedbackEntries) {
   if (!feedbackEntries || feedbackEntries.length === 0) {
     return;
   }
@@ -540,13 +1015,60 @@ async function sendFeedback(userIdValue, runId, feedbackEntries, silent = false)
       `Feedback request failed (${response.status})${details ? `: ${details}` : ""}`
     );
   }
+}
 
-  if (!silent) {
-    setStatus("Feedback saved.");
+async function flushPendingFeedbackQueue() {
+  let fullySynced = true;
+  feedbackSyncError = "";
+
+  while (true) {
+    const batch = await dequeuePendingFeedbackBatch();
+    if (!batch) {
+      break;
+    }
+
+    try {
+      await sendFeedback(batch.userId, batch.runId, batch.feedback);
+    } catch (error) {
+      await requeuePendingFeedbackBatch(batch);
+      fullySynced = false;
+      feedbackSyncError =
+        error instanceof Error ? error.message : "Feedback sync failed";
+      break;
+    }
   }
+
+  return fullySynced;
+}
+
+async function syncPendingFeedbackInBackground() {
+  if (feedbackSyncPromise) {
+    return feedbackSyncPromise;
+  }
+
+  feedbackSyncState = "loading";
+  renderStatusRail();
+
+  feedbackSyncPromise = (async () => {
+    try {
+      const fullySynced = await flushPendingFeedbackQueue();
+      feedbackSyncState = fullySynced ? "idle" : "error";
+      return fullySynced;
+    } catch (error) {
+      feedbackSyncState = "error";
+      feedbackSyncError = error instanceof Error ? error.message : "Feedback sync failed";
+      return false;
+    } finally {
+      feedbackSyncPromise = null;
+      renderStatusRail();
+    }
+  })();
+
+  return feedbackSyncPromise;
 }
 
 async function sendChatMessage(message) {
+  const currentCard = getCurrentCard();
   const response = await fetchWithTimeout(
     `${apiBaseUrl}/api/assumptions/chat`,
     {
@@ -555,7 +1077,7 @@ async function sendChatMessage(message) {
       body: JSON.stringify({
         userId,
         message,
-        runId: currentRun?.runId,
+        runId: currentCard?.runId,
       }),
     },
     CHAT_TIMEOUT_MS
@@ -580,132 +1102,250 @@ async function sendChatMessage(message) {
   return payload.reply;
 }
 
-async function flushCurrentRunVotes() {
-  if (!currentRun) {
-    return {
-      fullySynced: true,
-      timedOut: false,
-    };
+function normalizeBatchPayload(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("API returned invalid assumptions payload");
   }
 
-  const entries = Object.entries(currentRun.votes || {})
-    .filter(([, vote]) => vote === "agree" || vote === "disagree")
-    .map(([assumptionId, vote]) => ({ assumptionId, vote }));
+  const runId =
+    typeof payload.runId === "string" && payload.runId.trim().length > 0
+      ? payload.runId.trim()
+      : crypto.randomUUID();
+  const generatedAt =
+    typeof payload.generatedAt === "string" && payload.generatedAt.trim().length > 0
+      ? payload.generatedAt
+      : new Date().toISOString();
+  const assumptions = Array.isArray(payload.assumptions) ? payload.assumptions : [];
+  const cards = assumptions
+    .map((card) => normalizeQueuedCard(card, runId, generatedAt))
+    .filter(Boolean);
 
-  if (entries.length === 0) {
-    return {
-      fullySynced: true,
-      timedOut: false,
-    };
+  if (cards.length === 0) {
+    throw new Error("API returned empty assumptions payload");
   }
 
-  await queueFeedback(userId, currentRun.runId, entries);
-
-  const syncPromise = syncPendingFeedbackInBackground();
-  const result = await Promise.race([
-    syncPromise.then((fullySynced) => ({
-      fullySynced,
-      timedOut: false,
-    })),
-    new Promise((resolve) => {
-      setTimeout(
-        () =>
-          resolve({
-            fullySynced: false,
-            timedOut: true,
-          }),
-        FINAL_SYNC_MAX_WAIT_MS
-      );
-    }),
-  ]);
-
-  return result;
+  return {
+    runId,
+    generatedAt,
+    cards,
+  };
 }
 
-async function maybeStartNextPhase() {
-  if (!currentRun || busy || autoRegenerateInFlight || !allCardsVoted()) {
-    return false;
-  }
+function filterUniqueCards(existingCards, incomingCards) {
+  const seenTexts = new Set(existingCards.map((card) => normalizeAssumptionText(card.assumption)));
+  const uniqueCards = [];
 
-  autoRegenerateInFlight = true;
-  setBusy(true);
-  setStatus("Phase complete. Preparing next assumptions...");
-  renderCurrentCard();
-
-  try {
-    const syncResult = await flushCurrentRunVotes();
-
-    if (syncResult.timedOut) {
-      setStatus("Starting next phase while feedback continues syncing...");
-    } else if (!syncResult.fullySynced) {
-      setStatus("Starting next phase. Some feedback will sync shortly.");
-    } else {
-      setStatus("Feedback synced. Starting next phase...");
+  for (const card of incomingCards) {
+    const normalizedText = normalizeAssumptionText(card.assumption);
+    if (!normalizedText || seenTexts.has(normalizedText)) {
+      continue;
     }
 
-    await generateAssumptions({ auto: true });
-    return true;
-  } finally {
-    autoRegenerateInFlight = false;
+    seenTexts.add(normalizedText);
+    uniqueCards.push(card);
   }
+
+  return uniqueCards;
 }
 
-async function handleVote(vote) {
-  if (!currentRun || busy || voteActionInFlight) {
-    return;
-  }
-
-  voteActionInFlight = true;
-  const assumption = getCurrentAssumption();
-  if (!assumption) {
-    voteActionInFlight = false;
-    return;
-  }
-
-  try {
-    currentRun.votes = currentRun.votes || {};
-    currentRun.votes[assumption.id] = vote;
-    await queueFeedback(userId, currentRun.runId, [
-      {
-        assumptionId: assumption.id,
-        vote,
-      },
-    ]);
-    void saveLastRun();
-
-    if (currentRun.currentIndex < currentRun.assumptions.length - 1) {
-      currentRun.currentIndex += 1;
-      void saveLastRun();
-    }
-
-    renderCurrentCard();
-    setStatus("Answer saved. Syncing in background...");
-    void syncPendingFeedbackInBackground();
-    await maybeStartNextPhase();
-  } finally {
-    voteActionInFlight = false;
-  }
+function buildSessionFromBatch(batch) {
+  return {
+    sessionId: crypto.randomUUID(),
+    createdAt: batch.generatedAt,
+    updatedAt: new Date().toISOString(),
+    cursor: 0,
+    cards: batch.cards,
+    votes: {},
+    prefetchState: "idle",
+    prefetchError: "",
+  };
 }
 
-async function generateAssumptions(options = {}) {
-  const auto = options && options.auto === true;
-  setBusy(true);
-  setStatus(
-    auto
-      ? "Refreshing with a new assumption stack..."
-      : "Collecting last 90 days of history..."
-  );
+function schedulePrefetchReadyReset(sessionId) {
+  if (prefetchReadyTimer) {
+    clearTimeout(prefetchReadyTimer);
+  }
 
-  try {
-    const history = await getHistoryForGeneration(auto);
-
-    if (history.length === 0) {
-      setStatus("No history found for the last 90 days.");
-      renderEmptyCard();
+  prefetchReadyTimer = setTimeout(() => {
+    if (!currentSession || currentSession.sessionId !== sessionId) {
       return;
     }
 
-    setStatus(`Generating from ${history.length} history events...`);
+    if (currentSession.prefetchState === "ready") {
+      currentSession.prefetchState = "idle";
+      currentSession.updatedAt = new Date().toISOString();
+      void saveLastSession();
+      renderStatusRail();
+    }
+  }, PREFETCH_READY_RESET_MS);
+}
+
+async function requestAssumptionsBatch(batchSize, useHistoryCache) {
+  const history = await getHistoryForGeneration(useHistoryCache);
+
+  if (history.length === 0) {
+    throw new Error("No history found for the last 90 days.");
+  }
+
+  const response = await fetchWithTimeout(
+    `${apiBaseUrl}/api/assumptions/generate`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        windowDays: WINDOW_DAYS,
+        batchSize,
+        history,
+        clientContext: {
+          source: "chrome_extension_popup",
+          extensionVersion: chrome.runtime.getManifest().version,
+        },
+      }),
+    },
+    GENERATE_TIMEOUT_MS
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    const details =
+      errorBody && typeof errorBody === "object"
+        ? errorBody.details || errorBody.error
+        : "";
+    throw new Error(
+      `Generate request failed (${response.status})${details ? `: ${details}` : ""}`
+    );
+  }
+
+  const payload = await response.json();
+  return normalizeBatchPayload(payload);
+}
+
+function maybeAdvanceCursorAfterAppend(previousCount) {
+  if (!currentSession || previousCount <= 0) {
+    return;
+  }
+
+  const previousCard = currentSession.cards[Math.min(currentSession.cursor, previousCount - 1)];
+  if (!previousCard) {
+    return;
+  }
+
+  const previousVote = currentSession.votes?.[getVoteKey(previousCard)];
+  if (isStoredVote(previousVote) && currentSession.cursor >= previousCount - 1) {
+    currentSession.cursor = previousCount;
+    triggerCardAdvanceAnimation();
+  }
+}
+
+async function startPrefetch(options = {}) {
+  if (!currentSession || manualGenerationInFlight || initializationInFlight) {
+    return false;
+  }
+
+  const force = options.force === true;
+  const remainingCount = getRemainingCount(currentSession);
+  if (!force && remainingCount > PREFETCH_THRESHOLD) {
+    return false;
+  }
+
+  if (currentSession.prefetchState === "loading") {
+    return false;
+  }
+
+  const sessionToken = activeSessionToken;
+  const requestToken = ++requestTokenCounter;
+  activePrefetchRequestToken = requestToken;
+
+  currentSession.prefetchState = "loading";
+  currentSession.prefetchError = "";
+  currentSession.updatedAt = new Date().toISOString();
+  void saveLastSession();
+  setPrimaryStatus("Keep rating. Warming the next 5 assumptions in the background.");
+  renderAll();
+
+  try {
+    const batch = await requestAssumptionsBatch(PREFETCH_BATCH_SIZE, true);
+
+    if (sessionToken !== activeSessionToken || requestToken !== activePrefetchRequestToken || !currentSession) {
+      return false;
+    }
+
+    const uniqueCards = filterUniqueCards(currentSession.cards, batch.cards);
+    if (uniqueCards.length === 0) {
+      throw new Error("Prefetch returned only repeated assumptions. Retry for a fresh batch.");
+    }
+
+    const previousCount = currentSession.cards.length;
+    currentSession.cards = currentSession.cards.concat(uniqueCards);
+    currentSession.prefetchState = "ready";
+    currentSession.prefetchError = "";
+    currentSession.updatedAt = new Date().toISOString();
+    maybeAdvanceCursorAfterAppend(previousCount);
+    await saveLastSession();
+    schedulePrefetchReadyReset(currentSession.sessionId);
+    setPrimaryStatus("Next 5 assumptions are queued. Keep rating.");
+    renderAll();
+    return true;
+  } catch (error) {
+    if (sessionToken !== activeSessionToken || requestToken !== activePrefetchRequestToken || !currentSession) {
+      return false;
+    }
+
+    const message = error instanceof Error ? error.message : "Unknown prefetch error";
+    currentSession.prefetchState = "error";
+    currentSession.prefetchError = message;
+    currentSession.updatedAt = new Date().toISOString();
+    await saveLastSession();
+    setPrimaryStatus("Keep rating. The next 5 assumptions failed to load.");
+    renderAll();
+    return false;
+  } finally {
+    if (activePrefetchRequestToken === requestToken) {
+      activePrefetchRequestToken = 0;
+    }
+  }
+}
+
+async function startManualGeneration() {
+  if (manualGenerationInFlight || initializationInFlight) {
+    return;
+  }
+
+  if (currentSession) {
+    currentSession.prefetchState = "idle";
+    currentSession.prefetchError = "";
+    currentSession.updatedAt = new Date().toISOString();
+  }
+
+  manualGenerationInFlight = true;
+  manualGenerationPhase = "collecting";
+  showSkeletonCard = true;
+  const previousSession = currentSession;
+  const sessionToken = ++activeSessionToken;
+  const requestToken = ++requestTokenCounter;
+  activeManualRequestToken = requestToken;
+  activePrefetchRequestToken = 0;
+  if (prefetchReadyTimer) {
+    clearTimeout(prefetchReadyTimer);
+  }
+
+  setPrimaryStatus("Collecting the last 90 days of history...");
+  renderAll();
+
+  try {
+    const history = await getHistoryForGeneration(false);
+    if (history.length === 0) {
+      throw new Error("No history found for the last 90 days.");
+    }
+
+    if (sessionToken !== activeSessionToken || requestToken !== activeManualRequestToken) {
+      return;
+    }
+
+    manualGenerationPhase = "generating";
+    setPrimaryStatus(`Generating ${INITIAL_BATCH_SIZE} assumptions from ${history.length} history events...`);
+    renderAll();
 
     const response = await fetchWithTimeout(
       `${apiBaseUrl}/api/assumptions/generate`,
@@ -715,6 +1355,7 @@ async function generateAssumptions(options = {}) {
         body: JSON.stringify({
           userId,
           windowDays: WINDOW_DAYS,
+          batchSize: INITIAL_BATCH_SIZE,
           history,
           clientContext: {
             source: "chrome_extension_popup",
@@ -737,65 +1378,135 @@ async function generateAssumptions(options = {}) {
     }
 
     const payload = await response.json();
+    const batch = normalizeBatchPayload(payload);
 
-    if (!payload || !Array.isArray(payload.assumptions) || payload.assumptions.length === 0) {
-      throw new Error("API returned empty assumptions payload");
+    if (sessionToken !== activeSessionToken || requestToken !== activeManualRequestToken) {
+      return;
     }
 
-    const normalizedRun = normalizeRun({
-      runId: payload.runId,
-      generatedAt: payload.generatedAt,
-      assumptions: payload.assumptions,
-      votes: {},
-      currentIndex: 0,
-    });
-
-    if (!normalizedRun) {
-      throw new Error("Generated assumptions payload was invalid");
-    }
-
-    currentRun = normalizedRun;
-
-    await saveLastRun();
-    void syncPendingFeedbackInBackground();
-
-    setStatus(auto ? "New stack ready. Keep rating." : "Wild assumptions ready. Rate each card.");
-    renderCurrentCard();
+    currentSession = buildSessionFromBatch(batch);
+    await saveLastSession();
+    setPrimaryStatus("Fresh assumptions ready. Rate what lands and the next 5 will warm up automatically.");
+    renderAll();
   } catch (error) {
+    if (sessionToken !== activeSessionToken || requestToken !== activeManualRequestToken) {
+      return;
+    }
+
+    currentSession = previousSession;
     const message = error instanceof Error ? error.message : "Unknown error";
-    setStatus(`Error: ${message}`);
-    renderCurrentCard();
+    setPrimaryStatus(`Could not generate a fresh queue: ${message}`);
+    renderAll();
   } finally {
-    setBusy(false);
-    renderCurrentCard();
+    if (activeManualRequestToken === requestToken) {
+      activeManualRequestToken = 0;
+    }
+
+    if (sessionToken === activeSessionToken) {
+      manualGenerationInFlight = false;
+      manualGenerationPhase = "idle";
+      showSkeletonCard = false;
+      renderAll();
+      void maybeStartPrefetch();
+    }
   }
 }
 
+async function handleVote(vote) {
+  if (!currentSession || voteActionInFlight || manualGenerationInFlight || initializationInFlight) {
+    return;
+  }
+
+  const card = getCurrentCard();
+  if (!card) {
+    return;
+  }
+
+  voteActionInFlight = true;
+
+  try {
+    currentSession.votes[getVoteKey(card)] = vote;
+    currentSession.updatedAt = new Date().toISOString();
+    await queueFeedback(userId, card.runId, [
+      {
+        assumptionId: card.id,
+        vote,
+      },
+    ]);
+
+    if (currentSession.cursor < currentSession.cards.length - 1) {
+      currentSession.cursor += 1;
+      triggerCardAdvanceAnimation();
+    }
+
+    await saveLastSession();
+    setPrimaryStatus("Answer saved. Keep going while feedback syncs in the background.");
+    renderAll();
+    void syncPendingFeedbackInBackground();
+    void maybeStartPrefetch();
+  } finally {
+    voteActionInFlight = false;
+    syncControlStates();
+  }
+}
+
+async function maybeStartPrefetch() {
+  if (!currentSession || manualGenerationInFlight || initializationInFlight) {
+    return false;
+  }
+
+  if (getRemainingCount(currentSession) > PREFETCH_THRESHOLD) {
+    return false;
+  }
+
+  if (currentSession.prefetchState === "loading") {
+    return false;
+  }
+
+  if (currentSession.prefetchState === "error") {
+    return false;
+  }
+
+  return startPrefetch();
+}
+
+async function retryPrefetch() {
+  if (!currentSession || currentSession.prefetchState !== "error") {
+    return;
+  }
+
+  await startPrefetch({ force: true });
+}
+
 async function moveCard(direction) {
-  if (!currentRun || busy) {
+  if (!currentSession || manualGenerationInFlight || initializationInFlight) {
     return;
   }
 
-  const nextIndex = currentRun.currentIndex + direction;
-  if (nextIndex < 0 || nextIndex >= currentRun.assumptions.length) {
+  const nextIndex = currentSession.cursor + direction;
+  if (nextIndex < 0 || nextIndex >= currentSession.cards.length) {
     return;
   }
 
-  currentRun.currentIndex = nextIndex;
-  await saveLastRun();
-  renderCurrentCard();
+  currentSession.cursor = nextIndex;
+  currentSession.updatedAt = new Date().toISOString();
+  await saveLastSession();
+  triggerCardAdvanceAnimation();
+  renderAll();
 }
 
 async function handleChatSubmit(event) {
   event.preventDefault();
 
   const message = elements.chatInput.value.trim();
-  if (!message) {
+  if (!message || chatThinking) {
     return;
   }
 
+  chatThinking = true;
   elements.chatInput.value = "";
-  elements.chatSendButton.disabled = true;
+  renderStatusRail();
+  syncControlStates();
 
   chatHistory.push({ role: "user", content: message });
   renderChatMessages();
@@ -804,81 +1515,100 @@ async function handleChatSubmit(event) {
   try {
     const reply = await sendChatMessage(message);
     chatHistory.push({ role: "assistant", content: reply });
-    renderChatMessages();
-    await saveChatHistory();
+    setPrimaryStatus("Chat updated with the latest read.");
   } catch (error) {
     const reason = error instanceof Error ? error.message : "Unknown error";
     chatHistory.push({
       role: "assistant",
       content: `Could not reach chat endpoint: ${reason}`,
     });
+    setPrimaryStatus(`Chat request failed: ${reason}`);
+  } finally {
+    chatThinking = false;
     renderChatMessages();
     await saveChatHistory();
-  } finally {
-    elements.chatSendButton.disabled = false;
+    renderStatusRail();
+    syncControlStates();
   }
 }
 
 async function initializePopup() {
-  setBusy(true);
-  setStatus("Booting extension...");
+  initializationInFlight = true;
+  showSkeletonCard = false;
+  setPrimaryStatus("Booting extension...");
+  renderAll();
 
   try {
     userId = await getOrCreateUserId();
     apiBaseUrl = await getApiBaseUrl();
     chatHistory = await loadChatHistory();
     renderChatMessages();
-    renderChatPanelState();
-
     void syncPendingFeedbackInBackground();
 
-    const cachedRun = await loadLastRun();
-    if (cachedRun) {
-      currentRun = cachedRun;
-      setStatus("Loaded cached card stack. Click Generate for fresh assumptions.");
-      renderCurrentCard();
+    const cachedSession = await loadLastSession();
+    if (cachedSession) {
+      currentSession = cachedSession;
+      activeSessionToken = 1;
+      setPrimaryStatus("Loaded your cached queue. Generate for a fresh read.");
     } else {
-      renderEmptyCard();
-      setStatus("Ready. Click Generate.");
+      setPrimaryStatus("Ready. Generate a fresh queue from your last 90 days.");
     }
+
+    renderAll();
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    renderEmptyCard();
-    setStatus(`Initialization failed: ${message}`);
+    currentSession = null;
+    setPrimaryStatus(`Initialization failed: ${message}`);
+    renderAll();
   } finally {
-    setBusy(false);
-    renderCurrentCard();
-    void maybeStartNextPhase();
+    initializationInFlight = false;
+    renderAll();
+    void maybeStartPrefetch();
   }
 }
 
 elements.generateButton.addEventListener("click", () => {
-  generateAssumptions();
+  void startManualGeneration();
+});
+
+elements.introGenerateButton.addEventListener("click", () => {
+  void startManualGeneration();
+});
+
+elements.prefetchRetryButton.addEventListener("click", () => {
+  void retryPrefetch();
 });
 
 elements.disagreeButton.addEventListener("click", () => {
-  handleVote("disagree");
+  void handleVote("disagree");
 });
 
 elements.agreeButton.addEventListener("click", () => {
-  handleVote("agree");
+  void handleVote("agree");
 });
 
 elements.prevButton.addEventListener("click", () => {
-  moveCard(-1);
+  void moveCard(-1);
 });
 
 elements.nextButton.addEventListener("click", () => {
-  moveCard(1);
+  void moveCard(1);
 });
 
 elements.toggleChatButton.addEventListener("click", () => {
-  chatOpen = !chatOpen;
-  renderChatPanelState();
+  activePage = "chat";
+  renderAll();
+});
+
+elements.backToCardsButton.addEventListener("click", () => {
+  activePage = "assumptions";
+  renderAll();
 });
 
 elements.chatForm.addEventListener("submit", (event) => {
-  handleChatSubmit(event);
+  void handleChatSubmit(event);
 });
 
+renderChatMessages();
+renderAll();
 initializePopup();

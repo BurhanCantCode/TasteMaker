@@ -11,7 +11,7 @@ extension/  Chrome Extension (MV3 side panel)
 
 ## APIs
 
-- `POST /api/assumptions/generate` — generate 10 assumption cards from browsing history
+- `POST /api/assumptions/generate` — generate a configurable batch of assumption cards from browsing history
 - `POST /api/assumptions/feedback` — submit agree/disagree votes, updates learning weights
 - `POST /api/assumptions/chat` — conversational follow-up grounded in assumptions + patterns
 

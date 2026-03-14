@@ -12,11 +12,12 @@
 1. Click the extension icon
 2. Chrome opens the TasteMaker side panel on the right
 3. Click **Generate**
-4. Review 10 assumptions
+4. Review the first 10 assumptions
 5. Vote **Agree** or **Disagree** per card
 
-Votes are sent immediately and also flushed as a final batch once all cards are rated.
-After the 10th vote, the extension auto-generates the next stack.
+Votes are queued per source run, sent immediately when possible, and kept in local storage until background sync succeeds.
+After 5 ratings, the extension starts warming the next 5 cards in the background so the queue can keep rolling without a hard stop.
+Recently generated assumptions are filtered to reduce repeats across the active session and recent runs.
 
 You can drag the panel edge to make it wider if needed.
 
