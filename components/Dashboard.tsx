@@ -111,6 +111,21 @@ export function Dashboard({ profile, onContinue, onUpdateFacts, onSignInClick, o
 
         {/* Header */}
         <div className="text-center space-y-3">
+          {/* App Icon */}
+          <div className="flex justify-center mb-2">
+            <div
+              style={{
+                width: 96,
+                height: 96,
+                clipPath: "path('M 48 0 C 67.88 0 81.94 0 88.97 7.03 C 96 13.06 96 28.12 96 48 C 96 67.88 96 81.94 88.97 88.97 C 81.94 96 67.88 96 48 96 C 28.12 96 13.06 96 7.03 88.97 C 0 81.94 0 67.88 0 48 C 0 28.12 0 13.06 7.03 7.03 C 13.06 0 28.12 0 48 0 Z')",
+                overflow: "hidden",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/sparkle.png" alt="Tastemaker" style={{ width: 96, height: 96, objectFit: "cover" }} />
+            </div>
+          </div>
           <h1 className="text-4xl font-bold tracking-tight text-[#171717]">
             {isNewUser ? "Tastemaker Alpha" : "Welcome back"}
           </h1>
