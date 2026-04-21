@@ -206,4 +206,45 @@ test.describe("/api/generate source contract", () => {
     });
     expect(res.status()).toBe(400);
   });
+
+  test("two fresh-profile static calls return different card sets (per-request shuffle)", async ({
+    request,
+  }) => {
+    // Two independent calls with identical empty profiles. Per-request
+    // shuffle should sample the pool independently each time, so the
+    // probability both calls pick the same 10 cards in the same order
+    // is effectively zero (pool size 2651). If this test starts flaking
+    // legitimately, the shuffle has regressed to module-load or got a
+    // seeded RNG bolted onto it.
+    const [a, b] = await Promise.all([
+      request.post("/api/generate", {
+        data: {
+          userProfile: EMPTY_PROFILE,
+          batchSize: 10,
+          mode: "ask",
+          source: "static",
+        },
+      }),
+      request.post("/api/generate", {
+        data: {
+          userProfile: EMPTY_PROFILE,
+          batchSize: 10,
+          mode: "ask",
+          source: "static",
+        },
+      }),
+    ]);
+
+    const bodyA = await a.json();
+    const bodyB = await b.json();
+
+    const idsA: string[] = bodyA.cards.map(
+      (c: { content: { id: string } }) => c.content.id
+    );
+    const idsB: string[] = bodyB.cards.map(
+      (c: { content: { id: string } }) => c.content.id
+    );
+
+    expect(idsA).not.toEqual(idsB);
+  });
 });
