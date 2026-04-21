@@ -135,22 +135,28 @@ test.describe("question flow sends correct batch source", () => {
 
     await clearAndSeed(page, profile);
 
+    // Clear any captures that landed during the pre-seed load (the initial
+    // goto("/") runs against an empty profile before the reload seeds
+    // localStorage — those calls are noise for this assertion).
+    generateBodies.length = 0;
+
     // The seeded profile has 30 facts — not a new user — so onboarding is
-    // skipped and the app lands on the Me tab. We need to navigate to
-    // Questions to trigger the fetch.
+    // skipped and the app lands on the Me tab. Navigate to Questions to
+    // trigger the fetch under test.
     await page.getByRole("button", { name: /^Questions$/i }).click();
 
-    // Wait for the fetch.
+    // Poll until we see a call carrying the seeded 30 facts. This is
+    // tighter than waiting on generateBodies.length > 0 — any straggling
+    // stale-profile calls can't satisfy this.
     await expect
-      .poll(() => generateBodies.length, {
+      .poll(() => generateBodies.find((b) => b.facts === 30), {
         timeout: 15_000,
-        message: "expected /api/generate to be called after clicking Questions tab",
+        message:
+          "expected /api/generate call with 30-fact profile after clicking Questions tab",
       })
-      .toBeGreaterThan(0);
+      .toBeTruthy();
 
-    // Assert the call saw the seeded 30 facts AND requested dynamic.
     const callWithThirty = generateBodies.find((b) => b.facts === 30);
-    expect(callWithThirty, "expected a call carrying 30 facts").toBeTruthy();
     expect(callWithThirty?.source).toBe("dynamic");
   });
 });
