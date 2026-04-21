@@ -1,97 +1,68 @@
 "use client";
 
+import { useRef } from "react";
 import { Question } from "@/lib/types";
-import { YesNoButtons } from "../inputs/YesNoButtons";
-import { LikeScale } from "../inputs/LikeScale";
-import { WantScale } from "../inputs/WantScale";
-import { MultipleChoice } from "../inputs/MultipleChoice";
-import { TextInput } from "../inputs/TextInput";
-import { RatingScale } from "../inputs/RatingScale";
+import { Star } from "lucide-react";
 
 interface AskCardProps {
   question: Question;
-  onAnswer: (answer: string) => void;
   disabled?: boolean;
 }
 
+export function AskCard({ question, disabled }: AskCardProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  void disabled;
 
-export function AskCard({ question, onAnswer, disabled }: AskCardProps) {
+  // No on-mount fade for card content. The peek (rendered with disabled=true)
+  // shows the same question's content at opacity 1 just before commit; if the
+  // active then mounts with content opacity 0 and fades in, the user sees the
+  // question text vanish, the new peek's text flash behind, then the active
+  // text fade back in — that's the stutter on button tap. Keep content visible
+  // on mount so the peek→active handoff is continuous.
+
+  const category = question.tags && question.tags[0];
+
+  // Tune text size to question length so the card never feels empty or cramped.
+  const len = question.title.length;
+  const textSize =
+    len > 140 ? "text-[20px] leading-[1.25]" :
+    len > 90  ? "text-[24px] leading-[1.2]"  :
+    len > 50  ? "text-[28px] leading-[1.15]" :
+                "text-[32px] leading-[1.1]";
+
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full h-full flex flex-col overflow-hidden">
-      {/* Top Section - Badge and Question */}
-      <div className="flex flex-col gap-8 flex-1 min-h-0 overflow-y-auto pr-1">
-        {/* Question Badge */}
-        <div className="flex-shrink-0">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-900 text-xs font-bold uppercase tracking-wider">
+    <div
+      ref={ref}
+      className="bg-white rounded-[28px] p-7 shadow-[0_10px_36px_rgba(0,0,0,0.06)] w-full h-full flex flex-col"
+    >
+      <div className="flex items-center justify-between" data-card-fade>
+        {category ? (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-900 text-white text-[10px] font-bold uppercase tracking-[0.14em]">
+            {category}
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-[0.14em]">
             Question
           </span>
-        </div>
-
-        {/* Question Title */}
-        <div className="flex-shrink-0">
-          <h2 className="text-2xl font-bold text-[#171717] leading-tight tracking-tight">
-            {question.title}
-          </h2>
-        </div>
+        )}
+        {question.superLikeEnabled && (
+          <span
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-[0.08em]"
+            title="Swipe up for Super Yes"
+          >
+            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+            Super
+          </span>
+        )}
       </div>
 
-      {/* Input Section - Fixed at bottom */}
-      <div className="flex-shrink-0 pt-6">
-        {question.answerType === "yes_no" && (
-          <YesNoButtons
-            onAnswer={onAnswer}
-            disabled={disabled}
-            labels={question.answerLabels as [string, string] | undefined}
-          />
-        )}
-
-        {question.answerType === "like_scale" && (
-          <LikeScale
-            onAnswer={onAnswer}
-            disabled={disabled}
-            labels={question.answerLabels}
-          />
-        )}
-
-        {question.answerType === "want_scale" && (
-          <WantScale
-            onAnswer={onAnswer}
-            disabled={disabled}
-            labels={question.answerLabels}
-          />
-        )}
-
-        {question.answerType === "rating_scale" && (
-          <RatingScale
-            onAnswer={onAnswer}
-            disabled={disabled}
-            anchorLabels={question.answerLabels as [string, string] | undefined}
-          />
-        )}
-
-        {question.answerType === "multiple_choice" && question.options && (
-          <MultipleChoice
-            key={question.id}
-            options={question.options}
-            onAnswer={(ans) => {
-              if (Array.isArray(ans)) {
-                onAnswer(ans.join(","));
-              } else {
-                onAnswer(ans);
-              }
-            }}
-            disabled={disabled}
-            allowMultiple={true}
-          />
-        )}
-
-        {question.answerType === "text_input" && (
-          <TextInput
-            onAnswer={onAnswer}
-            disabled={disabled}
-            placeholder="Type your answer..."
-          />
-        )}
+      <div className="flex-1 flex items-center justify-center">
+        <h2
+          data-card-fade
+          className={`${textSize} font-bold text-[#171717] tracking-tight text-balance text-center`}
+        >
+          {question.title}
+        </h2>
       </div>
     </div>
   );

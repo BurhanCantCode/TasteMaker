@@ -47,3 +47,12 @@ TASTEMAKER_UI_GUIDE.md
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# local editor/agent config
+/.claude/

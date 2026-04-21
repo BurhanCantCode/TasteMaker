@@ -98,6 +98,8 @@ export function createEmptyProfile(): UserProfile {
   return {
     facts: [],
     likes: [],
+    skippedIds: [],
+    reports: [],
   };
 }
 

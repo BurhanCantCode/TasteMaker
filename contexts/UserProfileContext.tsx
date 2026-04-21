@@ -9,7 +9,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import { UserProfile, UserFact, UserLike } from "@/lib/types";
+import { UserProfile, UserFact, UserLike, PersonalityReport } from "@/lib/types";
 import {
   loadProfile,
   saveProfile,
@@ -26,6 +26,9 @@ interface UserProfileContextValue {
   isLoaded: boolean;
   addFact: (fact: Omit<UserFact, "timestamp">) => void;
   addLike: (like: Omit<UserLike, "timestamp">) => void;
+  addSkip: (questionId: string) => void;
+  undoLast: () => "fact" | "skip" | null;
+  addReport: (report: Omit<PersonalityReport, "createdAt" | "id">) => PersonalityReport;
   setInitialFacts: (facts: string) => void;
   setUserLocation: (city: string, region?: string, country?: string) => void;
   reset: () => void;
@@ -104,6 +107,54 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const addSkip = useCallback((questionId: string) => {
+    setProfile((prev) => ({
+      ...prev,
+      skippedIds: [...(prev.skippedIds ?? []), questionId],
+    }));
+  }, []);
+
+  const undoLast = useCallback((): "fact" | "skip" | null => {
+    // Decide what to undo from the latest snapshot — NOT from a closure variable
+    // mutated inside the setProfile updater. React may run the updater lazily,
+    // so the closure pattern returned null before the pop landed and the caller
+    // bailed out (leaving the card index un-rewound).
+    const lastFact = profile.facts[profile.facts.length - 1];
+    const lastSkip = profile.skippedIds?.[profile.skippedIds.length - 1];
+    if (lastFact) {
+      setProfile((prev) => {
+        if (prev.facts.length === 0) return prev;
+        return { ...prev, facts: prev.facts.slice(0, -1) };
+      });
+      return "fact";
+    }
+    if (lastSkip) {
+      setProfile((prev) => {
+        const skipped = prev.skippedIds ?? [];
+        if (skipped.length === 0) return prev;
+        return { ...prev, skippedIds: skipped.slice(0, -1) };
+      });
+      return "skip";
+    }
+    return null;
+  }, [profile]);
+
+  const addReport = useCallback(
+    (report: Omit<PersonalityReport, "createdAt" | "id">): PersonalityReport => {
+      const full: PersonalityReport = {
+        ...report,
+        id: `report_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        createdAt: Date.now(),
+      };
+      setProfile((prev) => ({
+        ...prev,
+        reports: [...(prev.reports ?? []), full],
+      }));
+      return full;
+    },
+    []
+  );
+
   const setInitialFacts = useCallback((facts: string) => {
     setProfile((prev) => ({ ...prev, initialFacts: facts }));
   }, []);
@@ -125,6 +176,9 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     isLoaded,
     addFact,
     addLike,
+    addSkip,
+    undoLast,
+    addReport,
     setInitialFacts,
     setUserLocation,
     reset,

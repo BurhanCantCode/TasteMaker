@@ -212,6 +212,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         likes: data.likes || [],
         initialFacts: data.initialFacts,
         userLocation: data.userLocation,
+        skippedIds: data.skippedIds || [],
+        reports: data.reports || [],
       };
 
       const localProfile = loadProfile();
@@ -219,7 +221,9 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       // Skip if cloud data matches local (nothing new to merge)
       if (localProfile &&
         localProfile.facts.length === cloudProfile.facts.length &&
-        localProfile.likes.length === cloudProfile.likes.length) {
+        localProfile.likes.length === cloudProfile.likes.length &&
+        (localProfile.skippedIds?.length ?? 0) === (cloudProfile.skippedIds?.length ?? 0) &&
+        (localProfile.reports?.length ?? 0) === (cloudProfile.reports?.length ?? 0)) {
         return;
       }
 

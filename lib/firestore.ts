@@ -6,7 +6,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { getFirebaseDb } from "./firebase";
-import { UserProfile, UserFact, UserLike, CardSession } from "./types";
+import { UserProfile, UserFact, UserLike, CardSession, PersonalityReport } from "./types";
 import { CachedSummary } from "./cookies";
 
 export interface CloudUserDocument {
@@ -18,6 +18,8 @@ export interface CloudUserDocument {
     region?: string;
     country?: string;
   };
+  skippedIds?: string[];
+  reports?: PersonalityReport[];
   cardSession?: CardSession;
   cachedSummary?: CachedSummary;
   lastModifiedAt: number;
@@ -50,6 +52,12 @@ export async function syncProfileToCloud(
     }
     if (profile.userLocation !== undefined) {
       data.userLocation = profile.userLocation;
+    }
+    if (profile.skippedIds !== undefined) {
+      data.skippedIds = profile.skippedIds;
+    }
+    if (profile.reports !== undefined) {
+      data.reports = profile.reports;
     }
     if (cardSession) {
       data.cardSession = cardSession;
@@ -109,6 +117,8 @@ export async function loadProfileFromCloud(uid: string): Promise<{
       likes: data.likes || [],
       initialFacts: data.initialFacts,
       userLocation: data.userLocation,
+      skippedIds: data.skippedIds || [],
+      reports: data.reports || [],
     };
 
     console.log(
@@ -154,6 +164,20 @@ export function mergeProfiles(
     }
   }
 
+  // Skipped IDs: union
+  const skippedSet = new Set<string>([
+    ...(local.skippedIds ?? []),
+    ...(cloud.skippedIds ?? []),
+  ]);
+
+  // Reports: union by id, preserve all from both sides
+  const reportsMap = new Map<string, PersonalityReport>();
+  for (const r of cloud.reports ?? []) reportsMap.set(r.id, r);
+  for (const r of local.reports ?? []) {
+    const existing = reportsMap.get(r.id);
+    if (!existing || r.createdAt > existing.createdAt) reportsMap.set(r.id, r);
+  }
+
   return {
     facts: Array.from(factsMap.values()).sort(
       (a, b) => a.timestamp - b.timestamp
@@ -169,6 +193,10 @@ export function mergeProfiles(
           : cloud.initialFacts
         : local.initialFacts || cloud.initialFacts,
     userLocation: local.userLocation || cloud.userLocation,
+    skippedIds: Array.from(skippedSet),
+    reports: Array.from(reportsMap.values()).sort(
+      (a, b) => a.createdAt - b.createdAt
+    ),
   };
 }
 
