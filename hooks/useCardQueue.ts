@@ -1,8 +1,23 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { Card, UserProfile, GenerateResponse, CardSession, PendingCardsBatch } from "@/lib/types";
+import { BatchSource, Card, UserProfile, GenerateResponse, CardSession, PendingCardsBatch, Question } from "@/lib/types";
 import { saveCardSession, savePendingCards, clearPendingCards } from "@/lib/cookies";
+
+// A prefetch can overlap the tail of the current batch (prefetch fires at
+// halfBatch with only ~5 facts, so the API returns q6-q15 even though
+// q6-q10 are still being answered). When the buffer is later consumed,
+// drop any ask cards whose questions are already in facts/skippedIds so
+// the user doesn't re-see them as duplicates.
+function filterSeenAskCards(cards: Card[], profile: UserProfile): Card[] {
+  const seen = new Set<string>();
+  for (const f of profile.facts ?? []) seen.add(f.questionId);
+  for (const id of profile.skippedIds ?? []) seen.add(id);
+  return cards.filter((c) => {
+    if (c.type !== "ask") return true;
+    return !seen.has((c.content as Question).id);
+  });
+}
 
 interface CardQueueState {
   cards: Card[];
@@ -17,6 +32,7 @@ interface PrefetchedBatch {
   cards: Card[];
   mode: "ask" | "result";
   batchSize: number;
+  source: BatchSource;
   factsCountAtPrefetch: number;
   likesCountAtPrefetch: number;
 }
@@ -46,7 +62,8 @@ export function useCardQueue() {
       userProfile: UserProfile,
       mode: "ask" | "result",
       batchSize: number = 10,
-      systemPrompt?: string
+      systemPrompt?: string,
+      source: BatchSource = "static"
     ) => {
       // CHECK PREFETCH BUFFER FIRST
       let prefetched = prefetchedBatchRef.current;
@@ -79,34 +96,55 @@ export function useCardQueue() {
       const maxFactDrift =
         mode === "ask" && batchSize >= 10 ? Math.ceil(batchSize / 2) : 2;
 
+      // Buffer is fresh only if its source also matches what we're asking
+      // for. Otherwise we'd serve a static batch where the caller asked
+      // for dynamic (or vice-versa) and the user loses the "they really
+      // get me" moment — or gets an unexpected LLM call mid-session.
       const isFresh =
         prefetched &&
         prefetched.mode === mode &&
         prefetched.batchSize === batchSize &&
+        prefetched.source === source &&
         userProfile.facts.length - prefetched.factsCountAtPrefetch <= maxFactDrift;
 
       if (prefetched && isFresh) {
-        // Consume the prefetched batch instantly -- no loading state, no API call
-        console.info(
-          `[Tastemaker] Using pre-generated batch instantly (${prefetched.cards.length} cards, mode=${prefetched.mode}, batch=${prefetched.batchSize})`
-        );
-        prefetchedBatchRef.current = null;
+        // Filter already-answered cards: prefetch was generated with a
+        // smaller seen-set than the user's current state, so the batch
+        // can start with questions the user just answered.
+        const filteredCards =
+          prefetched.mode === "ask"
+            ? filterSeenAskCards(prefetched.cards, userProfile)
+            : prefetched.cards;
 
-        setState((prev) => ({
-          ...prev,
-          cards: prefetched.cards,
-          currentIndex: 0,
-          isLoading: false,
-          error: null,
-          mode: prefetched.mode,
-          batchSize: prefetched.batchSize,
-        }));
+        if (filteredCards.length === 0) {
+          // Everything in the buffer was already answered — discard it
+          // and fall through to a fresh fetch.
+          console.info(
+            `[Tastemaker] Pre-generated batch fully stale after filter; discarding and fetching fresh`
+          );
+          prefetchedBatchRef.current = null;
+        } else {
+          console.info(
+            `[Tastemaker] Using pre-generated batch instantly (${filteredCards.length} cards after filter, mode=${prefetched.mode}, batch=${prefetched.batchSize})`
+          );
+          prefetchedBatchRef.current = null;
 
-        saveCardSession({ mode: prefetched.mode, batchProgress: 0, batchSize: prefetched.batchSize });
-        if (prefetched.mode === "ask") {
-          savePendingCards({ cards: prefetched.cards, currentIndex: 0, mode: prefetched.mode, batchSize: prefetched.batchSize });
+          setState((prev) => ({
+            ...prev,
+            cards: filteredCards,
+            currentIndex: 0,
+            isLoading: false,
+            error: null,
+            mode: prefetched.mode,
+            batchSize: prefetched.batchSize,
+          }));
+
+          saveCardSession({ mode: prefetched.mode, batchProgress: 0, batchSize: prefetched.batchSize });
+          if (prefetched.mode === "ask") {
+            savePendingCards({ cards: filteredCards, currentIndex: 0, mode: prefetched.mode, batchSize: prefetched.batchSize });
+          }
+          return;
         }
-        return;
       }
 
       // NORMAL FETCH PATH (existing logic)
@@ -123,6 +161,7 @@ export function useCardQueue() {
             batchSize,
             mode,
             systemPrompt,
+            source,
           }),
         });
 
@@ -165,7 +204,8 @@ export function useCardQueue() {
       mode: "ask" | "result",
       batchSize: number = 10,
       systemPrompt?: string,
-      options?: PrefetchOptions
+      options?: PrefetchOptions,
+      source: BatchSource = "static"
     ) => {
       const force = options?.force ?? false;
 
@@ -194,7 +234,7 @@ export function useCardQueue() {
       isPrefetchingRef.current = true;
       const startedAt = Date.now();
       console.info(
-        `[Tastemaker] Pre-generation started (${reason}) -> mode=${mode}, batch=${batchSize}, facts=${userProfile.facts.length}, likes=${userProfile.likes.length}`
+        `[Tastemaker] Pre-generation started (${reason}, source=${source}) -> mode=${mode}, batch=${batchSize}, facts=${userProfile.facts.length}, likes=${userProfile.likes.length}`
       );
 
       const promise = (async () => {
@@ -207,6 +247,7 @@ export function useCardQueue() {
               batchSize,
               mode,
               systemPrompt,
+              source,
             }),
             // No AbortController — request always completes
           });
@@ -222,15 +263,22 @@ export function useCardQueue() {
 
           // Only store result if this generation is still current
           if (prefetchGenerationRef.current === thisGeneration) {
+            // Use the source the server actually returned — on dynamic
+            // failure it silently falls back to static, and we need the
+            // buffer to reflect that so fetchCards's freshness check
+            // (which compares caller-requested source against buffered
+            // source) can decide whether to reuse or refetch.
+            const servedSource: BatchSource = data.source ?? source;
             prefetchedBatchRef.current = {
               cards: data.cards,
               mode,
               batchSize,
+              source: servedSource,
               factsCountAtPrefetch: userProfile.facts.length,
               likesCountAtPrefetch: userProfile.likes.length,
             };
             console.info(
-              `[Tastemaker] Pre-generation completed (${reason}) -> ${data.cards.length} cards ready in ${Date.now() - startedAt}ms`
+              `[Tastemaker] Pre-generation completed (${reason}, served=${servedSource}) -> ${data.cards.length} cards ready in ${Date.now() - startedAt}ms`
             );
           } else {
             console.info(
