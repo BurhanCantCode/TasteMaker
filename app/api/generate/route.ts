@@ -16,6 +16,7 @@ import {
   buildDynamicBatchUserPrompt,
   validateDynamicCard,
 } from "@/lib/personalityPrompts";
+import { buildSeenIds } from "@/lib/questionSequencer";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -26,9 +27,7 @@ function serveStatic(
   userProfile: UserProfile,
   batchSize: number
 ): { cards: Card[]; hasMore: boolean } {
-  const seenIds = new Set<string>();
-  for (const f of userProfile.facts ?? []) seenIds.add(f.questionId);
-  for (const id of userProfile.skippedIds ?? []) seenIds.add(id);
+  const seenIds = buildSeenIds(userProfile);
   const { questions, hasMore } = getNextQuestionBatch(seenIds, batchSize);
   const cards: Card[] = questions.map((q) => ({ type: "ask", content: q }));
   return { cards, hasMore };
@@ -81,9 +80,7 @@ async function serveDynamic(
     // Validate each card, drop bad ones, and dedupe against the user's
     // already-seen question ids (LLM can occasionally echo an id it saw
     // in the prompt).
-    const seenIds = new Set<string>();
-    for (const f of userProfile.facts ?? []) seenIds.add(f.questionId);
-    for (const id of userProfile.skippedIds ?? []) seenIds.add(id);
+    const seenIds = buildSeenIds(userProfile);
 
     const validated: Question[] = [];
     for (const raw of rawCards) {
