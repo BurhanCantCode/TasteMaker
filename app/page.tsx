@@ -15,29 +15,12 @@ import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { PhoneSignIn } from "@/components/auth/PhoneSignIn";
 import { TabBar, Tab } from "@/components/navigation/TabBar";
 import { RecommendationInterstitialCard } from "@/components/cards/RecommendationInterstitialCard";
-import { BatchSource, Card, Gesture, PersonalityParams, PersonalityReport, Question } from "@/lib/types";
+import { Card, Gesture, PersonalityParams, PersonalityReport, Question } from "@/lib/types";
 import { clearSummary, clearCardSession, loadPendingCards, clearPendingCards } from "@/lib/cookies";
 import { deleteCloudProfile } from "@/lib/firestore";
 import { isPositiveAnswer } from "@/lib/personalityQuestions";
+import { BATCH_SIZE, CHUNK_SIZE, isMilestoneAnswer } from "@/lib/questionSequencer";
 import { ArrowLeft, Loader2, Undo2 } from "lucide-react";
-
-const CHUNK_SIZE = 20;
-const BATCH_SIZE = 10; // Two batches per 20-answer milestone.
-
-/**
- * First 20 answers ever → all static (no context exists yet).
- * After that, each 20-chunk is static(first 10) + dynamic(last 10).
- *
- *   answered < 20                    → static  (chunk 1 both batches)
- *   answered % 20 is in [0, 10)      → static  (first batch of chunk 2+)
- *   answered % 20 is in [10, 20)     → dynamic (second batch of chunk 2+)
- *
- * See docs/plans/2026-04-22-dynamic-question-batching.md.
- */
-function batchSourceFor(answeredCount: number): BatchSource {
-  if (answeredCount < CHUNK_SIZE) return "static";
-  return answeredCount % CHUNK_SIZE >= BATCH_SIZE ? "dynamic" : "static";
-}
 
 export default function Home() {
   const {
@@ -59,11 +42,11 @@ export default function Home() {
     error,
     mode,
     hasMoreCards,
-    fetchCards,
+    ensureBatch,
     nextCard,
     reset: resetQueue,
     hydrateFromPending,
-    prefetchNextBatch,
+    prefetchAhead,
   } = useCardQueue();
 
   const { user, isAuthLoading } = useAuth();
@@ -105,14 +88,15 @@ export default function Home() {
   }, [isLoaded, initialSyncDone, hasPendingMerge, profile]);
 
   // Pre-fetch first batch when new user is on welcome screen.
-  // Always static — a brand-new user has no facts for the LLM to ground on.
+  // Always static — a brand-new user has no facts for the LLM to ground on
+  // (and planNextBatch returns "static" for facts.length=0, so no override needed).
   useEffect(() => {
     if (showOnboarding && isLoaded && !currentCard && !isLoading) {
       if (profile.facts.length === 0 && (profile.skippedIds?.length ?? 0) === 0) {
-        fetchCards(profile, "ask", BATCH_SIZE, systemPrompt, "static");
+        ensureBatch(profile, { systemPrompt });
       }
     }
-  }, [showOnboarding, isLoaded, currentCard, isLoading, profile, systemPrompt, fetchCards]);
+  }, [showOnboarding, isLoaded, currentCard, isLoading, profile, systemPrompt, ensureBatch]);
 
   // Restore/fetch when entering questions tab.
   useEffect(() => {
@@ -133,49 +117,33 @@ export default function Home() {
       }
       if (firstUnanswered >= pending.cards.length) {
         clearPendingCards();
-        fetchCards(
-          profile,
-          "ask",
-          BATCH_SIZE,
-          systemPrompt,
-          batchSourceFor(profile.facts.length)
-        );
+        ensureBatch(profile, { systemPrompt });
       } else {
         hydrateFromPending({ ...pending, currentIndex: firstUnanswered });
       }
       return;
     }
 
-    fetchCards(
-      profile,
-      "ask",
-      BATCH_SIZE,
-      systemPrompt,
-      batchSourceFor(profile.facts.length)
-    );
-  }, [isLoaded, activeTab, currentCard, isLoading, profile, systemPrompt, fetchCards, hydrateFromPending]);
+    ensureBatch(profile, { systemPrompt });
+  }, [isLoaded, activeTab, currentCard, isLoading, profile, systemPrompt, ensureBatch, hydrateFromPending]);
 
   // Prefetch next batch mid-way through current batch.
-  // "Next" batch is the ONE AFTER what the user is answering now, so source is
-  // computed for `answeredCount + BATCH_SIZE` (i.e. where they'll land once
-  // the current batch is fully answered).
+  // "Next" batch is the ONE AFTER what the user is answering now, so plan
+  // for `answeredCount + BATCH_SIZE` (i.e. where they'll land once the
+  // current batch is fully answered).
   useEffect(() => {
     if (activeTab !== "questions" || mode !== "ask" || cards.length === 0) return;
     if (showInterstitial || showOnboarding) return;
 
     const halfBatch = Math.ceil(cards.length / 2);
     if (currentIndex >= halfBatch) {
-      const nextSource = batchSourceFor(profile.facts.length + BATCH_SIZE);
-      prefetchNextBatch(
-        profile,
-        "ask",
-        BATCH_SIZE,
+      prefetchAhead(profile, {
         systemPrompt,
-        { reason: "mid-batch-auto" },
-        nextSource
-      );
+        delta: BATCH_SIZE,
+        reason: "mid-batch-auto",
+      });
     }
-  }, [activeTab, mode, cards.length, currentIndex, profile, systemPrompt, prefetchNextBatch, showInterstitial, showOnboarding]);
+  }, [activeTab, mode, cards.length, currentIndex, profile, systemPrompt, prefetchAhead, showInterstitial, showOnboarding]);
 
   const generateReport = useCallback(
     async (factsCountSnapshot: number) => {
@@ -255,33 +223,26 @@ export default function Home() {
   };
 
   const advance = async (projectedAnswered: number) => {
-    const reachedMilestone = projectedAnswered > 0 && projectedAnswered % CHUNK_SIZE === 0;
-    if (reachedMilestone) {
+    if (isMilestoneAnswer(projectedAnswered)) {
       setShowInterstitial(true);
       // After the interstitial the user pulls the FIRST batch of the new
-      // chunk, which is always static (projectedAnswered is a multiple of
-      // CHUNK_SIZE, so batchSourceFor returns "static").
-      prefetchNextBatch(
-        profile,
-        "ask",
-        BATCH_SIZE,
+      // chunk, which is always static — projectedAnswered is a multiple
+      // of CHUNK_SIZE, and projectedAnswered = facts.length + 1 because
+      // the new fact is committed but the closure still holds the stale
+      // profile, so we pass delta=1 to compensate.
+      prefetchAhead(profile, {
         systemPrompt,
-        { reason: "post-milestone" },
-        batchSourceFor(projectedAnswered)
-      );
+        delta: 1,
+        reason: "post-milestone",
+      });
       return;
     }
 
     if (hasMoreCards) {
       nextCard();
     } else {
-      await fetchCards(
-        profile,
-        "ask",
-        BATCH_SIZE,
-        systemPrompt,
-        batchSourceFor(projectedAnswered)
-      );
+      // projectedAnswered = facts.length + 1 (see above); pass delta=1.
+      await ensureBatch(profile, { systemPrompt, delta: 1 });
     }
   };
 
@@ -304,15 +265,13 @@ export default function Home() {
     if (hasMoreCards) {
       nextCard();
     } else {
-      await fetchCards(
-        profile,
-        "ask",
-        BATCH_SIZE,
+      // Count this skip + existing skips as they shift the projected
+      // answered count across chunk boundaries (profile closure is stale
+      // until React re-renders).
+      await ensureBatch(profile, {
         systemPrompt,
-        batchSourceFor(
-          profile.facts.length + (profile.skippedIds?.length ?? 0) + 1
-        )
-      );
+        delta: (profile.skippedIds?.length ?? 0) + 1,
+      });
     }
   };
 
@@ -333,13 +292,7 @@ export default function Home() {
     } else {
       // Undo at the very start of a batch — re-pull with the current
       // batch source for where we are now.
-      fetchCards(
-        profile,
-        "ask",
-        BATCH_SIZE,
-        systemPrompt,
-        batchSourceFor(profile.facts.length)
-      );
+      ensureBatch(profile, { systemPrompt });
     }
   };
 
@@ -422,13 +375,7 @@ export default function Home() {
             }}
             onKeepAnswering={async () => {
               setShowInterstitial(false);
-              await fetchCards(
-                profile,
-                "ask",
-                BATCH_SIZE,
-                systemPrompt,
-                batchSourceFor(profile.facts.length)
-              );
+              await ensureBatch(profile, { systemPrompt });
             }}
           />
         </div>

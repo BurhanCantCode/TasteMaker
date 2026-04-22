@@ -1,23 +1,13 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { BatchSource, Card, UserProfile, GenerateResponse, CardSession, PendingCardsBatch, Question } from "@/lib/types";
+import { BatchSource, Card, UserProfile, GenerateResponse, CardSession, PendingCardsBatch } from "@/lib/types";
 import { saveCardSession, savePendingCards, clearPendingCards } from "@/lib/cookies";
-
-// A prefetch can overlap the tail of the current batch (prefetch fires at
-// halfBatch with only ~5 facts, so the API returns q6-q15 even though
-// q6-q10 are still being answered). When the buffer is later consumed,
-// drop any ask cards whose questions are already in facts/skippedIds so
-// the user doesn't re-see them as duplicates.
-function filterSeenAskCards(cards: Card[], profile: UserProfile): Card[] {
-  const seen = new Set<string>();
-  for (const f of profile.facts ?? []) seen.add(f.questionId);
-  for (const id of profile.skippedIds ?? []) seen.add(id);
-  return cards.filter((c) => {
-    if (c.type !== "ask") return true;
-    return !seen.has((c.content as Question).id);
-  });
-}
+import {
+  BATCH_SIZE,
+  filterSeenAskCards,
+  planNextBatch,
+} from "@/lib/questionSequencer";
 
 interface CardQueueState {
   cards: Card[];
@@ -37,9 +27,17 @@ interface PrefetchedBatch {
   likesCountAtPrefetch: number;
 }
 
-interface PrefetchOptions {
-  force?: boolean;
+// `delta` maps to planNextBatch's projectedAnsweredDelta — see the docs
+// on that function for when to pass non-zero values.
+interface BatchRequestOptions {
+  mode?: "ask" | "result";
+  systemPrompt?: string;
+  delta?: number;
+}
+
+interface PrefetchOptions extends BatchRequestOptions {
   reason?: string;
+  force?: boolean;
 }
 
 export function useCardQueue() {
@@ -49,7 +47,7 @@ export function useCardQueue() {
     isLoading: false,
     error: null,
     mode: "ask",
-    batchSize: 10,
+    batchSize: BATCH_SIZE,
   });
 
   const prefetchedBatchRef = useRef<PrefetchedBatch | null>(null);
@@ -57,14 +55,21 @@ export function useCardQueue() {
   const prefetchGenerationRef = useRef(0);
   const prefetchPromiseRef = useRef<Promise<void> | null>(null);
 
-  const fetchCards = useCallback(
+  // Fetch the next batch the user should see. The source and size are
+  // derived from `profile` via planNextBatch — callers control
+  // look-ahead via `delta` only. Uses a prefetched buffer if one is
+  // available and still fresh for the planned (mode, size, source).
+  const ensureBatch = useCallback(
     async (
-      userProfile: UserProfile,
-      mode: "ask" | "result",
-      batchSize: number = 10,
-      systemPrompt?: string,
-      source: BatchSource = "static"
-    ) => {
+      profile: UserProfile,
+      opts?: BatchRequestOptions
+    ): Promise<void> => {
+      const mode = opts?.mode ?? "ask";
+      const plan = planNextBatch(profile, { projectedAnsweredDelta: opts?.delta ?? 0 });
+      const batchSize = plan.size;
+      const source = plan.source;
+      const systemPrompt = opts?.systemPrompt;
+
       // CHECK PREFETCH BUFFER FIRST
       let prefetched = prefetchedBatchRef.current;
 
@@ -105,7 +110,7 @@ export function useCardQueue() {
         prefetched.mode === mode &&
         prefetched.batchSize === batchSize &&
         prefetched.source === source &&
-        userProfile.facts.length - prefetched.factsCountAtPrefetch <= maxFactDrift;
+        profile.facts.length - prefetched.factsCountAtPrefetch <= maxFactDrift;
 
       if (prefetched && isFresh) {
         // Filter already-answered cards: prefetch was generated with a
@@ -113,7 +118,7 @@ export function useCardQueue() {
         // can start with questions the user just answered.
         const filteredCards =
           prefetched.mode === "ask"
-            ? filterSeenAskCards(prefetched.cards, userProfile)
+            ? filterSeenAskCards(prefetched.cards, profile)
             : prefetched.cards;
 
         if (filteredCards.length === 0) {
@@ -147,7 +152,7 @@ export function useCardQueue() {
         }
       }
 
-      // NORMAL FETCH PATH (existing logic)
+      // NORMAL FETCH PATH
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
@@ -157,7 +162,7 @@ export function useCardQueue() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            userProfile,
+            userProfile: profile,
             batchSize,
             mode,
             systemPrompt,
@@ -172,9 +177,17 @@ export function useCardQueue() {
 
         const data: GenerateResponse = await response.json();
 
+        // Defensive dedup on the fresh-fetch path. The server already
+        // filters, but if the profile snapshot sent in the request was
+        // stale (e.g. a fact committed during the in-flight fetch), the
+        // response can still contain a just-answered question. This is
+        // the same filter the prefetched-buffer path applies.
+        const freshCards =
+          mode === "ask" ? filterSeenAskCards(data.cards, profile) : data.cards;
+
         setState((prev) => ({
           ...prev,
-          cards: data.cards,
+          cards: freshCards,
           currentIndex: 0,
           isLoading: false,
           mode,
@@ -185,7 +198,7 @@ export function useCardQueue() {
         saveCardSession({ mode, batchProgress: 0, batchSize });
         // Persist question batch so it survives refresh (ask mode only)
         if (mode === "ask") {
-          savePendingCards({ cards: data.cards, currentIndex: 0, mode, batchSize });
+          savePendingCards({ cards: freshCards, currentIndex: 0, mode, batchSize });
         }
       } catch (error) {
         setState((prev) => ({
@@ -198,16 +211,21 @@ export function useCardQueue() {
     []
   );
 
-  const prefetchNextBatch = useCallback(
+  // Fire-and-forget prefetch for an upcoming batch. Default delta = 0;
+  // common callers pass delta=BATCH_SIZE (prefetch the batch after the
+  // current one finishes) or delta=1 (prefetch what comes right after
+  // the answer being committed right now).
+  const prefetchAhead = useCallback(
     (
-      userProfile: UserProfile,
-      mode: "ask" | "result",
-      batchSize: number = 10,
-      systemPrompt?: string,
-      options?: PrefetchOptions,
-      source: BatchSource = "static"
-    ) => {
-      const force = options?.force ?? false;
+      profile: UserProfile,
+      opts?: PrefetchOptions
+    ): void => {
+      const mode = opts?.mode ?? "ask";
+      const plan = planNextBatch(profile, { projectedAnsweredDelta: opts?.delta ?? 0 });
+      const batchSize = plan.size;
+      const source = plan.source;
+      const systemPrompt = opts?.systemPrompt;
+      const force = opts?.force ?? false;
 
       if (force) {
         // Increment generation — any in-flight request's result will be discarded (not aborted)
@@ -217,24 +235,24 @@ export function useCardQueue() {
         // Guard: don't prefetch if already prefetching or buffer already exists
         if (isPrefetchingRef.current) {
           console.info(
-            `[Tastemaker] Pre-generation skipped (${options?.reason ?? "auto"}): already in progress`
+            `[Tastemaker] Pre-generation skipped (${opts?.reason ?? "auto"}): already in progress`
           );
           return;
         }
         if (prefetchedBatchRef.current) {
           console.info(
-            `[Tastemaker] Pre-generation skipped (${options?.reason ?? "auto"}): next batch already ready`
+            `[Tastemaker] Pre-generation skipped (${opts?.reason ?? "auto"}): next batch already ready`
           );
           return;
         }
       }
 
-      const reason = options?.reason ?? "auto";
+      const reason = opts?.reason ?? "auto";
       const thisGeneration = prefetchGenerationRef.current;
       isPrefetchingRef.current = true;
       const startedAt = Date.now();
       console.info(
-        `[Tastemaker] Pre-generation started (${reason}, source=${source}) -> mode=${mode}, batch=${batchSize}, facts=${userProfile.facts.length}, likes=${userProfile.likes.length}`
+        `[Tastemaker] Pre-generation started (${reason}, source=${source}) -> mode=${mode}, batch=${batchSize}, facts=${profile.facts.length}, likes=${profile.likes.length}`
       );
 
       const promise = (async () => {
@@ -243,7 +261,7 @@ export function useCardQueue() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              userProfile,
+              userProfile: profile,
               batchSize,
               mode,
               systemPrompt,
@@ -265,7 +283,7 @@ export function useCardQueue() {
           if (prefetchGenerationRef.current === thisGeneration) {
             // Use the source the server actually returned — on dynamic
             // failure it silently falls back to static, and we need the
-            // buffer to reflect that so fetchCards's freshness check
+            // buffer to reflect that so ensureBatch's freshness check
             // (which compares caller-requested source against buffered
             // source) can decide whether to reuse or refetch.
             const servedSource: BatchSource = data.source ?? source;
@@ -274,8 +292,8 @@ export function useCardQueue() {
               mode,
               batchSize,
               source: servedSource,
-              factsCountAtPrefetch: userProfile.facts.length,
-              likesCountAtPrefetch: userProfile.likes.length,
+              factsCountAtPrefetch: profile.facts.length,
+              likesCountAtPrefetch: profile.likes.length,
             };
             console.info(
               `[Tastemaker] Pre-generation completed (${reason}, served=${servedSource}) -> ${data.cards.length} cards ready in ${Date.now() - startedAt}ms`
@@ -336,7 +354,7 @@ export function useCardQueue() {
       isLoading: false,
       error: null,
       mode: "ask",
-      batchSize: 10,
+      batchSize: BATCH_SIZE,
     });
   }, [clearPrefetch]);
 
@@ -378,12 +396,12 @@ export function useCardQueue() {
     hasMoreCards,
     progress,
     shouldPrefetch,
-    fetchCards,
+    ensureBatch,
     nextCard,
     reset,
     getCardSession,
     hydrateFromPending,
-    prefetchNextBatch,
+    prefetchAhead,
     clearPrefetch,
   };
 }
