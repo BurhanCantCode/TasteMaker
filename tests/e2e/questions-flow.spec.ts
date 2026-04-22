@@ -55,31 +55,38 @@ test.describe("question flow sends correct batch source", () => {
     await page.evaluate(() => localStorage.clear());
   });
 
-  test("brand-new user's first batch requests source:static", async ({
+  test("brand-new user's first batch is served client-side — no /api/generate call", async ({
     page,
   }) => {
+    // Post never-wait refactor: static batches run entirely in the
+    // browser (the question JSON is bundled). A brand-new user's first
+    // batch is always static (facts.length=0), so /api/generate must NOT
+    // be called at all. The onboarding useEffect fires a prefetch while
+    // the welcome screen is up; after Phase A that runs client-side and
+    // populates pending_cards in localStorage.
     const generateCalls: Array<{ source?: string; mode?: string }> = [];
     await page.route("**/api/generate", async (route) => {
       const body = route.request().postDataJSON();
       generateCalls.push({ source: body?.source, mode: body?.mode });
-      // Let the real server handle it so the page keeps working.
       await route.continue();
     });
 
     await clearAndSeed(page, EMPTY_PROFILE);
 
-    // Wait until at least one generate call has been made.
+    // Wait for the client-side static path to populate localStorage.
     await expect
-      .poll(() => generateCalls.length, {
-        timeout: 15_000,
-        message: "expected /api/generate to be called at least once",
-      })
-      .toBeGreaterThan(0);
+      .poll(
+        () => page.evaluate(() => localStorage.getItem("tastemaker_pending_cards")),
+        {
+          timeout: 15_000,
+          message: "expected pending_cards to be populated by the client-side static path",
+        }
+      )
+      .toBeTruthy();
 
-    // Every call during the first chunk (facts < 20) must be static.
-    for (const call of generateCalls) {
-      expect(call.source).toBe("static");
-    }
+    // Small breath for any straggler request, then assert zero /api/generate.
+    await page.waitForTimeout(250);
+    expect(generateCalls, "static first batch should not hit /api/generate").toEqual([]);
   });
 
   test("user with 30 facts entering Questions tab requests source:dynamic", async ({

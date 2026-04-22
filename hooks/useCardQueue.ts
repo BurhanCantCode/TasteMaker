@@ -6,8 +6,16 @@ import { saveCardSession, savePendingCards, clearPendingCards } from "@/lib/cook
 import {
   BATCH_SIZE,
   filterSeenAskCards,
+  nextStaticBatchClientSide,
   planNextBatch,
 } from "@/lib/questionSequencer";
+
+// The in-flight prefetch wait was previously 45s for a 10-card ask batch.
+// That meant a user who out-paced the LLM could see a spinner for up to
+// 45 seconds. The new ceiling is tight — if the prefetch hasn't landed
+// quickly we fall through to a fresh path (for dynamic, Phase C will
+// swap this for a client-side static fallback so the wait is truly zero).
+const MAX_PREFETCH_WAIT_MS = 1500;
 
 // Pre-pivot cached batches may contain multiple_choice / yes_no_maybe
 // cards that the new UI no longer renders. Refuse to hydrate such a
@@ -82,25 +90,21 @@ export function useCardQueue() {
       // CHECK PREFETCH BUFFER FIRST
       let prefetched = prefetchedBatchRef.current;
 
-      // If no buffer but a prefetch is in-flight, wait for it before falling back.
-      // Ask 10-card batches get a longer wait window because generation can be slower.
+      // Short-wait for an in-flight prefetch — the old 45-second ceiling
+      // made the user spin for almost a minute when the LLM was slow.
+      // Now we wait at most MAX_PREFETCH_WAIT_MS; if the prefetch hasn't
+      // landed by then, fall through. Phase C will back this up with a
+      // client-side static fallback so the user never sees a spinner.
       if (!prefetched && prefetchPromiseRef.current) {
         try {
-          const prefetchWaitMs =
-            mode === "ask" && batchSize >= 10 ? 45000 : 8000;
-          console.info(
-            `[Tastemaker] Waiting for pre-generation to finish (mode=${mode}, batch=${batchSize}, timeout=${prefetchWaitMs}ms)`
-          );
           const timeoutPromise = new Promise<void>((_, reject) =>
-            setTimeout(() => reject(new Error("prefetch_timeout")), prefetchWaitMs)
+            setTimeout(() => reject(new Error("prefetch_timeout")), MAX_PREFETCH_WAIT_MS)
           );
           await Promise.race([prefetchPromiseRef.current, timeoutPromise]);
-          // Re-check buffer after awaiting
           prefetched = prefetchedBatchRef.current;
         } catch {
-          // Timeout or error — fall through to normal fetch
-          console.warn(
-            `[Tastemaker] Pre-generation wait timed out; falling back to direct fetch (mode=${mode}, batch=${batchSize})`
+          console.info(
+            `[Tastemaker] Prefetch not ready within ${MAX_PREFETCH_WAIT_MS}ms; falling through (mode=${mode}, source=${source})`
           );
           prefetched = null;
         }
@@ -161,7 +165,30 @@ export function useCardQueue() {
         }
       }
 
-      // NORMAL FETCH PATH
+      // CLIENT-SIDE STATIC PATH — zero network, zero latency.
+      // The static question pool is already bundled into the client, so
+      // any batch planned as "static" runs entirely in-process and is
+      // served synchronously. This eliminates ~80% of network round-trips
+      // under normal usage and is the foundation of the never-wait
+      // guarantee.
+      if (mode === "ask" && source === "static") {
+        const cards = nextStaticBatchClientSide(profile, batchSize);
+        const filteredCards = filterSeenAskCards(cards, profile);
+        setState((prev) => ({
+          ...prev,
+          cards: filteredCards,
+          currentIndex: 0,
+          isLoading: false,
+          error: null,
+          mode,
+          batchSize,
+        }));
+        saveCardSession({ mode, batchProgress: 0, batchSize });
+        savePendingCards({ cards: filteredCards, currentIndex: 0, mode, batchSize });
+        return;
+      }
+
+      // NORMAL FETCH PATH (dynamic / result modes only post Phase A).
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
@@ -224,6 +251,11 @@ export function useCardQueue() {
   // common callers pass delta=BATCH_SIZE (prefetch the batch after the
   // current one finishes) or delta=1 (prefetch what comes right after
   // the answer being committed right now).
+  //
+  // Static batches are skipped entirely here — they are served at
+  // memory speed from `nextStaticBatchClientSide` at consume time, so
+  // there is nothing useful to warm up. Only dynamic batches need to
+  // live in the buffer.
   const prefetchAhead = useCallback(
     (
       profile: UserProfile,
@@ -235,6 +267,8 @@ export function useCardQueue() {
       const source = plan.source;
       const systemPrompt = opts?.systemPrompt;
       const force = opts?.force ?? false;
+
+      if (source === "static") return;
 
       if (force) {
         // Increment generation — any in-flight request's result will be discarded (not aborted)

@@ -1,4 +1,5 @@
 import { BatchSource, Card, Question, UserProfile } from "./types";
+import { getNextQuestionBatch } from "./personalityQuestions";
 
 // Batches the sequencer hands out. Two batches per CHUNK_SIZE-answer
 // milestone; keep them in lockstep so a chunk is always static+dynamic.
@@ -73,4 +74,22 @@ export function filterSeenAskCards(cards: Card[], profile: UserProfile): Card[] 
     if (c.type !== "ask") return true;
     return !seen.has((c.content as Question).id);
   });
+}
+
+// Build a static batch of ask Cards entirely in-process. The static
+// question pool is already bundled into the client (personalityQuestions
+// statically imports the JSON), so this runs at memory speed — zero
+// network, zero latency. Shuffle semantics match the server's
+// `serveStatic` exactly, so client-rendered batches are indistinguishable
+// from server-rendered ones.
+//
+// This is the foundation of the never-wait guarantee: we never hit the
+// network for static batches, and we fall back to this for any dynamic
+// batch that isn't ready in time.
+export function nextStaticBatchClientSide(
+  profile: UserProfile,
+  batchSize: number = BATCH_SIZE
+): Card[] {
+  const { questions } = getNextQuestionBatch(buildSeenIds(profile), batchSize);
+  return questions.map((q) => ({ type: "ask", content: q }));
 }

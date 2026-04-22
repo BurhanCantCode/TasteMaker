@@ -75,19 +75,30 @@ test.describe("Card UI is yes/no only", () => {
       });
     });
 
-    // Seed a profile that skips onboarding so we land somewhere that
-    // fetches cards. 5 seed facts keeps us in chunk 1 (static path).
+    // Seed 30 facts to put the next batch in dynamic territory
+    // (batchSourceFor(30)=dynamic). Post never-wait refactor, static
+    // batches are served client-side and bypass /api/generate entirely,
+    // so we need the dynamic path to get the stub to fire.
     await clearAndSeed(page, {
-      facts: Array.from({ length: 5 }, (_, i) => ({
+      facts: Array.from({ length: 30 }, (_, i) => ({
         questionId: `seed-${i}`,
         question: `seed ${i}?`,
-        answer: "Yes",
-        positive: true,
+        answer: i % 2 === 0 ? "Yes" : "No",
+        positive: i % 2 === 0,
         timestamp: i,
       })),
       likes: [],
       skippedIds: [],
-      reports: [],
+      reports: [
+        {
+          id: "rep1",
+          createdAt: Date.now() - 10_000,
+          factsCount: 20,
+          summary: "Seed summary",
+          portrait: "Seed portrait",
+          highlights: ["a", "b"],
+        },
+      ],
     });
 
     await page.getByRole("button", { name: /^Questions$/i }).click();
