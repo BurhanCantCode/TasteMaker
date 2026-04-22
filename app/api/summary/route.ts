@@ -62,24 +62,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Enriched per-fact evidence. The richer the input, the more the model
+    // has to echo back specifically — super-likes, option index, and
+    // sentiment together let the portrait reference a single answer by
+    // its flavor instead of only the question text.
     const answeredText = userProfile.facts
-      .map(
-        (f, i) =>
-          `${i + 1}. Q: ${f.question}\n   A: ${f.answer} (${f.positive ? "affirmative" : "non-affirmative"})`
-      )
+      .map((f, i) => {
+        const isSuper =
+          typeof f.answer === "string" && /\(super\)\s*$/i.test(f.answer);
+        const superTag = isSuper ? " **SUPER-LIKED**" : "";
+        const idxTag =
+          typeof f.answerIndex === "number"
+            ? ` [picked option ${f.answerIndex + 1}]`
+            : "";
+        const sentiment = f.positive ? "affirmative" : "non-affirmative";
+        return `${i + 1}. Q: ${f.question}\n   A: ${f.answer} (${sentiment}${idxTag})${superTag}`;
+      })
       .join("\n");
+
+    const skippedCount = userProfile.skippedIds?.length ?? 0;
+    const skippedBlock =
+      skippedCount > 0
+        ? `\n\nSKIPPED (refused to engage with ${skippedCount} question${skippedCount === 1 ? "" : "s"}) — a signal in itself.`
+        : "";
 
     if (mode === "short") {
       const message = await anthropic.messages.create({
         model: "claude-sonnet-4-6",
-        max_tokens: 220,
-        temperature: 0.7,
-        system:
-          "You write short, crisp inferences about a real person based on their answers to a personality quiz. Write 2-3 sentences in third person. No bullet points. Do not restate the questions. Lean into personality, temperament, taste, and quirks. Be specific, not generic. Avoid flattery.",
+        max_tokens: 240,
+        temperature: 0.8,
+        system: [
+          "You write short, uncannily specific inferences about a real person based on their answers to a personality quiz.",
+          "Third person. 2-3 sentences. No bullet points.",
+          "RULES:",
+          "- Reference one specific answer by paraphrase so the reader feels SEEN by a particular moment.",
+          "- Name one small tension or contradiction the evidence supports.",
+          "- Voice: sharp, slightly teasing, never sycophantic. Short sentences beat long.",
+          "- Never write \"tend to\", \"many sides to you/them\", \"a complex person\", or any horoscope vocabulary.",
+          "- Never restate a question title verbatim. Never flatter. No emojis.",
+        ].join("\n"),
         messages: [
           {
             role: "user",
-            content: `Tell me about a user who reports these answers to the questions below. What kind of person are they?\n\nANSWERS:\n${answeredText}`,
+            content: `EVIDENCE — numbered answers from this person:\n\n${answeredText}${skippedBlock}\n\nWrite the 2-3 sentence inference now.`,
           },
         ],
       });
@@ -98,27 +123,40 @@ export async function POST(request: NextRequest) {
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 1100,
-      temperature: 0.8,
+      temperature: 0.85,
       system: [
-        "You write vivid, specific personality portraits based on a user's answers to a personality quiz.",
-        "Your output is STRICT JSON with keys: summary, portrait, highlights, params.",
-        "- summary: 2-3 crisp sentences in third person (no bullet points).",
-        "- portrait: 2-3 short paragraphs, third person, imagining this person as a real human. Speak to temperament, worldview, taste, and likely quirks. Be grounded and specific, not horoscopic.",
-        "- highlights: 4-6 short bullet strings (no leading dashes, no emojis) naming notable traits or tensions.",
-        "- params: an object of six floats in [0, 1] that summarize the person on these orthogonal dimensions — these drive a 3D visualization, so let the numbers meaningfully DIVERGE from 0.5 when the evidence supports it. Dimensions:",
-        "    warmth (0 = cold/detached, 1 = warm/relational),",
-        "    energy (0 = slow/contemplative, 1 = restless/fast),",
-        "    structure (0 = organic/improvisational, 1 = structured/analytical),",
-        "    density (0 = minimal/spare, 1 = rich/layered/complex),",
-        "    extroversion (0 = introverted/inward, 1 = extroverted/outward),",
-        "    symmetry (0 = asymmetric/experimental, 1 = symmetric/conventional).",
-        "Never restate the question list. Never fabricate facts. Do not flatter. Mature subjects are fine; avoid sexual content.",
-        "Return JSON only, no code fences.",
-      ].join(" "),
+        "You write personality portraits that feel uncannily specific. You have numbered EVIDENCE in the user message. USE it.",
+        "",
+        "OUTPUT: strict JSON with keys: summary, portrait, highlights, params. No code fences. No preamble.",
+        "",
+        "PORTRAIT — 3 short paragraphs, ≤ 120 words total, third person. Follow ALL five rules:",
+        "",
+        "1. OBSERVATION ECHO. Reference at least TWO specific answers by paraphrase so the reader feels seen by a particular moment, not abstractly. Never list question numbers; weave evidence into sentences.",
+        "2. TENSION. Name exactly ONE internal contradiction the evidence supports. Both sides acknowledged in one sentence. Example shape: \"Warm with the people who've earned it, but guarded with new ones.\"",
+        "3. VANISHING NEGATIVE. Include one small, earned criticism and immediately reframe it as the source of a strength. Not flattery — honest insight.",
+        "4. INTERIOR. At least one statement about a common-but-private internal experience — a quiet preference, a secret fear, a thing they don't say out loud. These hit hardest.",
+        "5. SUPER-LIKE. If any answer is marked **SUPER-LIKED**, build the portrait around it. That is the single highest-weight signal in the evidence.",
+        "",
+        "SUMMARY — 2 crisp sentences. Same rules, condensed. No filler.",
+        "",
+        "HIGHLIGHTS — 4-6 short bullet strings naming notable traits or TENSIONS (not sentences, no leading dashes, no emojis).",
+        "",
+        "PARAMS — six floats in [0, 1] on these orthogonal dimensions. LET VALUES DIVERGE from 0.5 when the evidence supports it — neutral values waste the 3D visualization:",
+        "  warmth (0 = cold/detached, 1 = warm/relational),",
+        "  energy (0 = slow/contemplative, 1 = restless/fast),",
+        "  structure (0 = organic/improvisational, 1 = structured/analytical),",
+        "  density (0 = minimal/spare, 1 = rich/layered/complex),",
+        "  extroversion (0 = introverted/inward, 1 = extroverted/outward),",
+        "  symmetry (0 = asymmetric/experimental, 1 = symmetric/conventional).",
+        "",
+        "VOICE: sharp, slightly teasing, never sycophantic. Short sentences beat long ones.",
+        "FORBIDDEN language (do not write these): \"tend to\", \"many sides to you\" or \"many sides to them\", \"a complex person\", \"a part of you\" or \"a part of them\", any horoscope vocabulary (\"the stars\", \"aligned\", \"cosmic\").",
+        "Never restate a question title verbatim. Never fabricate facts. Mature subjects are fine; avoid sexual content.",
+      ].join("\n"),
       messages: [
         {
           role: "user",
-          content: `Tell me about a user who reports these answers to the questions. What kind of person are they?\n\nANSWERS:\n${answeredText}\n\nRespond with JSON: {\"summary\": string, \"portrait\": string, \"highlights\": string[], \"params\": {\"warmth\": number, \"energy\": number, \"structure\": number, \"density\": number, \"extroversion\": number, \"symmetry\": number}}`,
+          content: `EVIDENCE — numbered answers from this person:\n\n${answeredText}${skippedBlock}\n\nRespond with JSON only: {\"summary\": string, \"portrait\": string, \"highlights\": string[], \"params\": {\"warmth\": number, \"energy\": number, \"structure\": number, \"density\": number, \"extroversion\": number, \"symmetry\": number}}`,
         },
       ],
     });
