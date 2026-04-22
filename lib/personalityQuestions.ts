@@ -32,9 +32,15 @@ function shuffledCopy<T>(arr: readonly T[]): T[] {
   return out;
 }
 
+// Yes/no-only pivot: the product intentionally simplified to a single
+// swipe-left/swipe-right gesture vocabulary, so we drop any raw question
+// whose inferred answerType is not "yes_no". Also excludes the sexual
+// content tag as before. See docs/plans for rationale + dataset audit.
 const INCLUDED_QUESTIONS: readonly PersonalityQuestionRaw[] =
   dataset.questions.filter(
-    (q) => !q.content_tags?.some((tag) => EXCLUDED_TAGS.has(tag))
+    (q) =>
+      !q.content_tags?.some((tag) => EXCLUDED_TAGS.has(tag)) &&
+      classifyAnswerType(q) === "yes_no"
   );
 
 const BY_ID = new Map<string, PersonalityQuestionRaw>();

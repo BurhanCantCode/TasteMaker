@@ -20,12 +20,12 @@ function latestReport(profile: UserProfile): PersonalityReport | null {
 export const DYNAMIC_BATCH_SYSTEM_PROMPT = [
   "You are generating personality-quiz questions for a user you have already learned about.",
   "You output STRICT JSON with a single top-level `cards` array. Each card is:",
-  '{ "type": "ask", "content": { "id": string, "title": string, "answerType": "yes_no" | "yes_no_maybe" | "multiple_choice", "answerLabels": string[], "options"?: string[], "optionTags"?: string[], "tags"?: string[], "superLikeEnabled"?: boolean } }',
+  '{ "type": "ask", "content": { "id": string, "title": string, "answerType": "yes_no", "answerLabels": string[], "optionTags"?: string[], "tags"?: string[], "superLikeEnabled"?: boolean } }',
   "",
-  "ANSWER TYPES — use ONLY these three:",
-  '- "yes_no": two options. answerLabels = [negative, affirmative] (exactly 2).',
-  '- "yes_no_maybe": three options (no / maybe / yes). answerLabels = 3 strings in that order; options = same strings; optionTags = ["negative","neutral","affirmative"].',
-  '- "multiple_choice": 2–5 options. options = string[]; answerLabels = same strings; optionTags = one of "affirmative"/"neutral"/"negative" per option.',
+  "ANSWER TYPE — always yes_no:",
+  "- Every card MUST be yes_no. answerLabels = [negative, affirmative] — exactly 2 strings in that order.",
+  "- Do NOT produce yes_no_maybe, multiple_choice, rating_scale, or any other type. Cards with any other answerType will be discarded.",
+  "- Titles must be answerable with a clean yes or no. No comparisons (\"X vs Y?\"), no scale questions (\"how often…?\"), no open prompts.",
   "",
   "RULES:",
   '- id MUST be unique per card — use "dyn_<short-random>" (e.g. "dyn_a7b2").',
@@ -91,6 +91,7 @@ export function buildDynamicBatchUserPrompt(
 
 // Shape validator for a single LLM-generated card. Returns null on invalid
 // so the API route can drop bad cards without crashing the batch.
+// Post yes/no pivot: only yes_no is accepted; anything else is dropped.
 export function validateDynamicCard(raw: unknown): Question | null {
   if (!raw || typeof raw !== "object") return null;
   const obj = raw as Record<string, unknown>;
@@ -99,31 +100,16 @@ export function validateDynamicCard(raw: unknown): Question | null {
 
   const id = typeof content.id === "string" ? content.id : null;
   const title = typeof content.title === "string" ? content.title : null;
-  const answerType = content.answerType;
   if (!id || !title) return null;
-  if (
-    answerType !== "yes_no" &&
-    answerType !== "yes_no_maybe" &&
-    answerType !== "multiple_choice"
-  ) {
-    return null;
-  }
+  if (content.answerType !== "yes_no") return null;
 
   const answerLabels = Array.isArray(content.answerLabels)
     ? (content.answerLabels as unknown[]).filter(
         (x): x is string => typeof x === "string"
       )
     : [];
+  if (answerLabels.length !== 2) return null;
 
-  if (answerType === "yes_no" && answerLabels.length !== 2) return null;
-  if (answerType === "yes_no_maybe" && answerLabels.length !== 3) return null;
-  if (answerType === "multiple_choice" && answerLabels.length < 2) return null;
-
-  const options = Array.isArray(content.options)
-    ? (content.options as unknown[]).filter(
-        (x): x is string => typeof x === "string"
-      )
-    : undefined;
   const optionTags = Array.isArray(content.optionTags)
     ? (content.optionTags as unknown[]).filter(
         (x): x is string => typeof x === "string"
@@ -139,9 +125,8 @@ export function validateDynamicCard(raw: unknown): Question | null {
   return {
     id,
     title,
-    answerType,
+    answerType: "yes_no",
     answerLabels,
-    options,
     optionTags,
     tags,
     superLikeEnabled,
