@@ -127,22 +127,25 @@ export default function Home() {
     ensureBatch(profile, { systemPrompt });
   }, [isLoaded, activeTab, currentCard, isLoading, profile, systemPrompt, ensureBatch, hydrateFromPending]);
 
-  // Prefetch next batch mid-way through current batch.
-  // "Next" batch is the ONE AFTER what the user is answering now, so plan
-  // for `answeredCount + BATCH_SIZE` (i.e. where they'll land once the
-  // current batch is fully answered).
+  // Prefetch next batch AS EARLY AS POSSIBLE in the current batch.
+  // "Next" is the batch after what the user is answering now, so plan
+  // for `answeredCount + BATCH_SIZE`. Previously this waited until
+  // currentIndex >= halfBatch (card 5 of 10), giving the LLM only
+  // ~5 cards of runway — a fast answerer could outpace dynamic
+  // generation and hit a spinner. Firing at currentIndex >= 0 gives
+  // the full ~10 cards of runway and eliminates most prefetch misses.
+  // prefetchAhead internally skips static batches (instant client-side)
+  // and dedupes against in-flight / already-ready buffers, so this is
+  // safe to fire every render.
   useEffect(() => {
     if (activeTab !== "questions" || mode !== "ask" || cards.length === 0) return;
     if (showInterstitial || showOnboarding) return;
 
-    const halfBatch = Math.ceil(cards.length / 2);
-    if (currentIndex >= halfBatch) {
-      prefetchAhead(profile, {
-        systemPrompt,
-        delta: BATCH_SIZE,
-        reason: "mid-batch-auto",
-      });
-    }
+    prefetchAhead(profile, {
+      systemPrompt,
+      delta: BATCH_SIZE,
+      reason: "batch-start-auto",
+    });
   }, [activeTab, mode, cards.length, currentIndex, profile, systemPrompt, prefetchAhead, showInterstitial, showOnboarding]);
 
   const generateReport = useCallback(
