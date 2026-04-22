@@ -9,8 +9,6 @@ interface SwipeableCardProps {
   onSwipe?: (direction: SwipeDirection) => void;
   enabled?: boolean;
   superLikeEnabled?: boolean;
-  /** When true, the gold "SUPER" label is replaced with a "MAYBE" label. */
-  showMaybeLabel?: boolean;
   /**
    * Called with a normalized swipe progress (-1 ... +1 for x, 0..-1 for up)
    * while dragging. Lets parents sync button highlights, tint overlays, etc.
@@ -29,7 +27,6 @@ export function SwipeableCard({
   onSwipe,
   enabled = true,
   superLikeEnabled = true,
-  showMaybeLabel = false,
   onDragProgress,
 }: SwipeableCardProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -334,15 +331,13 @@ export function SwipeableCard({
       >
         YES
       </div>
-      {(superLikeEnabled || showMaybeLabel) && (
+      {superLikeEnabled && (
         <div
           ref={superLabelRef}
-          className={`pointer-events-none absolute left-1/2 top-8 -translate-x-1/2 rounded-2xl border-4 px-4 py-2 text-4xl font-black tracking-widest ${
-            showMaybeLabel ? "border-gray-500 text-gray-500" : "border-amber-500 text-amber-500"
-          }`}
+          className="pointer-events-none absolute left-1/2 top-8 -translate-x-1/2 rounded-2xl border-4 px-4 py-2 text-4xl font-black tracking-widest border-amber-500 text-amber-500"
           style={{ opacity: 0 }}
         >
-          {showMaybeLabel ? "~ MAYBE" : "★ SUPER"}
+          ★ SUPER
         </div>
       )}
     </div>

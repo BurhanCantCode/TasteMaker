@@ -1,13 +1,22 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { BatchSource, Card, UserProfile, GenerateResponse, CardSession, PendingCardsBatch } from "@/lib/types";
+import { BatchSource, Card, Question, UserProfile, GenerateResponse, CardSession, PendingCardsBatch } from "@/lib/types";
 import { saveCardSession, savePendingCards, clearPendingCards } from "@/lib/cookies";
 import {
   BATCH_SIZE,
   filterSeenAskCards,
   planNextBatch,
 } from "@/lib/questionSequencer";
+
+// Pre-pivot cached batches may contain multiple_choice / yes_no_maybe
+// cards that the new UI no longer renders. Refuse to hydrate such a
+// batch — the caller will trigger a fresh fetch that returns yes_no only.
+function isPrePivotBatch(batch: PendingCardsBatch): boolean {
+  return batch.cards.some(
+    (c) => c.type === "ask" && (c.content as Question).answerType !== "yes_no"
+  );
+}
 
 interface CardQueueState {
   cards: Card[];
@@ -359,6 +368,14 @@ export function useCardQueue() {
   }, [clearPrefetch]);
 
   const hydrateFromPending = useCallback((batch: PendingCardsBatch) => {
+    // Reject stale pre-pivot cache. Calling clearPendingCards here lets the
+    // caller's no-currentCard useEffect fall through to ensureBatch on the
+    // next tick without re-reading the same stale payload.
+    if (isPrePivotBatch(batch)) {
+      clearPendingCards();
+      return;
+    }
+
     setState((prev) => ({
       ...prev,
       cards: batch.cards,

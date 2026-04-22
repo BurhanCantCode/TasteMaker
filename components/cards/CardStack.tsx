@@ -171,7 +171,6 @@ export function CardStack({
 
   const question = card.type === "ask" ? (card.content as Question) : null;
   const superLikeEnabled = question?.superLikeEnabled ?? false;
-  const answerType = question?.answerType;
   const labels = question?.answerLabels ?? [];
 
   return (
@@ -196,9 +195,8 @@ export function CardStack({
           {card.type === "ask" && question && (
             <SwipeableCard
               key={`active-${question.id}`}
-              enabled={answerType === "yes_no" || answerType === "yes_no_maybe"}
+              enabled
               superLikeEnabled={superLikeEnabled}
-              showMaybeLabel={answerType === "yes_no_maybe"}
               onSwipe={(direction) => {
                 if (!question) return;
                 if (direction === "left") {
@@ -239,39 +237,19 @@ export function CardStack({
 
       {card.type === "ask" && question && (
         <div ref={actionRowRef} className="w-full flex flex-col items-center gap-2.5">
-          {answerType === "yes_no" && (
-            <YesNoActions
-              labels={[labels[0] ?? "No", labels[1] ?? "Yes"]}
-              superLikeEnabled={superLikeEnabled}
-              onNo={() => triggerDismissAndCommit("left", () => onAnswer(labels[0] ?? "No", { index: 0, gesture: "tap_left" }))}
-              onYes={() => triggerDismissAndCommit("right", () => onAnswer(labels[1] ?? "Yes", { index: 1, gesture: "tap_right" }))}
-              onSuper={() => triggerDismissAndCommit("up", () => onAnswer("super_yes", { index: 1, gesture: "swipe_up" }))}
-            />
-          )}
-          {answerType === "yes_no_maybe" && (
-            <YesNoMaybeActions
-              labels={[labels[0] ?? "No", labels[1] ?? "Maybe", labels[2] ?? "Yes"]}
-              superLikeEnabled={superLikeEnabled}
-              onNo={() => triggerDismissAndCommit("left", () => onAnswer(labels[0] ?? "No", { index: 0, gesture: "tap_left" }))}
-              onMaybe={() => triggerDismissAndCommit("down", () => onAnswer(labels[1] ?? "Maybe", { index: 1, gesture: "tap_center" }))}
-              onYes={() => triggerDismissAndCommit("right", () => onAnswer(labels[2] ?? "Yes", { index: 2, gesture: "tap_right" }))}
-              onSuper={() => triggerDismissAndCommit("up", () => onAnswer("super_yes", { index: 2, gesture: "swipe_up" }))}
-            />
-          )}
-          {answerType === "multiple_choice" && question.options && (
-            <MultipleChoiceActions
-              options={question.options}
-              onPick={(index) => {
-                const option = question.options?.[index] ?? "";
-                const lastIdx = (question.options?.length ?? 1) - 1;
-                const direction: SwipeDirection =
-                  index === 0 ? "left" : index === lastIdx ? "right" : "down";
-                const gesture: Gesture =
-                  index === 0 ? "tap_left" : index === lastIdx ? "tap_right" : "tap_n";
-                triggerDismissAndCommit(direction, () => onAnswer(option, { index, gesture }));
-              }}
-            />
-          )}
+          <YesNoActions
+            labels={[labels[0] ?? "No", labels[labels.length - 1] ?? "Yes"]}
+            superLikeEnabled={superLikeEnabled}
+            onNo={() => triggerDismissAndCommit("left", () => onAnswer(labels[0] ?? "No", { index: 0, gesture: "tap_left" }))}
+            onYes={() => {
+              const lastIdx = labels.length - 1;
+              triggerDismissAndCommit("right", () => onAnswer(labels[lastIdx] ?? "Yes", { index: lastIdx, gesture: "tap_right" }));
+            }}
+            onSuper={() => {
+              const lastIdx = labels.length - 1;
+              triggerDismissAndCommit("up", () => onAnswer("super_yes", { index: lastIdx, gesture: "swipe_up" }));
+            }}
+          />
 
           <button
             onClick={() => onSkip?.()}
@@ -318,111 +296,6 @@ function YesNoActions({
           <path d="M20 6 9 17l-5-5" />
         </svg>
       </IconBtn>
-    </div>
-  );
-}
-
-function YesNoMaybeActions({
-  labels,
-  superLikeEnabled,
-  onNo,
-  onMaybe,
-  onYes,
-  onSuper,
-}: {
-  labels: [string, string, string];
-  superLikeEnabled: boolean;
-  onNo: () => void;
-  onMaybe: () => void;
-  onYes: () => void;
-  onSuper: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-center gap-3.5">
-      <IconBtn dataBtn="left" tint="#ef4444" size={62} onClick={onNo} ariaLabel={labels[0]}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-          <path d="M18 6 6 18" />
-          <path d="m6 6 12 12" />
-        </svg>
-      </IconBtn>
-      <IconBtn dataBtn="center" tint="#737373" size={54} onClick={onMaybe} ariaLabel={labels[1]}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-          <path d="M5 12h14" />
-        </svg>
-      </IconBtn>
-      {superLikeEnabled && (
-        <IconBtn dataBtn="super" tint="#f59e0b" size={48} onClick={onSuper} ariaLabel="Super Yes">
-          <Star className="w-4 h-4 fill-current" />
-        </IconBtn>
-      )}
-      <IconBtn dataBtn="right" tint="#10b981" size={62} onClick={onYes} ariaLabel={labels[2]}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
-      </IconBtn>
-    </div>
-  );
-}
-
-function MultipleChoiceActions({
-  options,
-  onPick,
-}: {
-  options: string[];
-  onPick: (index: number) => void;
-}) {
-  const count = options.length;
-  const tints = gradientTints(count);
-
-  // 2 options → horizontal row
-  // 3 options → horizontal row
-  // 4 options → 2×2 grid (wider pills, full text)
-  // 5+ options → vertical stack
-  if (count <= 3) {
-    return (
-      <div className="w-full grid gap-2" style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}>
-        {options.map((opt, i) => (
-          <PillBtn
-            key={i}
-            dataBtn={i === 0 ? "left" : i === count - 1 ? "right" : "center"}
-            tint={tints[i]}
-            label={opt}
-            onClick={() => onPick(i)}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  if (count === 4) {
-    return (
-      <div className="w-full grid grid-cols-2 gap-2">
-        {options.map((opt, i) => (
-          <PillBtn
-            key={i}
-            dataBtn={i === 0 ? "left" : i === 3 ? "right" : undefined}
-            tint={tints[i]}
-            label={opt}
-            onClick={() => onPick(i)}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  // 5+ → vertical stack
-  return (
-    <div className="w-full grid grid-cols-1 gap-1.5">
-      {options.map((opt, i) => (
-        <PillBtn
-          key={i}
-          dataBtn={i === 0 ? "left" : i === count - 1 ? "right" : undefined}
-          tint={tints[i]}
-          label={opt}
-          onClick={() => onPick(i)}
-          fullWidth
-        />
-      ))}
     </div>
   );
 }
@@ -478,70 +351,8 @@ function IconBtn({
   );
 }
 
-function PillBtn({
-  tint,
-  label,
-  onClick,
-  dataBtn,
-  fullWidth,
-}: {
-  tint: string;
-  label: string;
-  onClick?: () => void;
-  dataBtn?: "left" | "center" | "right";
-  fullWidth?: boolean;
-}) {
-  const ref = useRef<HTMLButtonElement | null>(null);
-  const press = () => {
-    if (!ref.current) return;
-    gsap.fromTo(
-      ref.current,
-      { scale: 1 },
-      { scale: 0.95, duration: 0.08, yoyo: true, repeat: 1, ease: "power2.out" }
-    );
-  };
-  return (
-    <button
-      ref={ref}
-      data-btn={dataBtn}
-      aria-label={label}
-      onClick={() => {
-        press();
-        onClick?.();
-      }}
-      style={{
-        color: tint,
-        borderColor: `${tint}40`,
-        backgroundImage: `linear-gradient(180deg, #fff, ${tint}08)`,
-      }}
-      className={`${fullWidth ? "w-full" : ""} min-h-[48px] px-3 py-2 rounded-[16px] bg-white border-2 shadow-[0_4px_14px_rgba(0,0,0,0.05)] active:shadow-[0_2px_6px_rgba(0,0,0,0.04)] transition-shadow flex items-center justify-center text-center text-[12px] font-bold uppercase tracking-[0.04em] leading-[1.15]`}
-    >
-      {/* No line-clamp: a truncated option like "OCCASIONALLY, WHEN I CAN'T
-          SMOKE A…" leaves the user guessing what they're picking. Grid rows
-          auto-match heights, so letting this wrap just grows the whole row
-          uniformly. */}
-      <span className="break-words">{label}</span>
-    </button>
-  );
-}
-
 function peekKey(c: Card): string {
   if (c.type === "ask") return (c.content as Question).id;
   if (c.type === "result") return (c.content as ResultItem).id;
   return (c.content as InterstitialContent).id;
-}
-
-function gradientTints(count: number): string[] {
-  const start = { r: 239, g: 68, b: 68 };
-  const end = { r: 16, g: 185, b: 129 };
-  if (count <= 1) return ["#737373"];
-  const out: string[] = [];
-  for (let i = 0; i < count; i++) {
-    const t = i / (count - 1);
-    const r = Math.round(start.r + (end.r - start.r) * t);
-    const g = Math.round(start.g + (end.g - start.g) * t);
-    const b = Math.round(start.b + (end.b - start.b) * t);
-    out.push(`rgb(${r}, ${g}, ${b})`);
-  }
-  return out;
 }
