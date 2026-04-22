@@ -72,6 +72,30 @@ export function useCardQueue() {
   const prefetchGenerationRef = useRef(0);
   const prefetchPromiseRef = useRef<Promise<void> | null>(null);
 
+  // Synchronous batch serve from the client-side static pool. Used both
+  // for the genuine "source=static" path and for the dynamic-fallback
+  // path (when the LLM isn't ready in time).
+  const serveStaticFromClient = useCallback(
+    (profile: UserProfile, batchSize: number, mode: "ask" | "result") => {
+      const cards = nextStaticBatchClientSide(profile, batchSize);
+      const filteredCards = filterSeenAskCards(cards, profile);
+      setState((prev) => ({
+        ...prev,
+        cards: filteredCards,
+        currentIndex: 0,
+        isLoading: false,
+        error: null,
+        mode,
+        batchSize,
+      }));
+      saveCardSession({ mode, batchProgress: 0, batchSize });
+      if (mode === "ask") {
+        savePendingCards({ cards: filteredCards, currentIndex: 0, mode, batchSize });
+      }
+    },
+    []
+  );
+
   // Fetch the next batch the user should see. The source and size are
   // derived from `profile` via planNextBatch — callers control
   // look-ahead via `delta` only. Uses a prefetched buffer if one is
@@ -172,23 +196,28 @@ export function useCardQueue() {
       // under normal usage and is the foundation of the never-wait
       // guarantee.
       if (mode === "ask" && source === "static") {
-        const cards = nextStaticBatchClientSide(profile, batchSize);
-        const filteredCards = filterSeenAskCards(cards, profile);
-        setState((prev) => ({
-          ...prev,
-          cards: filteredCards,
-          currentIndex: 0,
-          isLoading: false,
-          error: null,
-          mode,
-          batchSize,
-        }));
-        saveCardSession({ mode, batchProgress: 0, batchSize });
-        savePendingCards({ cards: filteredCards, currentIndex: 0, mode, batchSize });
+        serveStaticFromClient(profile, batchSize, mode);
         return;
       }
 
-      // NORMAL FETCH PATH (dynamic / result modes only post Phase A).
+      // DYNAMIC FALLBACK PATH — never wait on the LLM.
+      // If we reach this point with source === "dynamic", either the
+      // prefetch buffer was empty, or the in-flight prefetch did not
+      // land within MAX_PREFETCH_WAIT_MS. Rather than block the UI on
+      // a fresh LLM call (3-10s), serve a client-side static batch
+      // immediately from the same curated yes/no pool. Quality trade:
+      // the user gets non-tailored questions for this one slot, but
+      // never sees a spinner. Any in-flight dynamic prefetch keeps
+      // running and populates the buffer for the NEXT dynamic slot.
+      if (mode === "ask" && source === "dynamic") {
+        console.info(
+          "[Tastemaker] Dynamic batch not ready — serving static fallback instantly (preserves never-wait)"
+        );
+        serveStaticFromClient(profile, batchSize, mode);
+        return;
+      }
+
+      // NORMAL FETCH PATH (mode === "result" is the only remaining case).
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
@@ -244,7 +273,7 @@ export function useCardQueue() {
         }));
       }
     },
-    []
+    [serveStaticFromClient]
   );
 
   // Fire-and-forget prefetch for an upcoming batch. Default delta = 0;

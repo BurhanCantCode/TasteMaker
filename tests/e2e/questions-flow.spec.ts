@@ -89,15 +89,18 @@ test.describe("question flow sends correct batch source", () => {
     expect(generateCalls, "static first batch should not hit /api/generate").toEqual([]);
   });
 
-  test("user with 30 facts entering Questions tab requests source:dynamic", async ({
+  test("mid-static-batch prefetch fires source:dynamic", async ({
     page,
   }) => {
-    // Seed a user who has completed chunk 1 (20 facts) AND the first
-    // batch of chunk 2 (10 more facts), so answeredCount=30. The NEXT
-    // batch the app pulls — the second batch of chunk 2 — should be
-    // dynamic per batchSourceFor(30).
+    // Seed a user mid-static-batch in chunk 2 (facts=25): they've just
+    // entered the first batch of chunk 2 (static, 20-29). The Phase B
+    // prefetch useEffect fires on batch mount and targets the NEXT
+    // batch (facts.length + BATCH_SIZE = 35), which is dynamic per
+    // batchSourceFor. That prefetch is the only path today that sends
+    // source=dynamic to /api/generate — the foreground ensureBatch
+    // serves static client-side without touching the network.
     const profile = {
-      facts: fakeFacts(30),
+      facts: fakeFacts(25),
       likes: [],
       skippedIds: [],
       reports: [
@@ -119,9 +122,7 @@ test.describe("question flow sends correct batch source", () => {
         source: body?.source,
         facts: body?.userProfile?.facts?.length,
       });
-      // Stub response so we don't depend on LLM availability in tests.
-      // Echo back the requested source so the UI's freshness check
-      // treats the buffer as valid.
+      // Stub so we don't depend on LLM availability in tests.
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
@@ -141,29 +142,23 @@ test.describe("question flow sends correct batch source", () => {
     });
 
     await clearAndSeed(page, profile);
-
-    // Clear any captures that landed during the pre-seed load (the initial
-    // goto("/") runs against an empty profile before the reload seeds
-    // localStorage — those calls are noise for this assertion).
     generateBodies.length = 0;
 
-    // The seeded profile has 30 facts — not a new user — so onboarding is
-    // skipped and the app lands on the Me tab. Navigate to Questions to
-    // trigger the fetch under test.
     await page.getByRole("button", { name: /^Questions$/i }).click();
 
-    // Poll until we see a call carrying the seeded 30 facts. This is
-    // tighter than waiting on generateBodies.length > 0 — any straggling
-    // stale-profile calls can't satisfy this.
+    // Wait for the background prefetch (source=dynamic) to fire. The
+    // user's foreground batch is served client-side from the static
+    // pool (no wait), so the only /api/generate POST is the dynamic
+    // prefetch for the batch after next.
     await expect
-      .poll(() => generateBodies.find((b) => b.facts === 30), {
+      .poll(() => generateBodies.find((b) => b.source === "dynamic"), {
         timeout: 15_000,
         message:
-          "expected /api/generate call with 30-fact profile after clicking Questions tab",
+          "expected a background /api/generate call with source=dynamic after entering Questions on a 25-fact profile",
       })
       .toBeTruthy();
 
-    const callWithThirty = generateBodies.find((b) => b.facts === 30);
-    expect(callWithThirty?.source).toBe("dynamic");
+    const dyn = generateBodies.find((b) => b.source === "dynamic");
+    expect(dyn?.facts).toBe(25);
   });
 });

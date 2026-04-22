@@ -30,25 +30,23 @@ const PLAIN_YES_NO_CARD = {
   },
 };
 
-function stubGenerateBatch(cards: typeof STARRED_YES_NO_CARD[]) {
-  return {
-    cards,
-    source: "static" as const,
-    hasMore: true,
-    reasoning: "stub",
-  };
-}
-
 async function clearAndSeed(
   page: import("@playwright/test").Page,
-  profile: object
+  profile: object,
+  pendingCards?: object
 ) {
   await page.goto("/");
-  await page.evaluate((p) => {
-    localStorage.clear();
-    localStorage.setItem("tastemaker_profile", JSON.stringify(p));
-    document.cookie = "tastemaker_has_data=1; path=/";
-  }, profile);
+  await page.evaluate(
+    ({ p, pc }) => {
+      localStorage.clear();
+      localStorage.setItem("tastemaker_profile", JSON.stringify(p));
+      if (pc) {
+        localStorage.setItem("tastemaker_pending_cards", JSON.stringify(pc));
+      }
+      document.cookie = "tastemaker_has_data=1; path=/";
+    },
+    { p: profile, pc: pendingCards }
+  );
   await page.reload();
 }
 
@@ -61,45 +59,35 @@ test.describe("Card UI is yes/no only", () => {
   test("starred yes_no card renders exactly 3 actions: no, super, yes", async ({
     page,
   }) => {
-    await page.route("**/api/generate", async (route) => {
-      await route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify(
-          stubGenerateBatch(
-            Array.from({ length: 10 }, (_, i) => ({
-              ...STARRED_YES_NO_CARD,
-              content: { ...STARRED_YES_NO_CARD.content, id: `stub-${i}` },
-            }))
-          )
-        ),
-      });
-    });
-
-    // Seed 30 facts to put the next batch in dynamic territory
-    // (batchSourceFor(30)=dynamic). Post never-wait refactor, static
-    // batches are served client-side and bypass /api/generate entirely,
-    // so we need the dynamic path to get the stub to fire.
-    await clearAndSeed(page, {
-      facts: Array.from({ length: 30 }, (_, i) => ({
-        questionId: `seed-${i}`,
-        question: `seed ${i}?`,
-        answer: i % 2 === 0 ? "Yes" : "No",
-        positive: i % 2 === 0,
-        timestamp: i,
-      })),
-      likes: [],
-      skippedIds: [],
-      reports: [
-        {
-          id: "rep1",
-          createdAt: Date.now() - 10_000,
-          factsCount: 20,
-          summary: "Seed summary",
-          portrait: "Seed portrait",
-          highlights: ["a", "b"],
-        },
-      ],
-    });
+    // Post never-wait refactor: batches are served client-side (static)
+    // or via the prefetch buffer (dynamic). The cleanest way to assert
+    // a specific card shape is to seed `tastemaker_pending_cards` in
+    // localStorage — the tab-enter useEffect calls hydrateFromPending,
+    // which renders exactly these cards. No network stubbing needed.
+    await clearAndSeed(
+      page,
+      {
+        facts: Array.from({ length: 5 }, (_, i) => ({
+          questionId: `seed-${i}`,
+          question: `seed ${i}?`,
+          answer: "Yes",
+          positive: true,
+          timestamp: i,
+        })),
+        likes: [],
+        skippedIds: [],
+        reports: [],
+      },
+      {
+        mode: "ask",
+        batchSize: 10,
+        currentIndex: 0,
+        cards: Array.from({ length: 10 }, (_, i) => ({
+          ...STARRED_YES_NO_CARD,
+          content: { ...STARRED_YES_NO_CARD.content, id: `stub-${i}` },
+        })),
+      }
+    );
 
     await page.getByRole("button", { name: /^Questions$/i }).click();
 
@@ -127,32 +115,30 @@ test.describe("Card UI is yes/no only", () => {
   test("non-starred yes_no card renders exactly 2 actions: no, yes", async ({
     page,
   }) => {
-    await page.route("**/api/generate", async (route) => {
-      await route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify(
-          stubGenerateBatch(
-            Array.from({ length: 10 }, (_, i) => ({
-              ...PLAIN_YES_NO_CARD,
-              content: { ...PLAIN_YES_NO_CARD.content, id: `plain-${i}` },
-            }))
-          )
-        ),
-      });
-    });
-
-    await clearAndSeed(page, {
-      facts: Array.from({ length: 5 }, (_, i) => ({
-        questionId: `seed-${i}`,
-        question: `seed ${i}?`,
-        answer: "Yes",
-        positive: true,
-        timestamp: i,
-      })),
-      likes: [],
-      skippedIds: [],
-      reports: [],
-    });
+    await clearAndSeed(
+      page,
+      {
+        facts: Array.from({ length: 5 }, (_, i) => ({
+          questionId: `seed-${i}`,
+          question: `seed ${i}?`,
+          answer: "Yes",
+          positive: true,
+          timestamp: i,
+        })),
+        likes: [],
+        skippedIds: [],
+        reports: [],
+      },
+      {
+        mode: "ask",
+        batchSize: 10,
+        currentIndex: 0,
+        cards: Array.from({ length: 10 }, (_, i) => ({
+          ...PLAIN_YES_NO_CARD,
+          content: { ...PLAIN_YES_NO_CARD.content, id: `plain-${i}` },
+        })),
+      }
+    );
 
     await page.getByRole("button", { name: /^Questions$/i }).click();
 
