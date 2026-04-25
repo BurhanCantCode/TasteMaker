@@ -10,7 +10,7 @@ import { useSync } from "@/contexts/SyncContext";
 import { SettingsGear } from "@/components/navigation/SettingsGear";
 import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { ReportStash } from "@/components/results/ReportStash";
-import { PersonalityReport } from "@/lib/types";
+import { FrameworkProfile, PersonalityReport } from "@/lib/types";
 import { Loader2, Sparkles, ArrowRight, RefreshCw } from "lucide-react";
 
 // Lazy-loaded — three.js + R3F is ~200KB gzipped and only needed on Results.
@@ -295,6 +295,8 @@ function ReportCard({
         </ul>
       )}
 
+      {report.profile && <FrameworkProfileSection profile={report.profile} />}
+
       <button
         onClick={onKeepAnswering}
         className="w-full bg-[#171717] text-white h-[56px] rounded-[24px] font-bold text-base hover:bg-black active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
@@ -302,6 +304,114 @@ function ReportCard({
         Answer More Questions
         <ArrowRight className="w-5 h-5" />
       </button>
+    </div>
+  );
+}
+
+function FrameworkProfileSection({ profile }: { profile: FrameworkProfile }) {
+  // Pick the highest-confidence framework as the hero. MBTI usually wins
+  // because it's the most legible label; fall back to Enneagram if MBTI is
+  // missing/low. The other frameworks render as supporting chips below.
+  const mbtiConf = profile.mbti?.confidence ?? 0;
+  const ennConf = profile.enneagram?.confidence ?? 0;
+  const heroIsMbti = mbtiConf >= ennConf && profile.mbti?.type;
+  const heroLabel = heroIsMbti
+    ? profile.mbti.type
+    : profile.enneagram
+      ? `${profile.enneagram.type}w${profile.enneagram.wing}`
+      : "";
+  const heroFramework = heroIsMbti ? "MBTI" : "Enneagram";
+  const heroConfidence = heroIsMbti ? mbtiConf : ennConf;
+
+  const bigFiveBars: Array<{ key: string; label: string; value: number }> = [
+    { key: "O", label: "Open", value: profile.bigFive?.O ?? 0.5 },
+    { key: "C", label: "Conscientious", value: profile.bigFive?.C ?? 0.5 },
+    { key: "E", label: "Extroverted", value: profile.bigFive?.E ?? 0.5 },
+    { key: "A", label: "Agreeable", value: profile.bigFive?.A ?? 0.5 },
+    { key: "N", label: "Neurotic", value: profile.bigFive?.N ?? 0.5 },
+  ];
+
+  const archetypes = profile.careerArchetypes ?? [];
+
+  return (
+    <div className="space-y-4 pt-2">
+      {heroLabel && (
+        <div className="rounded-3xl bg-gradient-to-br from-[#171717] to-[#3a3a3a] text-white px-5 py-4 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/60">
+              {heroFramework}
+            </div>
+            <div className="text-3xl font-extrabold tracking-tight">
+              {heroLabel}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">
+              Confidence
+            </div>
+            <div className="text-lg font-bold">
+              {Math.round(heroConfidence * 100)}%
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        {profile.disc?.dominant && (
+          <div className="rounded-2xl bg-gray-50 px-4 py-3">
+            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">
+              DISC
+            </div>
+            <div className="text-base font-bold text-[#171717] mt-0.5">
+              {profile.disc.dominant}
+              {profile.disc.secondary ? `/${profile.disc.secondary}` : ""}
+            </div>
+          </div>
+        )}
+        {profile.attachmentStyle?.type && (
+          <div className="rounded-2xl bg-gray-50 px-4 py-3">
+            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">
+              Attachment
+            </div>
+            <div className="text-base font-bold text-[#171717] mt-0.5 capitalize">
+              {profile.attachmentStyle.type}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl bg-gray-50 px-4 py-3 space-y-2">
+        <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">
+          Big Five
+        </div>
+        <div className="space-y-1.5">
+          {bigFiveBars.map((b) => (
+            <div key={b.key} className="flex items-center gap-3">
+              <div className="text-xs font-semibold text-gray-600 w-24 shrink-0">
+                {b.label}
+              </div>
+              <div className="flex-1 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                <div
+                  className="h-full bg-[#171717] rounded-full"
+                  style={{ width: `${Math.round(b.value * 100)}%` }}
+                />
+              </div>
+              <div className="text-xs font-mono text-gray-500 w-8 text-right">
+                {Math.round(b.value * 100)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {(profile.ageRange || archetypes.length > 0) && (
+        <p className="text-xs italic text-gray-500 leading-relaxed">
+          <span className="font-semibold text-gray-700 not-italic">Our read:</span>{" "}
+          {profile.ageRange && <span>{profile.ageRange}</span>}
+          {profile.ageRange && archetypes.length > 0 && <span> · </span>}
+          {archetypes.length > 0 && <span>{archetypes.join(", ")}</span>}
+        </p>
+      )}
     </div>
   );
 }

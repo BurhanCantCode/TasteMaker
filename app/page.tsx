@@ -15,10 +15,10 @@ import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { PhoneSignIn } from "@/components/auth/PhoneSignIn";
 import { TabBar, Tab } from "@/components/navigation/TabBar";
 import { RecommendationInterstitialCard } from "@/components/cards/RecommendationInterstitialCard";
-import { Card, Gesture, PersonalityParams, PersonalityReport, Question } from "@/lib/types";
+import { Card, FrameworkProfile, Gesture, PersonalityParams, PersonalityReport, Question } from "@/lib/types";
 import { clearSummary, clearCardSession, loadPendingCards, clearPendingCards } from "@/lib/cookies";
 import { deleteCloudProfile } from "@/lib/firestore";
-import { isPositiveAnswer } from "@/lib/personalityQuestions";
+import { sentimentForAnswer } from "@/lib/personalityQuestions";
 import { BATCH_SIZE, CHUNK_SIZE, isMilestoneAnswer } from "@/lib/questionSequencer";
 import { ArrowLeft, Loader2, Undo2 } from "lucide-react";
 
@@ -163,6 +163,7 @@ export default function Home() {
           portrait: string;
           highlights: string[];
           params?: PersonalityParams;
+          profile?: FrameworkProfile;
         } = await res.json();
 
         const stored = addReport({
@@ -170,6 +171,7 @@ export default function Home() {
           portrait: data.portrait ?? "",
           highlights: data.highlights ?? [],
           params: data.params,
+          profile: data.profile,
           factsCount: factsCountSnapshot,
         });
         setLatestReport(stored);
@@ -209,20 +211,27 @@ export default function Home() {
     const question = currentCard.content as Question;
 
     const isSuper = answer === "super_yes" || answer === "superlike";
-    const isPositive = isSuper ? true : isPositiveAnswer(question, answer);
+    const sentiment = isSuper
+      ? "affirmative"
+      : sentimentForAnswer(question, answer, meta?.index);
+    const isPositive = sentiment === "affirmative";
     const lastIdx = (question.answerLabels?.length ?? 1) - 1;
     const displayAnswer = isSuper
       ? `${question.answerLabels?.[lastIdx] ?? "Yes"} (super)`
       : answer;
 
-    addFact({
-      questionId: question.id,
-      question: question.title,
-      answer: displayAnswer,
-      positive: isPositive,
-      answerIndex: meta?.index,
-      gesture: meta?.gesture,
-    });
+    addFact(
+      {
+        questionId: question.id,
+        question: question.title,
+        answer: displayAnswer,
+        positive: isPositive,
+        sentiment,
+        answerIndex: meta?.index,
+        gesture: meta?.gesture,
+      },
+      question
+    );
   };
 
   const advance = async (projectedAnswered: number) => {

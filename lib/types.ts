@@ -82,6 +82,28 @@ export interface PersonalityParams {
   symmetry: number;     // 0 = asymmetric/experimental, 1 = symmetric/conventional
 }
 
+// Best-fit results across the five personality frameworks the engine maps.
+// Confidence floats in [0, 1]; 0.5 means genuinely uncertain.
+export interface FrameworkProfile {
+  enneagram: { type: number; wing: number; confidence: number };
+  mbti: { type: string; confidence: number };
+  disc: { dominant: string; secondary: string; confidence: number };
+  bigFive: { O: number; C: number; E: number; A: number; N: number };
+  attachmentStyle: { type: string; confidence: number };
+  ageRange: string;
+  careerArchetypes: string[];
+}
+
+// Running per-framework probability vector; updated after each swipe.
+// Values within each framework should sum to ~1 after normalization.
+export interface ProbabilityState {
+  mbti: Record<"I" | "E" | "N" | "S" | "T" | "F" | "J" | "P", number>;
+  enneagram: Record<"1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9", number>;
+  disc: Record<"D" | "I" | "S" | "C", number>;
+  bigFive: Record<"O" | "C" | "E" | "A" | "N", number>;
+  attachment: Record<"secure" | "anxious" | "avoidant" | "disorganized", number>;
+}
+
 // Stashed personality report
 export interface PersonalityReport {
   id: string;
@@ -91,6 +113,7 @@ export interface PersonalityReport {
   portrait: string;  // richer multi-paragraph "tell me about a user who reports these answers"
   highlights?: string[]; // bullet-point insights
   params?: PersonalityParams; // optional — reports stashed before this field existed won't have it
+  profile?: FrameworkProfile; // optional — older reports lack the multi-framework profile
 }
 
 // User Profile (stored in localStorage)
@@ -105,13 +128,21 @@ export interface UserProfile {
   };
   skippedIds?: string[];        // Question IDs the user chose to skip
   reports?: PersonalityReport[]; // Stashed personality reports
+  probabilityState?: ProbabilityState; // running per-framework confidence
 }
+
+export type FactSentiment = "affirmative" | "neutral" | "non-affirmative";
 
 export interface UserFact {
   questionId: string;
   question: string;
   answer: string;
+  // Kept for back-compat with reports/prompts written before yes_no_maybe.
+  // Equivalent to `sentiment === "affirmative"` for new facts.
   positive: boolean;
+  // Three-way sentiment introduced with yes_no_maybe support. Older facts
+  // lack this; readers should fall back to `positive`.
+  sentiment?: FactSentiment;
   timestamp: number;
   skipped?: boolean;
   answerIndex?: number;

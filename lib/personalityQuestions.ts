@@ -32,16 +32,18 @@ function shuffledCopy<T>(arr: readonly T[]): T[] {
   return out;
 }
 
-// Yes/no-only pivot: the product intentionally simplified to a single
-// swipe-left/swipe-right gesture vocabulary, so we drop any raw question
-// whose inferred answerType is not "yes_no". Also excludes the sexual
-// content tag as before. See docs/plans for rationale + dataset audit.
+// Personality-engine pivot: yes_no AND yes_no_maybe questions both ship —
+// the multi-framework prompt set wants a 3-way Yes/Maybe/No signal, but
+// the legacy yes/no questions in the JSON bank are still useful filler.
+// Multiple-choice and other shapes are still dropped (the swipe UI can't
+// render them). Also excludes the sexual content tag as before. See
+// docs/plans for rationale + dataset audit.
 const INCLUDED_QUESTIONS: readonly PersonalityQuestionRaw[] =
-  dataset.questions.filter(
-    (q) =>
-      !q.content_tags?.some((tag) => EXCLUDED_TAGS.has(tag)) &&
-      classifyAnswerType(q) === "yes_no"
-  );
+  dataset.questions.filter((q) => {
+    if (q.content_tags?.some((tag) => EXCLUDED_TAGS.has(tag))) return false;
+    const t = classifyAnswerType(q);
+    return t === "yes_no" || t === "yes_no_maybe";
+  });
 
 const BY_ID = new Map<string, PersonalityQuestionRaw>();
 for (const q of INCLUDED_QUESTIONS) BY_ID.set(q.id, q);
@@ -173,6 +175,39 @@ export function isPositiveAnswer(question: Question, answer: string): boolean {
   );
   if (idx < 0) return false;
   return question.optionTags[idx] === "affirmative";
+}
+
+// Three-way sentiment for a given answer. For yes_no_maybe cards the
+// middle index is `neutral`. For yes_no cards the result collapses to
+// affirmative/non-affirmative — same shape as the legacy `positive` flag.
+export function sentimentForAnswer(
+  question: Question,
+  answer: string,
+  answerIndex?: number
+): "affirmative" | "neutral" | "non-affirmative" {
+  if (answer === "super_yes" || answer === "superlike") return "affirmative";
+
+  const labels = question.answerLabels ?? [];
+  const idx =
+    typeof answerIndex === "number"
+      ? answerIndex
+      : labels.findIndex((l) => l.toLowerCase() === answer.toLowerCase());
+
+  if (question.answerType === "yes_no_maybe") {
+    if (idx === 1) return "neutral";
+    if (idx === labels.length - 1) return "affirmative";
+    return "non-affirmative";
+  }
+
+  // Prefer optionTags when present (static pool questions ship them).
+  if (question.optionTags && idx >= 0 && idx < question.optionTags.length) {
+    const tag = question.optionTags[idx];
+    if (tag === "neutral") return "neutral";
+    if (tag === "affirmative") return "affirmative";
+    return "non-affirmative";
+  }
+
+  return isPositiveAnswer(question, answer) ? "affirmative" : "non-affirmative";
 }
 
 export function indexForAnswer(question: Question, answer: string): number {

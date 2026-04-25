@@ -1,6 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
-import { PersonalityParams, UserProfile } from "@/lib/types";
+import {
+  FrameworkProfile,
+  PersonalityParams,
+  UserProfile,
+} from "@/lib/types";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -18,6 +22,7 @@ interface PortraitPayload {
   portrait: string;
   highlights: string[];
   params?: Partial<Record<keyof PersonalityParams, number>>;
+  profile?: Partial<FrameworkProfile>;
 }
 
 // Clamp any incoming number into [0, 1]; fall back to 0.5 (neutral) if
@@ -38,6 +43,65 @@ function normalizeParams(
     density: clampParam(r.density),
     extroversion: clampParam(r.extroversion),
     symmetry: clampParam(r.symmetry),
+  };
+}
+
+// Pull a Partial<FrameworkProfile> out of the LLM response, dropping any
+// piece that doesn't match the expected shape. Returns undefined if there
+// isn't enough usable signal to render — UI gracefully hides the section.
+function sanitizeProfile(
+  raw: unknown
+): FrameworkProfile | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as Record<string, unknown>;
+
+  const enn = r.enneagram as Record<string, unknown> | undefined;
+  const mb = r.mbti as Record<string, unknown> | undefined;
+  const disc = r.disc as Record<string, unknown> | undefined;
+  const bf = r.bigFive as Record<string, unknown> | undefined;
+  const att = r.attachmentStyle as Record<string, unknown> | undefined;
+
+  if (!enn || !mb || !disc || !bf || !att) return undefined;
+
+  const num = (v: unknown, fallback = 0): number =>
+    typeof v === "number" && Number.isFinite(v) ? v : fallback;
+  const str = (v: unknown, fallback = ""): string =>
+    typeof v === "string" ? v : fallback;
+
+  const archetypes = Array.isArray(r.careerArchetypes)
+    ? (r.careerArchetypes as unknown[]).filter(
+        (x): x is string => typeof x === "string"
+      )
+    : [];
+
+  return {
+    enneagram: {
+      type: Math.round(num(enn.type, 0)),
+      wing: Math.round(num(enn.wing, 0)),
+      confidence: clampParam(num(enn.confidence, 0.5)),
+    },
+    mbti: {
+      type: str(mb.type, ""),
+      confidence: clampParam(num(mb.confidence, 0.5)),
+    },
+    disc: {
+      dominant: str(disc.dominant, ""),
+      secondary: str(disc.secondary, ""),
+      confidence: clampParam(num(disc.confidence, 0.5)),
+    },
+    bigFive: {
+      O: clampParam(num(bf.O, 0.5)),
+      C: clampParam(num(bf.C, 0.5)),
+      E: clampParam(num(bf.E, 0.5)),
+      A: clampParam(num(bf.A, 0.5)),
+      N: clampParam(num(bf.N, 0.5)),
+    },
+    attachmentStyle: {
+      type: str(att.type, ""),
+      confidence: clampParam(num(att.confidence, 0.5)),
+    },
+    ageRange: str(r.ageRange, ""),
+    careerArchetypes: archetypes,
   };
 }
 
@@ -65,7 +129,8 @@ export async function POST(request: NextRequest) {
     // Enriched per-fact evidence. The richer the input, the more the model
     // has to echo back specifically — super-likes, option index, and
     // sentiment together let the portrait reference a single answer by
-    // its flavor instead of only the question text.
+    // its flavor instead of only the question text. Sentiment now carries
+    // the three-way Yes/Maybe/No signal for yes_no_maybe cards.
     const answeredText = userProfile.facts
       .map((f, i) => {
         const isSuper =
@@ -75,8 +140,15 @@ export async function POST(request: NextRequest) {
           typeof f.answerIndex === "number"
             ? ` [picked option ${f.answerIndex + 1}]`
             : "";
-        const sentiment = f.positive ? "affirmative" : "non-affirmative";
-        return `${i + 1}. Q: ${f.question}\n   A: ${f.answer} (${sentiment}${idxTag})${superTag}`;
+        const sentiment =
+          f.sentiment ?? (f.positive ? "affirmative" : "non-affirmative");
+        const tag =
+          sentiment === "neutral"
+            ? "Maybe"
+            : sentiment === "affirmative"
+              ? "Yes"
+              : "No";
+        return `${i + 1}. Q: ${f.question}\n   A: ${tag} — "${f.answer}" (${sentiment}${idxTag})${superTag}`;
       })
       .join("\n");
 
@@ -119,44 +191,66 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Full portrait + highlights + visualization params
+    // Full portrait + highlights + visualization params + framework profile
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 1100,
+      max_tokens: 1600,
       temperature: 0.85,
       system: [
-        "You write personality portraits that feel uncannily specific. You have numbered EVIDENCE in the user message. USE it.",
+        "You are generating a personality portrait and full psychological profile for a user you have learned about through a series of swipe-card responses.",
         "",
-        "OUTPUT: strict JSON with keys: summary, portrait, highlights, params. No code fences. No preamble.",
+        "You output STRICT JSON with keys: profile, summary, portrait, highlights, params. No code fences. No preamble.",
+        "",
+        "You will receive:",
+        "- ANSWER LOG: every question asked and how the user responded (Yes / Maybe / No), with SUPER-LIKED answers marked",
+        "- DISCOVERIES: patterns already noted from prior batches",
+        "",
+        "SCORING NOTES:",
+        "- Yes = full signal weight in the affirming direction",
+        "- No = full signal weight in the opposing direction",
+        "- Maybe = half-weight in both directions; treat as soft ambiguity, not absence of signal",
+        "",
+        "PROFILE — best-fit types across all frameworks:",
+        "{",
+        '  "enneagram": { "type": number (1–9), "wing": number, "confidence": float },',
+        '  "mbti": { "type": string, "confidence": float },',
+        '  "disc": { "dominant": string, "secondary": string, "confidence": float },',
+        '  "bigFive": { "O": float, "C": float, "E": float, "A": float, "N": float },',
+        '  "attachmentStyle": { "type": string, "confidence": float },',
+        '  "ageRange": string,',
+        '  "careerArchetypes": [string]',
+        "}",
+        'Confidence floats in [0,1] — let them diverge, 0.5 means genuinely uncertain. ageRange is a soft inference, express as a range ("late 20s–mid 30s"). careerArchetypes: 3–5 real role titles, not personality adjectives.',
         "",
         "PORTRAIT — 3 short paragraphs, ≤ 120 words total, third person. Follow ALL five rules:",
         "",
-        "1. OBSERVATION ECHO. Reference at least TWO specific answers by paraphrase so the reader feels seen by a particular moment, not abstractly. Never list question numbers; weave evidence into sentences.",
-        "2. TENSION. Name exactly ONE internal contradiction the evidence supports. Both sides acknowledged in one sentence. Example shape: \"Warm with the people who've earned it, but guarded with new ones.\"",
-        "3. VANISHING NEGATIVE. Include one small, earned criticism and immediately reframe it as the source of a strength. Not flattery — honest insight.",
-        "4. INTERIOR. At least one statement about a common-but-private internal experience — a quiet preference, a secret fear, a thing they don't say out loud. These hit hardest.",
-        "5. SUPER-LIKE. If any answer is marked **SUPER-LIKED**, build the portrait around it. That is the single highest-weight signal in the evidence.",
+        "1. OBSERVATION ECHO. Reference at least TWO specific answers by paraphrase so the reader feels seen by a particular moment, not abstractly. Never mention question numbers; weave evidence into sentences.",
+        '2. TENSION. Name exactly ONE internal contradiction the evidence supports. Both sides in one sentence. Shape: "Warm with the people who\'ve earned it, but guarded with new ones."',
+        "3. VANISHING NEGATIVE. One small, earned criticism immediately reframed as the source of a strength. Not flattery — honest insight.",
+        "4. INTERIOR. At least one statement about a private internal experience — a quiet preference, a secret fear, something they don't say out loud.",
+        "5. SUPER-LIKE. If any answer is marked SUPER-LIKED, build the portrait around it. That is the single highest-weight signal.",
         "",
         "SUMMARY — 2 crisp sentences. Same rules, condensed. No filler.",
         "",
-        "HIGHLIGHTS — 4-6 short bullet strings naming notable traits or TENSIONS (not sentences, no leading dashes, no emojis).",
+        "HIGHLIGHTS — 4–6 short strings naming notable traits or TENSIONS. Not sentences. No leading dashes. No emojis.",
         "",
-        "PARAMS — six floats in [0, 1] on these orthogonal dimensions. LET VALUES DIVERGE from 0.5 when the evidence supports it — neutral values waste the 3D visualization:",
-        "  warmth (0 = cold/detached, 1 = warm/relational),",
-        "  energy (0 = slow/contemplative, 1 = restless/fast),",
-        "  structure (0 = organic/improvisational, 1 = structured/analytical),",
-        "  density (0 = minimal/spare, 1 = rich/layered/complex),",
-        "  extroversion (0 = introverted/inward, 1 = extroverted/outward),",
-        "  symmetry (0 = asymmetric/experimental, 1 = symmetric/conventional).",
+        "PARAMS — six floats in [0,1]. Let values diverge — neutral values waste the visualization:",
+        "  warmth (0 = cold/detached, 1 = warm/relational)",
+        "  energy (0 = slow/contemplative, 1 = restless/fast)",
+        "  structure (0 = organic/improvisational, 1 = structured/analytical)",
+        "  density (0 = minimal/spare, 1 = rich/layered/complex)",
+        "  extroversion (0 = introverted/inward, 1 = extroverted/outward)",
+        "  symmetry (0 = asymmetric/experimental, 1 = symmetric/conventional)",
         "",
         "VOICE: sharp, slightly teasing, never sycophantic. Short sentences beat long ones.",
-        "FORBIDDEN language (do not write these): \"tend to\", \"many sides to you\" or \"many sides to them\", \"a complex person\", \"a part of you\" or \"a part of them\", any horoscope vocabulary (\"the stars\", \"aligned\", \"cosmic\").",
-        "Never restate a question title verbatim. Never fabricate facts. Mature subjects are fine; avoid sexual content.",
+        'FORBIDDEN: "tend to", "many sides to them", "a complex person", "a part of them", any horoscope vocabulary. Never restate a question verbatim. Never fabricate.',
+        "",
+        "OUTPUT: JSON only, no code fences, no prose.",
       ].join("\n"),
       messages: [
         {
           role: "user",
-          content: `EVIDENCE — numbered answers from this person:\n\n${answeredText}${skippedBlock}\n\nRespond with JSON only: {\"summary\": string, \"portrait\": string, \"highlights\": string[], \"params\": {\"warmth\": number, \"energy\": number, \"structure\": number, \"density\": number, \"extroversion\": number, \"symmetry\": number}}`,
+          content: `ANSWER LOG — numbered answers from this person:\n\n${answeredText}${skippedBlock}\n\nRespond with JSON only: {"profile": {"enneagram": {"type": number, "wing": number, "confidence": number}, "mbti": {"type": string, "confidence": number}, "disc": {"dominant": string, "secondary": string, "confidence": number}, "bigFive": {"O": number, "C": number, "E": number, "A": number, "N": number}, "attachmentStyle": {"type": string, "confidence": number}, "ageRange": string, "careerArchetypes": string[]}, "summary": string, "portrait": string, "highlights": string[], "params": {"warmth": number, "energy": number, "structure": number, "density": number, "extroversion": number, "symmetry": number}}`,
         },
       ],
     });
@@ -189,6 +283,7 @@ export async function POST(request: NextRequest) {
       portrait: parsed.portrait ?? "",
       highlights: Array.isArray(parsed.highlights) ? parsed.highlights : [],
       params: normalizeParams(parsed.params),
+      profile: sanitizeProfile(parsed.profile),
     });
   } catch (error) {
     console.error("Error in /api/summary:", error);

@@ -237,19 +237,55 @@ export function CardStack({
 
       {card.type === "ask" && question && (
         <div ref={actionRowRef} className="w-full flex flex-col items-center gap-2.5">
-          <YesNoActions
-            labels={[labels[0] ?? "No", labels[labels.length - 1] ?? "Yes"]}
-            superLikeEnabled={superLikeEnabled}
-            onNo={() => triggerDismissAndCommit("left", () => onAnswer(labels[0] ?? "No", { index: 0, gesture: "tap_left" }))}
-            onYes={() => {
-              const lastIdx = labels.length - 1;
-              triggerDismissAndCommit("right", () => onAnswer(labels[lastIdx] ?? "Yes", { index: lastIdx, gesture: "tap_right" }));
-            }}
-            onSuper={() => {
-              const lastIdx = labels.length - 1;
-              triggerDismissAndCommit("up", () => onAnswer("super_yes", { index: lastIdx, gesture: "swipe_up" }));
-            }}
-          />
+          {question.answerType === "yes_no_maybe" ? (
+            <YesNoMaybeActions
+              labels={[
+                labels[0] ?? "No",
+                labels[1] ?? "Maybe",
+                labels[2] ?? "Yes",
+              ]}
+              superLikeEnabled={superLikeEnabled}
+              onNo={() =>
+                triggerDismissAndCommit("left", () =>
+                  onAnswer(labels[0] ?? "No", { index: 0, gesture: "tap_left" })
+                )
+              }
+              onMaybe={() =>
+                onAnswer(labels[1] ?? "Maybe", {
+                  index: 1,
+                  gesture: "tap_center",
+                })
+              }
+              onYes={() =>
+                triggerDismissAndCommit("right", () =>
+                  onAnswer(labels[2] ?? "Yes", {
+                    index: 2,
+                    gesture: "tap_right",
+                  })
+                )
+              }
+              onSuper={() => {
+                const lastIdx = labels.length - 1;
+                triggerDismissAndCommit("up", () =>
+                  onAnswer("super_yes", { index: lastIdx, gesture: "swipe_up" })
+                );
+              }}
+            />
+          ) : (
+            <YesNoActions
+              labels={[labels[0] ?? "No", labels[labels.length - 1] ?? "Yes"]}
+              superLikeEnabled={superLikeEnabled}
+              onNo={() => triggerDismissAndCommit("left", () => onAnswer(labels[0] ?? "No", { index: 0, gesture: "tap_left" }))}
+              onYes={() => {
+                const lastIdx = labels.length - 1;
+                triggerDismissAndCommit("right", () => onAnswer(labels[lastIdx] ?? "Yes", { index: lastIdx, gesture: "tap_right" }));
+              }}
+              onSuper={() => {
+                const lastIdx = labels.length - 1;
+                triggerDismissAndCommit("up", () => onAnswer("super_yes", { index: lastIdx, gesture: "swipe_up" }));
+              }}
+            />
+          )}
 
           <button
             onClick={() => onSkip?.()}
@@ -292,6 +328,48 @@ function YesNoActions({
         </IconBtn>
       )}
       <IconBtn dataBtn="right" tint="#10b981" size={66} onClick={onYes} ariaLabel={labels[1]}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </IconBtn>
+    </div>
+  );
+}
+
+function YesNoMaybeActions({
+  labels,
+  superLikeEnabled,
+  onNo,
+  onMaybe,
+  onYes,
+  onSuper,
+}: {
+  labels: [string, string, string];
+  superLikeEnabled: boolean;
+  onNo: () => void;
+  onMaybe: () => void;
+  onYes: () => void;
+  onSuper: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-3">
+      <IconBtn dataBtn="left" tint="#ef4444" size={62} onClick={onNo} ariaLabel={labels[0]}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </IconBtn>
+      <IconBtn dataBtn="center" tint="#f59e0b" size={56} onClick={onMaybe} ariaLabel={labels[1]}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
+          <path d="M5 12h14" />
+        </svg>
+      </IconBtn>
+      {superLikeEnabled && (
+        <IconBtn dataBtn="super" tint="#8b5cf6" size={48} onClick={onSuper} ariaLabel="Super Yes">
+          <Star className="w-5 h-5 fill-current" />
+        </IconBtn>
+      )}
+      <IconBtn dataBtn="right" tint="#10b981" size={62} onClick={onYes} ariaLabel={labels[2]}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 6 9 17l-5-5" />
         </svg>

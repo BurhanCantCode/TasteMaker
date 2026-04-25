@@ -38,7 +38,8 @@ function serveStatic(
 // failure so callers can fall back to static.
 async function serveDynamic(
   userProfile: UserProfile,
-  batchSize: number
+  batchSize: number,
+  batchNumber: number
 ): Promise<Question[] | null> {
   if (!process.env.ANTHROPIC_API_KEY) return null;
 
@@ -51,7 +52,11 @@ async function serveDynamic(
       messages: [
         {
           role: "user",
-          content: buildDynamicBatchUserPrompt(userProfile, batchSize),
+          content: buildDynamicBatchUserPrompt(
+            userProfile,
+            batchSize,
+            batchNumber
+          ),
         },
       ],
     });
@@ -120,7 +125,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (source === "dynamic") {
-      const dynamic = await serveDynamic(userProfile, batchSize);
+      // Round number = how many full batches the user has cleared so far +1.
+      // Used by the system prompt to gate progressive intimacy / batch-1
+      // breadth vs. batch-2+ tightening.
+      const answered = userProfile.facts?.length ?? 0;
+      const batchNumber = Math.floor(answered / batchSize) + 1;
+      const dynamic = await serveDynamic(userProfile, batchSize, batchNumber);
       if (dynamic && dynamic.length > 0) {
         const cards: Card[] = dynamic.map((q) => ({
           type: "ask",

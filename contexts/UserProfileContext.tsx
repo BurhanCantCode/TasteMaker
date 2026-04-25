@@ -9,7 +9,13 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import { UserProfile, UserFact, UserLike, PersonalityReport } from "@/lib/types";
+import {
+  UserProfile,
+  UserFact,
+  UserLike,
+  PersonalityReport,
+  Question,
+} from "@/lib/types";
 import {
   loadProfile,
   saveProfile,
@@ -20,11 +26,12 @@ import {
 } from "@/lib/cookies";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSync } from "@/contexts/SyncContext";
+import { applyAnswer, emptyState } from "@/lib/probabilityState";
 
 interface UserProfileContextValue {
   profile: UserProfile;
   isLoaded: boolean;
-  addFact: (fact: Omit<UserFact, "timestamp">) => void;
+  addFact: (fact: Omit<UserFact, "timestamp">, question?: Question) => void;
   addLike: (like: Omit<UserLike, "timestamp">) => void;
   addSkip: (questionId: string) => void;
   undoLast: () => "fact" | "skip" | null;
@@ -87,15 +94,23 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("tastemaker-reconnect-sync", handleReconnect);
   }, [user, isLoaded, profile, triggerSync]);
 
-  const addFact = useCallback((fact: Omit<UserFact, "timestamp">) => {
-    setProfile((prev) => ({
-      ...prev,
-      facts: [
-        ...prev.facts,
-        { ...fact, timestamp: Date.now() },
-      ],
-    }));
-  }, []);
+  const addFact = useCallback(
+    (fact: Omit<UserFact, "timestamp">, question?: Question) => {
+      setProfile((prev) => {
+        const stamped: UserFact = { ...fact, timestamp: Date.now() };
+        const baseState = prev.probabilityState ?? emptyState();
+        const nextState = question
+          ? applyAnswer(baseState, stamped, question)
+          : baseState;
+        return {
+          ...prev,
+          facts: [...prev.facts, stamped],
+          probabilityState: nextState,
+        };
+      });
+    },
+    []
+  );
 
   const addLike = useCallback((like: Omit<UserLike, "timestamp">) => {
     setProfile((prev) => ({
