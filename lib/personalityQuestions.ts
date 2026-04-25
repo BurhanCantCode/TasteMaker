@@ -8,6 +8,220 @@ import {
 
 const EXCLUDED_TAGS = new Set(["sexual"]);
 
+// Conservative keyword heuristic for inferring framework dimension tags
+// (mbti / enneagram / disc / bigfive / attachment) from a question's text.
+// Without these the static pool fires zero signal into ProbabilityState —
+// the dynamic prompt then sees a flat 0.5 across every dimension and has
+// nothing to disambiguate against. This isn't perfect, but a few accurate
+// tags per question is far better than none. Each rule only fires on
+// strong keyword presence to keep the false-positive rate low.
+const FRAMEWORK_TAG_RULES: ReadonlyArray<{
+  pattern: RegExp;
+  tags: readonly string[];
+}> = [
+  // MBTI: Introversion / Extroversion
+  {
+    pattern:
+      /\b(alone|solitude|by myself|introvert|recharge|quiet evening|small group|deep friendship|stay home|small circle)\b/i,
+    tags: ["mbti:I"],
+  },
+  {
+    pattern:
+      /\b(party|crowd|extrovert|outgoing|big group|stranger|social event|networking|small talk|the spotlight)\b/i,
+    tags: ["mbti:E", "bigfive:E"],
+  },
+  // MBTI: Thinking / Feeling + Big Five A
+  {
+    pattern:
+      /\b(logic|analytical|objective|rational|argument|debate|fact|data|cold|critical|sharp tongue)\b/i,
+    tags: ["mbti:T"],
+  },
+  {
+    pattern:
+      /\b(empathy|empathize|feeling|emotion|sensitive|cry|moved|tender|kind|harmony|warm|hurt feelings)\b/i,
+    tags: ["mbti:F", "bigfive:A"],
+  },
+  // MBTI: Judging / Perceiving + Big Five C
+  {
+    pattern:
+      /\b(plan|schedule|organized|routine|to-do|list|on time|deadline|early|prepared|tidy|order|structured)\b/i,
+    tags: ["mbti:J", "bigfive:C", "disc:C"],
+  },
+  {
+    pattern:
+      /\b(spontaneous|improvise|wing it|go with the flow|last[- ]minute|messy|disorganized|loose plan|adapt)\b/i,
+    tags: ["mbti:P", "bigfive:O"],
+  },
+  // MBTI: Intuition / Sensing + Big Five O
+  {
+    pattern:
+      /\b(creative|imagine|imagination|abstract|theory|big picture|possibility|metaphor|art|symbolic|daydream)\b/i,
+    tags: ["mbti:N", "bigfive:O"],
+  },
+  {
+    pattern:
+      /\b(concrete|practical|hands[- ]on|step by step|details|facts of the matter|real[- ]world|build|fix things)\b/i,
+    tags: ["mbti:S"],
+  },
+  // DISC dominant
+  {
+    pattern:
+      /\b(in charge|take charge|lead|leader|boss|decisive|compete|win|drive|push back|assertive|confront)\b/i,
+    tags: ["disc:D", "enneagram:8"],
+  },
+  {
+    pattern:
+      /\b(persuade|charm|fun|life of the party|talkative|enthusiast|optimistic)\b/i,
+    tags: ["disc:I", "mbti:E"],
+  },
+  {
+    pattern:
+      /\b(steady|loyal|patient|listener|peacemaker|behind the scenes|reliable|easy[- ]going)\b/i,
+    tags: ["disc:S", "enneagram:9"],
+  },
+  // Enneagram
+  {
+    pattern:
+      /\b(perfect|right way|wrong|principle|integrity|standards|critical of myself|self[- ]critical|moral)\b/i,
+    tags: ["enneagram:1", "bigfive:C"],
+  },
+  {
+    pattern:
+      /\b(help|helpful|needed|give|caretaker|put others first|nurturing|generous)\b/i,
+    tags: ["enneagram:2", "mbti:F", "bigfive:A"],
+  },
+  {
+    pattern:
+      /\b(achieve|accomplish|succeed|image|impressive|status|ambitious|career|goals|recognition)\b/i,
+    tags: ["enneagram:3", "disc:D"],
+  },
+  {
+    pattern:
+      /\b(unique|different|special|misunderstood|melancholy|longing|deep feelings|romantic|nostalgic|authentic)\b/i,
+    tags: ["enneagram:4", "mbti:F"],
+  },
+  {
+    pattern:
+      /\b(private|observe|study|research|knowledge|expert|niche|withdraw|guarded|cerebral)\b/i,
+    tags: ["enneagram:5", "mbti:I", "bigfive:O"],
+  },
+  {
+    pattern:
+      /\b(worry|anxious|doubt|what if|prepare for the worst|loyalty|committed|second[- ]guess|safety|cautious)\b/i,
+    tags: ["enneagram:6", "bigfive:N", "attachment:anxious"],
+  },
+  {
+    pattern:
+      /\b(adventure|fun|options|try new|variety|restless|impulsive|curious|excited|fomo)\b/i,
+    tags: ["enneagram:7", "mbti:P", "bigfive:O"],
+  },
+  {
+    pattern:
+      /\b(strong|tough|protect|control|intense|stand up to|unfair|injustice|powerful|in control)\b/i,
+    tags: ["enneagram:8", "disc:D"],
+  },
+  {
+    pattern:
+      /\b(go along|avoid conflict|peace|easy[- ]going|merge|comfortable|stable|blend in|laid back)\b/i,
+    tags: ["enneagram:9", "mbti:F"],
+  },
+  // Attachment
+  {
+    pattern:
+      /\b(trust|secure|comfortable depending|open up easily|safe in love|stable relationship)\b/i,
+    tags: ["attachment:secure"],
+  },
+  {
+    pattern:
+      /\b(distance|space|guarded|independent|on my own|don't need anyone|push (?:them|people) away|hate clingy)\b/i,
+    tags: ["attachment:avoidant", "mbti:I"],
+  },
+  {
+    pattern:
+      /\b(abandoned|abandonment|fear losing|clingy|need reassurance|jealous|read into|overthink texts)\b/i,
+    tags: ["attachment:anxious", "bigfive:N"],
+  },
+  // Big Five Neuroticism (standalone signals)
+  {
+    pattern:
+      /\b(stressed|anxious|nervous|panic|overwhelmed|worry|self[- ]doubt|low mood|insecure)\b/i,
+    tags: ["bigfive:N"],
+  },
+  // Dating-pool-specific rules (this dataset skews heavily relationship/etiquette)
+  {
+    pattern:
+      /\b(should|appropriate|inappropriate|proper|manners|etiquette|the right way|the wrong way)\b/i,
+    tags: ["enneagram:1"],
+  },
+  {
+    pattern:
+      /\b(annoy|annoyed|annoying|pet peeve|drives me crazy|bothers me|irritate)\b/i,
+    tags: ["enneagram:1", "bigfive:N"],
+  },
+  {
+    pattern:
+      /\b(jealous|jealousy|cheat|cheating|cheated|unfaithful|insecure about)\b/i,
+    tags: ["attachment:anxious", "bigfive:N"],
+  },
+  {
+    pattern:
+      /\b(password|privacy|secrets|hide things|something to hide|share everything)\b/i,
+    tags: ["mbti:I", "attachment:avoidant"],
+  },
+  {
+    pattern:
+      /\b(commit|commitment|long[- ]term|settle down|exclusive|monogamous|monogamy)\b/i,
+    tags: ["mbti:J"],
+  },
+  {
+    pattern:
+      /\b(forgive|grudge|let go|hold a grudge|move on|resentment)\b/i,
+    tags: ["bigfive:A"],
+  },
+  {
+    pattern:
+      /\b(judge|judgmental|opinion of|look down|disapprove|judging)\b/i,
+    tags: ["enneagram:1", "mbti:T"],
+  },
+  {
+    pattern:
+      /\b(authentic|fake|pretend|put on a show|true self|real you|mask)\b/i,
+    tags: ["enneagram:4"],
+  },
+  {
+    pattern:
+      /\b(money|spend|saving|cheap|frugal|generous with money|tip|tipping)\b/i,
+    tags: ["bigfive:C"],
+  },
+  {
+    pattern:
+      /\b(attention|center of attention|the spotlight|stand out|be noticed)\b/i,
+    tags: ["mbti:E", "bigfive:E", "enneagram:3"],
+  },
+  {
+    pattern:
+      /\b(text|texting|reply|response time|read receipts|left on read|ghost)\b/i,
+    tags: ["attachment:anxious"],
+  },
+  {
+    pattern:
+      /\b(trust your gut|gut feeling|first impression|sense people|read people)\b/i,
+    tags: ["mbti:N", "mbti:F"],
+  },
+];
+
+// Returns inferred framework dimension tags for a question's text. Always
+// returns a deduped array. Empty if no rule matched — that's fine.
+function inferFrameworkTags(text: string): string[] {
+  const hits = new Set<string>();
+  for (const rule of FRAMEWORK_TAG_RULES) {
+    if (rule.pattern.test(text)) {
+      for (const t of rule.tags) hits.add(t);
+    }
+  }
+  return [...hits];
+}
+
 interface RawDataset {
   questions: PersonalityQuestionRaw[];
 }
@@ -84,6 +298,13 @@ function classifyAnswerType(raw: PersonalityQuestionRaw): AnswerType {
 
 function toQuestion(raw: PersonalityQuestionRaw): Question {
   const answerType = classifyAnswerType(raw);
+  // Merge content_tags (mature/sexual/etc) with framework dimension tags
+  // inferred from the question text. ProbabilityState's parser ignores
+  // any tag it can't decode, so mixing them in one field is safe.
+  const mergedTags = [
+    ...(raw.content_tags ?? []),
+    ...inferFrameworkTags(raw.question),
+  ];
 
   if (answerType === "yes_no") {
     const negative =
@@ -98,7 +319,7 @@ function toQuestion(raw: PersonalityQuestionRaw): Question {
       answerType: "yes_no",
       answerLabels: [leftLabel, rightLabel],
       superLikeEnabled: raw.starred === true,
-      tags: raw.content_tags ?? [],
+      tags: mergedTags,
       optionTags: [negative?.tag ?? "negative", affirmative?.tag ?? "affirmative"],
     };
   }
@@ -118,7 +339,7 @@ function toQuestion(raw: PersonalityQuestionRaw): Question {
       options: ordered.map((o) => o.text),
       answerLabels: ordered.map((o) => o.text),
       superLikeEnabled: raw.starred === true,
-      tags: raw.content_tags ?? [],
+      tags: mergedTags,
       optionTags: ordered.map((o) => o.tag ?? "neutral"),
     };
   }
@@ -133,7 +354,7 @@ function toQuestion(raw: PersonalityQuestionRaw): Question {
     options,
     answerLabels: options,
     superLikeEnabled: raw.starred === true,
-    tags: raw.content_tags ?? [],
+    tags: mergedTags,
     optionTags: ordered.map((o) => o.tag ?? "neutral"),
   };
 }

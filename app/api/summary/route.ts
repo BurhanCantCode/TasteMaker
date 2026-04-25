@@ -23,6 +23,7 @@ interface PortraitPayload {
   highlights: string[];
   params?: Partial<Record<keyof PersonalityParams, number>>;
   profile?: Partial<FrameworkProfile>;
+  predictions?: unknown;
 }
 
 // Clamp any incoming number into [0, 1]; fall back to 0.5 (neutral) if
@@ -199,7 +200,7 @@ export async function POST(request: NextRequest) {
       system: [
         "You are generating a personality portrait and full psychological profile for a user you have learned about through a series of swipe-card responses.",
         "",
-        "You output STRICT JSON with keys: profile, summary, portrait, highlights, params. No code fences. No preamble.",
+        "You output STRICT JSON with keys: profile, predictions, summary, portrait, highlights, params. No code fences. No preamble.",
         "",
         "You will receive:",
         "- ANSWER LOG: every question asked and how the user responded (Yes / Maybe / No), with SUPER-LIKED answers marked",
@@ -221,6 +222,14 @@ export async function POST(request: NextRequest) {
         '  "careerArchetypes": [string]',
         "}",
         'Confidence floats in [0,1] — let them diverge, 0.5 means genuinely uncertain. ageRange is a soft inference, express as a range ("late 20s–mid 30s"). careerArchetypes: 3–5 real role titles, not personality adjectives.',
+        "",
+        "PREDICTIONS — 3 to 5 short, behaviorally specific guesses about this person that the evidence supports but they did NOT directly state. This is the section that should make them say \"how did it know that.\" Rules:",
+        "- One short sentence each, ≤ 14 words, present tense, second person (start with \"You\"). No periods at the end? Either way works — keep them clean.",
+        "- Concrete behavior, not personality adjectives. \"You keep browser tabs open you'll never read\" beats \"You're curious.\"",
+        "- Slightly transgressive or quietly vulnerable when the evidence supports it. Examples: \"You've stayed in a job past the point you knew it was over.\" \"You reread the same handful of books.\" \"You've ghosted someone you actually liked.\"",
+        "- No \"tend to\", no \"often\", no \"sometimes\", no horoscope vocab. Direct claims only.",
+        "- Don't repeat anything from HIGHLIGHTS or PORTRAIT. These are inferences sideways from the evidence, not summaries of it.",
+        "- If the evidence is too thin to support a real prediction, write fewer — never fabricate.",
         "",
         "PORTRAIT — 3 short paragraphs, ≤ 120 words total, third person. Follow ALL five rules:",
         "",
@@ -250,7 +259,7 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: "user",
-          content: `ANSWER LOG — numbered answers from this person:\n\n${answeredText}${skippedBlock}\n\nRespond with JSON only: {"profile": {"enneagram": {"type": number, "wing": number, "confidence": number}, "mbti": {"type": string, "confidence": number}, "disc": {"dominant": string, "secondary": string, "confidence": number}, "bigFive": {"O": number, "C": number, "E": number, "A": number, "N": number}, "attachmentStyle": {"type": string, "confidence": number}, "ageRange": string, "careerArchetypes": string[]}, "summary": string, "portrait": string, "highlights": string[], "params": {"warmth": number, "energy": number, "structure": number, "density": number, "extroversion": number, "symmetry": number}}`,
+          content: `ANSWER LOG — numbered answers from this person:\n\n${answeredText}${skippedBlock}\n\nRespond with JSON only: {"profile": {"enneagram": {"type": number, "wing": number, "confidence": number}, "mbti": {"type": string, "confidence": number}, "disc": {"dominant": string, "secondary": string, "confidence": number}, "bigFive": {"O": number, "C": number, "E": number, "A": number, "N": number}, "attachmentStyle": {"type": string, "confidence": number}, "ageRange": string, "careerArchetypes": string[]}, "predictions": string[], "summary": string, "portrait": string, "highlights": string[], "params": {"warmth": number, "energy": number, "structure": number, "density": number, "extroversion": number, "symmetry": number}}`,
         },
       ],
     });
@@ -278,12 +287,23 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Sanitize predictions: strip non-strings, trim, drop blanks, cap at 5.
+    // Empty array is fine — UI hides the section when there's nothing usable.
+    const predictions = Array.isArray(parsed.predictions)
+      ? (parsed.predictions as unknown[])
+          .filter((x): x is string => typeof x === "string")
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0 && s.length <= 200)
+          .slice(0, 5)
+      : [];
+
     return NextResponse.json({
       summary: parsed.summary ?? "",
       portrait: parsed.portrait ?? "",
       highlights: Array.isArray(parsed.highlights) ? parsed.highlights : [],
       params: normalizeParams(parsed.params),
       profile: sanitizeProfile(parsed.profile),
+      predictions,
     });
   } catch (error) {
     console.error("Error in /api/summary:", error);

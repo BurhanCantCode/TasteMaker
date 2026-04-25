@@ -114,6 +114,7 @@ export interface PersonalityReport {
   highlights?: string[]; // bullet-point insights
   params?: PersonalityParams; // optional — reports stashed before this field existed won't have it
   profile?: FrameworkProfile; // optional — older reports lack the multi-framework profile
+  predictions?: string[]; // 3-5 oddly-specific behavioral guesses; landed before framework chips
 }
 
 // User Profile (stored in localStorage)

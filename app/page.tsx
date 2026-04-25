@@ -164,6 +164,7 @@ export default function Home() {
           highlights: string[];
           params?: PersonalityParams;
           profile?: FrameworkProfile;
+          predictions?: string[];
         } = await res.json();
 
         const stored = addReport({
@@ -172,6 +173,7 @@ export default function Home() {
           highlights: data.highlights ?? [],
           params: data.params,
           profile: data.profile,
+          predictions: data.predictions,
           factsCount: factsCountSnapshot,
         });
         setLatestReport(stored);

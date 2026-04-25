@@ -295,6 +295,10 @@ function ReportCard({
         </ul>
       )}
 
+      {report.predictions && report.predictions.length > 0 && (
+        <PredictionsSection predictions={report.predictions} />
+      )}
+
       {report.profile && <FrameworkProfileSection profile={report.profile} />}
 
       <button
@@ -304,6 +308,29 @@ function ReportCard({
         Answer More Questions
         <ArrowRight className="w-5 h-5" />
       </button>
+    </div>
+  );
+}
+
+function PredictionsSection({ predictions }: { predictions: string[] }) {
+  return (
+    <div className="space-y-3 pt-2">
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-amber-500" />
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-500">
+          Things we'd bet on
+        </h3>
+      </div>
+      <ul className="space-y-2">
+        {predictions.map((p, i) => (
+          <li
+            key={i}
+            className="text-[15px] font-medium text-[#171717] leading-snug bg-amber-50/60 border border-amber-100 rounded-2xl px-4 py-3"
+          >
+            {p}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
