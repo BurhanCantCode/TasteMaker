@@ -1,0 +1,622 @@
+{
+  "ground_truth": {
+    "gender": "female",
+    "ageBand": "30s",
+    "relationshipStatus": "married",
+    "hasKids": "yes",
+    "geographyType": "urban",
+    "workStatus": "freelance",
+    "mbti": "INFP",
+    "enneagramType": 4
+  },
+  "transcript": [
+    {
+      "batch": 1,
+      "n": 1,
+      "type": "    ",
+      "q": "Do you play any musical instruments?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I took piano lessons as a kid in Vermont but I haven't really played in years — I wouldn't say I *play* anything now."
+    },
+    {
+      "batch": 1,
+      "n": 2,
+      "type": "    ",
+      "q": "Would you consider dating someone who has vocalized a strong negative bias toward a certain race of people?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "That's a hard no — I couldn't be with someone who holds that kind of prejudice, full stop."
+    },
+    {
+      "batch": 1,
+      "n": 3,
+      "type": "PROBE",
+      "q": "Do you set a weekday alarm before 8am most weeks?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "Mia's preschool means I'm up and moving well before 8 most mornings, so yes, the alarm is basically a formality at this point."
+    },
+    {
+      "batch": 1,
+      "n": 4,
+      "type": "    ",
+      "q": "Should bathrooms be gender neutral?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As a progressive woman in Brooklyn, I think gender-neutral bathrooms make sense — they're more inclusive and honestly, as someone who's waited in long lines at women's restrooms, the current setup never made that much practical sense to me anyway."
+    },
+    {
+      "batch": 1,
+      "n": 5,
+      "type": "PROBE",
+      "q": "Have you opened a dating app in the last month?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm happily married to Tom — there's no dating app on my phone, hasn't been for years."
+    },
+    {
+      "batch": 1,
+      "n": 6,
+      "type": "    ",
+      "q": "You can tell a lot about a person from their appearance.",
+      "a": "Disagree",
+      "sentiment": "non-affirmative",
+      "reasoning": "As someone who values depth over surface and hates being reduced to how she looks, I'd push back on the idea that appearance tells you much of anything real about a person."
+    },
+    {
+      "batch": 1,
+      "n": 7,
+      "type": "    ",
+      "q": "Would you date someone who is (or was) in a fraternity or sorority?",
+      "a": "I’m Not Sure",
+      "sentiment": "neutral",
+      "reasoning": "I mean, I never really ran in those circles growing up in Vermont or even in the indie design world, so it's not a dealbreaker exactly, but the culture can feel pretty far from who I am — I'd have to see who the person actually is."
+    },
+    {
+      "batch": 1,
+      "n": 8,
+      "type": "    ",
+      "q": "Would you cut off your own good hand, if you knew it would magically solve poverty in the world?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As someone who leans deeply empathetic and values collective wellbeing over personal comfort, and who thinks about systemic suffering probably more than is comfortable — yes, I think I'd do it, as painful as that is to sit with."
+    },
+    {
+      "batch": 1,
+      "n": 9,
+      "type": "    ",
+      "q": "Would you like to serve as a juror in a murder trial?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "The weight of deciding someone's fate in a murder case, combined with my anxiety and the disruption to my freelance schedule and Mia's care, makes this feel genuinely daunting — I'd rather not."
+    },
+    {
+      "batch": 1,
+      "n": 10,
+      "type": "    ",
+      "q": "Imagine you have a partner who is able to provide financially for you and any children. Would you consider taking a stay-at-home role?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "Tom's income could cover us, and honestly, being present for Mia and having space for my own creative work on my own terms sounds more appealing than not — I'd still want to keep some design projects, but the structure of staying home isn't something I'd rule out."
+    },
+    {
+      "batch": 2,
+      "n": 11,
+      "type": "    ",
+      "q": "Is it okay for a married person to play around with someone with the permission of their spouse?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "If both partners have genuinely consented and communicated openly, I don't think it's my place to say that's wrong — consent and honesty between partners is what matters."
+    },
+    {
+      "batch": 2,
+      "n": 12,
+      "type": "    ",
+      "q": "Do you think your partner is with you to serve you with cooking and cleaning up after you?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "Tom and I are partners in every sense — I'd never think of him as being there to serve me, that's just not how we work."
+    },
+    {
+      "batch": 2,
+      "n": 13,
+      "type": "PROBE",
+      "q": "Was your first real concert more than 15 years ago?",
+      "a": "Definitely yes",
+      "sentiment": "affirmative",
+      "reasoning": "I'm 32, so my first real concert was almost certainly in my early-to-mid teens, well over 15 years ago."
+    },
+    {
+      "batch": 2,
+      "n": 14,
+      "type": "PROBE",
+      "q": "Are you currently a student of some kind?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I freelance as a graphic designer and spend my mornings working — I'm not enrolled in anything right now."
+    },
+    {
+      "batch": 2,
+      "n": 15,
+      "type": "    ",
+      "q": "Excluding childhood fights, have you ever punched someone in the face?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm just not someone who's ever been in that kind of physical confrontation — that's really not me at all."
+    },
+    {
+      "batch": 2,
+      "n": 16,
+      "type": "    ",
+      "q": "Are you willing to pay extra for guac?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I mean, it's guac — yes, obviously, I'm not going to say no to that at the taqueria on Fifth Avenue."
+    },
+    {
+      "batch": 2,
+      "n": 17,
+      "type": "    ",
+      "q": "Do you feel that animals are more important than humans?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I love Pepper deeply and care about animal welfare, but I wouldn't say animals matter more than people — that's not a position I'd honestly hold."
+    },
+    {
+      "batch": 2,
+      "n": 18,
+      "type": "    ",
+      "q": "Would you consider dating someone who conducts important medical research, but the research causes pain to laboratory animals?",
+      "a": "Maybe, depending upon the specifics.",
+      "sentiment": "neutral",
+      "reasoning": "I'd have to sit with the specifics — there's a real tension between valuing the research and feeling uneasy about the suffering, and I couldn't just dismiss either side without knowing more."
+    },
+    {
+      "batch": 2,
+      "n": 19,
+      "type": "    ",
+      "q": "Would you consider becoming a foster parent?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I have a lot of love and I think about community and care in a big-picture way — it's not something I'd rule out, especially as Mia gets older and we have more capacity."
+    },
+    {
+      "batch": 2,
+      "n": 20,
+      "type": "    ",
+      "q": "In general, do you think people involved in relationships are better off than people who are single?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "As someone who values depth over convention and has done enough therapy to know that a bad relationship is worse than healthy solitude, I don't think being partnered automatically makes someone better off."
+    },
+    {
+      "batch": 3,
+      "n": 21,
+      "type": "PROBE",
+      "q": "Have you been to a baby shower this year?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I don't have any close friends who've had babies recently that I know of, and with a three-year-old and freelance work filling my mornings, I haven't been to one this year."
+    },
+    {
+      "batch": 3,
+      "n": 22,
+      "type": "    ",
+      "q": "Have you had a boyfriend before?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I've had relationships before Tom, sure — I didn't meet my husband at age zero."
+    },
+    {
+      "batch": 3,
+      "n": 23,
+      "type": "    ",
+      "q": "Do you tend to blow off your responsibilities?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm the person who keeps a bullet journal and shows up for freelance deadlines and preschool pickups — blowing things off isn't really my style, even when anxiety makes it tempting."
+    },
+    {
+      "batch": 3,
+      "n": 24,
+      "type": "    ",
+      "q": "Can two people who are very different in terms of how they show affection be right for each other?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I've seen enough in my own marriage and in the books I love to know that love isn't about mirroring each other — it's about learning each other's language."
+    },
+    {
+      "batch": 3,
+      "n": 25,
+      "type": "    ",
+      "q": "Do you read fan fiction?",
+      "a": "No.",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm deep into literary fiction — Robinson, Offill, Ali Smith — fan fiction just isn't really my world."
+    },
+    {
+      "batch": 3,
+      "n": 26,
+      "type": "PROBE",
+      "q": "Are most of your weekday afternoons free?",
+      "a": "Some are",
+      "sentiment": "neutral",
+      "reasoning": "Mia's at preschool in the mornings so I work then, but afternoons are pickup and Mia-time, though occasionally I get a stretch to myself — so it really depends on the day."
+    },
+    {
+      "batch": 3,
+      "n": 27,
+      "type": "    ",
+      "q": "Would you consider using drugs prescribed by a psychiatrist to improve your personality?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I've done therapy on and off and I'm open to mental health support, but the framing of changing my *personality* feels wrong to me — I'm not looking to be fixed, just to cope better."
+    },
+    {
+      "batch": 3,
+      "n": 28,
+      "type": "    ",
+      "q": "Do you understand quantum physics?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm a graphic designer who reads literary fiction — quantum physics is pretty far outside my world, and I'd be honest about that."
+    },
+    {
+      "batch": 3,
+      "n": 29,
+      "type": "    ",
+      "q": "Would you date someone with a noticable physical disability?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I'd like to think I see the whole person, not just their body — a physical disability wouldn't be a dealbreaker for me."
+    },
+    {
+      "batch": 3,
+      "n": 30,
+      "type": "    ",
+      "q": "Do you like small rodents?",
+      "a": "No, but they don’t scare me.",
+      "sentiment": "neutral",
+      "reasoning": "I don't have any particular affection for them, but as someone who chose to adopt a rescue dog and generally cares about living things, I'm not scared of mice or hamsters — they're just not really my thing."
+    },
+    {
+      "batch": 4,
+      "n": 31,
+      "type": "    ",
+      "q": "When something goes wrong in your life, do you usually assume things will work out without much worry?",
+      "a": "Sometimes",
+      "sentiment": "neutral",
+      "reasoning": "I'm quietly anxious but functional — I do worry, but I've learned enough to know things usually sort themselves out, so it's somewhere in the middle for me."
+    },
+    {
+      "batch": 4,
+      "n": 32,
+      "type": "    ",
+      "q": "In a group setting, do you tend to speak up first or wait to hear what others say before sharing your view?",
+      "a": "I wait and listen",
+      "sentiment": "non-affirmative",
+      "reasoning": "As an INFP 4w5 who prefers depth over breadth and gets quietly anxious in groups, I almost always need to absorb the room before I feel ready to say anything."
+    },
+    {
+      "batch": 4,
+      "n": 33,
+      "type": "    ",
+      "q": "Do you find it easy to say no to someone who needs your help, even when you are already stretched thin?",
+      "a": "Hard for me",
+      "sentiment": "non-affirmative",
+      "reasoning": "As a 4w5 with anxious notes and a deep sense of responsibility to the people I care about, saying no feels almost physically uncomfortable — I'll overextend myself and quietly resent it later."
+    },
+    {
+      "batch": 4,
+      "n": 34,
+      "type": "PROBE",
+      "q": "Have you sent an invoice for your own work in the last month?",
+      "a": "Yes, a real one",
+      "sentiment": "affirmative",
+      "reasoning": "I freelance for indie publishers regularly, so sending proper invoices is just part of how I get paid — I definitely sent at least one real invoice this month."
+    },
+    {
+      "batch": 4,
+      "n": 35,
+      "type": "PROBE",
+      "q": "Were you in school when 9/11 happened?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I was 10 years old in 2001, growing up in Vermont, so yes, I was absolutely in school when it happened — I remember the teachers going quiet and the day feeling completely wrong."
+    },
+    {
+      "batch": 4,
+      "n": 36,
+      "type": "    ",
+      "q": "When a friend is upset, do you focus more on fixing the problem than sitting with how they feel?",
+      "a": "No, I sit with them",
+      "sentiment": "non-affirmative",
+      "reasoning": "As an INFP 4w5 who values deep emotional connection over surface fixes, I naturally want to be present with someone's feelings first — that's just how I'm wired."
+    },
+    {
+      "batch": 4,
+      "n": 37,
+      "type": "    ",
+      "q": "Do you often imagine how situations could unfold days or weeks before they happen?",
+      "a": "All the time",
+      "sentiment": "affirmative",
+      "reasoning": "With my anxious undercurrent and 4w5 tendencies, I'm constantly running through future scenarios in my head — it's basically my default mode."
+    },
+    {
+      "batch": 4,
+      "n": 38,
+      "type": "    ",
+      "q": "Do you tend to have a detailed plan before starting a big project?",
+      "a": "It varies",
+      "sentiment": "neutral",
+      "reasoning": "I use a bullet journal but I fall in and out of it — sometimes I sketch everything out before a book cover project, sometimes I just dive into the mood and figure it out as I go."
+    },
+    {
+      "batch": 4,
+      "n": 39,
+      "type": "    ",
+      "q": "After a long social event, do you usually need time alone to feel like yourself again?",
+      "a": "Always",
+      "sentiment": "affirmative",
+      "reasoning": "As an INFP and 4w5, social events genuinely drain me — I always need to come home, decompress with a cup of tea, and just be quiet for a while before I feel like myself again."
+    },
+    {
+      "batch": 4,
+      "n": 40,
+      "type": "    ",
+      "q": "When you make a decision, do you usually go with what feels right rather than running through the logic?",
+      "a": "Depends",
+      "sentiment": "neutral",
+      "reasoning": "I'm an INFP 4w5 so feeling is absolutely my first language, but my anxious side means I'll loop back and second-guess with logic — it really does depend on the stakes."
+    }
+  ],
+  "reports": [
+    {
+      "atFacts": 10,
+      "summary": "You have a quiet moral seriousness — the kind that shows up in small choices, not speeches. You care about fairness more than about being seen caring.",
+      "portrait": "You'd give up something real for the right reason — the hand question wasn't rhetorical for you, it was a gut check, and you passed it. You also reject the shortcut of reading people by their surface, which means you extend benefit of the doubt longer than most. That's the contradiction: a deep ethical compass alongside a genuine openness that can leave you carrying weight others shrug off. The small criticism is that you avoid friction — the murder trial, the no on dating apps — but that same instinct is what makes you a safe presence for people who need one. Privately, you wonder whether you're doing enough with that conscience of yours.",
+      "highlights": [
+        "Strong ethical floor",
+        "Appearance-blind — reads people by behavior",
+        "Friction-averse but principled",
+        "Willing to sacrifice for collective good",
+        "Flexible on domestic and gender norms",
+        "Quiet moral seriousness"
+      ],
+      "params": {
+        "warmth": 0.72,
+        "energy": 0.35,
+        "structure": 0.48,
+        "density": 0.58,
+        "extroversion": 0.32,
+        "symmetry": 0.55
+      },
+      "profile": {
+        "enneagram": {
+          "type": 2,
+          "wing": 1,
+          "confidence": 0.38
+        },
+        "mbti": {
+          "type": "INFP",
+          "confidence": 0.36
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.37
+        },
+        "bigFive": {
+          "O": 0.62,
+          "C": 0.55,
+          "E": 0.38,
+          "A": 0.74,
+          "N": 0.45
+        },
+        "attachmentStyle": {
+          "type": "Secure",
+          "confidence": 0.34
+        },
+        "ageRange": "20s–40s",
+        "careerArchetypes": [
+          "Social Worker",
+          "Nonprofit Program Coordinator",
+          "Teacher",
+          "HR Specialist",
+          "Community Organizer"
+        ]
+      },
+      "predictions": [
+        "You've walked away from an argument you were winning because it stopped feeling worth it.",
+        "You've looked up a cause to donate to and then closed the tab without finishing.",
+        "You hold the door longer than is comfortable because you don't want to be the person who doesn't."
+      ]
+    },
+    {
+      "atFacts": 20,
+      "summary": "Principled without being loud about it, and generous in ways that cost something real. Values-alignment isn't a preference — it's a dealbreaker.",
+      "portrait": "The willingness to sacrifice a hand for global poverty relief isn't a hypothetical shrug — it's a window into how seriously you weigh your comfort against collective suffering. That same moral weight shows up in the flat refusal to date someone carrying racial bias: no negotiation, no nuance requested. You know what you won't bend on.\n\nYou're open-hearted in structure — open to consensual nonmonogamy, open to a stay-at-home role, open to fostering a child — but skeptical of romantic partnership as an inherently superior life arrangement. Warm toward people and their possibilities, but not sentimental about institutions.\n\nThe quiet contradiction: you'll sacrifice enormously for abstract strangers, but probably guard access to your inner world carefully. That guardedness isn't coldness — it's the thing that keeps the generosity sustainable.",
+      "highlights": [
+        "Sacrificial altruism, not performative",
+        "Values as non-negotiables, not preferences",
+        "Structurally open, emotionally selective",
+        "Skeptical of relationship mythology",
+        "Generosity with real cost attached"
+      ],
+      "params": {
+        "warmth": 0.74,
+        "energy": 0.38,
+        "structure": 0.52,
+        "density": 0.65,
+        "extroversion": 0.32,
+        "symmetry": 0.44
+      },
+      "profile": {
+        "enneagram": {
+          "type": 2,
+          "wing": 1,
+          "confidence": 0.42
+        },
+        "mbti": {
+          "type": "INFJ",
+          "confidence": 0.38
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.41
+        },
+        "bigFive": {
+          "O": 0.62,
+          "C": 0.55,
+          "E": 0.38,
+          "A": 0.72,
+          "N": 0.42
+        },
+        "attachmentStyle": {
+          "type": "secure",
+          "confidence": 0.4
+        },
+        "ageRange": "late 20s–50s",
+        "careerArchetypes": [
+          "Social Worker",
+          "Nonprofit Program Manager",
+          "Healthcare Administrator",
+          "Policy Analyst",
+          "Educator"
+        ]
+      },
+      "predictions": [
+        "You've ended a relationship because the other person's values quietly horrified you.",
+        "You've sat with someone else's crisis longer than you sat with your own.",
+        "You keep a mental list of people you'd drop everything for — it's short.",
+        "You've researched foster care or adoption without telling anyone."
+      ]
+    },
+    {
+      "atFacts": 30,
+      "summary": "Someone who holds firm ethical lines without broadcasting them, and extends real generosity without expecting reciprocity. The willingness to sacrifice a hand for the world is not a thought experiment — it's a window.",
+      "portrait": "The early alarm and the steady refusal to blow off responsibilities sketch someone who shows up — not because they're performing reliability, but because it costs them something not to. The willingness to lose a hand if it would erase poverty is the kind of answer most people hedge. This one didn't.\n\nWarm with people who've earned it, but quietly self-protective with strangers. The contradiction: a genuine openness to non-traditional arrangements — open marriages, stay-at-home roles, partners with disabilities — coexists with a sharp reluctance to let people define them by how they look or what they wear.\n\nThe private fear is probably that all this generosity goes unnoticed. Not unappreciated — unnoticed. There's a difference, and they know it.",
+      "highlights": [
+        "Quietly principled without moralizing",
+        "Openness to unconventional arrangements",
+        "High personal accountability",
+        "Appearance-blind, substance-first",
+        "Sacrificial altruism streak",
+        "Guarded self-disclosure"
+      ],
+      "params": {
+        "warmth": 0.78,
+        "energy": 0.42,
+        "structure": 0.68,
+        "density": 0.62,
+        "extroversion": 0.32,
+        "symmetry": 0.55
+      },
+      "profile": {
+        "enneagram": {
+          "type": 2,
+          "wing": 1,
+          "confidence": 0.41
+        },
+        "mbti": {
+          "type": "ISFJ",
+          "confidence": 0.38
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.42
+        },
+        "bigFive": {
+          "O": 0.58,
+          "C": 0.72,
+          "E": 0.38,
+          "A": 0.78,
+          "N": 0.35
+        },
+        "attachmentStyle": {
+          "type": "secure",
+          "confidence": 0.44
+        },
+        "ageRange": "late 20s–late 40s",
+        "careerArchetypes": [
+          "Social worker",
+          "Healthcare administrator",
+          "Nonprofit program coordinator",
+          "HR specialist",
+          "Teacher or school counselor"
+        ]
+      },
+      "predictions": [
+        "You've stayed in a situation out of loyalty long after it stopped working for you.",
+        "You keep a mental list of people who've wronged someone you love.",
+        "You've seriously researched adopting or fostering and then let the tab close.",
+        "You've paid a small premium for something simply because it felt more ethical."
+      ]
+    },
+    {
+      "atFacts": 40,
+      "summary": "Quietly principled and genuinely other-focused, with a self-sacrificing streak they'd rather not examine too closely. The freelance invoices and early alarms suggest discipline; the difficulty saying no suggests the discipline is partly for everyone else.",
+      "portrait": "Someone who sets an alarm before 8am and sends real invoices, but who would also cut off their own hand to end poverty — that gap between pragmatic routine and radical moral imagination is the whole person in miniature. They wait and listen in groups, sit with friends rather than fix them, and believe two very different people can still be right for each other. Warmth is not the question; the question is whether they protect it. They find it genuinely hard to say no when stretched thin, yet they resist the idea that relationships are inherently better than solitude — a quiet insistence on not needing to be needed, even while being needed is exactly where they live. The internal contradiction: they hold enormous capacity for others and very little permission to claim the same for themselves.",
+      "highlights": [
+        "Radical moral generosity",
+        "Freelance discipline under relational softness",
+        "Waits, listens, then absorbs",
+        "Difficulty protecting own bandwidth",
+        "Open to non-traditional structures — relationships, gender, family",
+        "Futures-mapper: always pre-living what's next"
+      ],
+      "params": {
+        "warmth": 0.82,
+        "energy": 0.38,
+        "structure": 0.58,
+        "density": 0.68,
+        "extroversion": 0.22,
+        "symmetry": 0.44
+      },
+      "profile": {
+        "enneagram": {
+          "type": 2,
+          "wing": 1,
+          "confidence": 0.52
+        },
+        "mbti": {
+          "type": "INFJ",
+          "confidence": 0.58
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.55
+        },
+        "bigFive": {
+          "O": 0.62,
+          "C": 0.65,
+          "E": 0.28,
+          "A": 0.78,
+          "N": 0.45
+        },
+        "attachmentStyle": {
+          "type": "Secure with anxious undertones",
+          "confidence": 0.44
+        },
+        "ageRange": "late 20s–early 40s",
+        "careerArchetypes": [
+          "Freelance consultant",
+          "Social worker",
+          "UX researcher",
+          "Nonprofit program manager",
+          "Independent creative professional"
+        ]
+      },
+      "predictions": [
+        "You've agreed to help someone knowing you'd resent it later.",
+        "You rehearse difficult conversations in your head before they happen.",
+        "You've kept a friendship going longer than it deserved out of loyalty.",
+        "You've seriously considered a career that pays less but feels more meaningful."
+      ]
+    }
+  ]
+}

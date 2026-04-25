@@ -26,7 +26,17 @@ import {
 } from "@/lib/cookies";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSync } from "@/contexts/SyncContext";
-import { applyAnswer, emptyState } from "@/lib/probabilityState";
+import {
+  applyAnswer,
+  applyMBTIProbeAnswer,
+  emptyState,
+} from "@/lib/probabilityState";
+import {
+  applyProbeAnswer,
+  emptyDemographicState,
+} from "@/lib/demographicState";
+import { getProbeById, isProbeId } from "@/lib/indirectProbes";
+import { getMBTIProbeById, isMBTIProbeId } from "@/lib/personalityProbes";
 
 interface UserProfileContextValue {
   profile: UserProfile;
@@ -98,14 +108,48 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     (fact: Omit<UserFact, "timestamp">, question?: Question) => {
       setProfile((prev) => {
         const stamped: UserFact = { ...fact, timestamp: Date.now() };
-        const baseState = prev.probabilityState ?? emptyState();
-        const nextState = question
-          ? applyAnswer(baseState, stamped, question)
-          : baseState;
+
+        // Personality (framework) scoring updates ProbabilityState from
+        // question.tags like "mbti:I". Demographic scoring updates
+        // DemographicState from probe.onYes/onNo implications. A card is
+        // either a personality question or a probe — never both — so
+        // exactly one branch fires per answer.
+        const baseProbState = prev.probabilityState ?? emptyState();
+        const baseDemoState =
+          prev.demographicState ?? emptyDemographicState();
+
+        let nextProbState = baseProbState;
+        let nextDemoState = baseDemoState;
+
+        if (question && isProbeId(question.id)) {
+          const probe = getProbeById(question.id);
+          if (probe) {
+            const sentiment =
+              stamped.sentiment ??
+              (stamped.positive ? "affirmative" : "non-affirmative");
+            nextDemoState = applyProbeAnswer(baseDemoState, probe, sentiment);
+          }
+        } else if (question && isMBTIProbeId(question.id)) {
+          const mbtiProbe = getMBTIProbeById(question.id);
+          if (mbtiProbe) {
+            const sentiment =
+              stamped.sentiment ??
+              (stamped.positive ? "affirmative" : "non-affirmative");
+            nextProbState = applyMBTIProbeAnswer(
+              baseProbState,
+              mbtiProbe,
+              sentiment
+            );
+          }
+        } else if (question) {
+          nextProbState = applyAnswer(baseProbState, stamped, question);
+        }
+
         return {
           ...prev,
           facts: [...prev.facts, stamped],
-          probabilityState: nextState,
+          probabilityState: nextProbState,
+          demographicState: nextDemoState,
         };
       });
     },

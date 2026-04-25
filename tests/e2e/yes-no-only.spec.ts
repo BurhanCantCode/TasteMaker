@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-// Every card served by /api/generate must be yes_no — both the static
-// (JSON bank) and dynamic (LLM-generated) paths. The static pool is
-// filtered at load; the dynamic prompt + validator enforce yes_no only.
+// Every card served by /api/generate must be a binary swipe shape —
+// either yes_no (2 labels) or yes_no_maybe (3 labels). No multiple_choice,
+// no rating_scale, nothing the swipe UI can't render. The static pool is
+// filtered at load; the dynamic prompt + validator enforce this; the
+// curated probe pool only ships yes_no_maybe.
 
 const EMPTY_PROFILE = {
   facts: [],
@@ -45,8 +47,9 @@ function expectYesNoCard(card: {
   };
 }) {
   expect(card.type).toBe("ask");
-  expect(card.content.answerType).toBe("yes_no");
-  expect(card.content.answerLabels).toHaveLength(2);
+  expect(["yes_no", "yes_no_maybe"]).toContain(card.content.answerType);
+  const expectedLen = card.content.answerType === "yes_no_maybe" ? 3 : 2;
+  expect(card.content.answerLabels).toHaveLength(expectedLen);
 }
 
 test.describe("/api/generate yes/no-only contract", () => {

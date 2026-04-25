@@ -1,0 +1,624 @@
+{
+  "ground_truth": {
+    "gender": "female",
+    "ageBand": "30s",
+    "relationshipStatus": "married",
+    "hasKids": "yes",
+    "geographyType": "urban",
+    "workStatus": "freelance",
+    "mbti": "INFP",
+    "enneagramType": 4
+  },
+  "transcript": [
+    {
+      "batch": 1,
+      "n": 1,
+      "type": "    ",
+      "q": "When stressed, do you mostly want to be alone to recover?",
+      "a": "Yes, alone",
+      "sentiment": "affirmative",
+      "reasoning": "As an INFP 4w5 with anxious tendencies, I definitely recharge by retreating inward — a long walk with Pepper or quiet time with a book is how I come back to myself."
+    },
+    {
+      "batch": 1,
+      "n": 2,
+      "type": "PROBE",
+      "q": "Have you grown a full beard at some point?",
+      "a": "Never could",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm a woman — that's just never been on the table for me."
+    },
+    {
+      "batch": 1,
+      "n": 3,
+      "type": "    ",
+      "q": "Have you ever cried during a movie?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I'm a deeply feeling person who reads Marilynne Robinson and cries at beautiful things — of course I've cried during a movie."
+    },
+    {
+      "batch": 1,
+      "n": 4,
+      "type": "    ",
+      "q": "Do you prefer that your date shares your political views?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "Tom and I are aligned on what matters — I can't really imagine building a life with someone whose politics are fundamentally different from mine."
+    },
+    {
+      "batch": 1,
+      "n": 5,
+      "type": "    ",
+      "q": "Can you recite any written literary work from memory, including a favourite poem?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I've read enough Marilynne Robinson and kept enough of a bullet journal that certain lines — probably a Mary Oliver or Rilke poem — have just settled into me over the years."
+    },
+    {
+      "batch": 1,
+      "n": 6,
+      "type": "    ",
+      "q": "Can you name your two closest neighbours?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "Living in a Park Slope apartment building, I know Pepper barks at people in the hallway but honestly I couldn't tell you the names of the people next door — city life is like that."
+    },
+    {
+      "batch": 1,
+      "n": 7,
+      "type": "PROBE",
+      "q": "Are most of your weekday afternoons free?",
+      "a": "Some are",
+      "sentiment": "neutral",
+      "reasoning": "Mia's at preschool in the mornings so I work then, but afternoons are pickup time and Mia-time, which isn't exactly 'free' — though some days feel more open than others depending on deadlines and what Mia needs."
+    },
+    {
+      "batch": 1,
+      "n": 8,
+      "type": "    ",
+      "q": "If it were possible to change your gender instantly, painlessly, reversibly, and for free, would you?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm pretty settled in who I am as a woman — motherhood, my body, my sense of self — I don't feel a pull to swap that, even hypothetically."
+    },
+    {
+      "batch": 1,
+      "n": 9,
+      "type": "    ",
+      "q": "Do you ever spit on the ground in public?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "That's just not something I do — it feels rude and kind of gross, especially walking around the neighborhood with Mia."
+    },
+    {
+      "batch": 1,
+      "n": 10,
+      "type": "    ",
+      "q": "Are you physically strong?",
+      "a": "Average",
+      "sentiment": "neutral",
+      "reasoning": "I walk everywhere with a heavy tote, carry Mia around, and haul groceries from the co-op — I'm not weak, but I wouldn't call myself strong either."
+    },
+    {
+      "batch": 2,
+      "n": 11,
+      "type": "PROBE",
+      "q": "Do you wear a wedding ring or equivalent most days?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "It says right in my bio that I wear my wedding ring most days, so yes."
+    },
+    {
+      "batch": 2,
+      "n": 12,
+      "type": "    ",
+      "q": "Have you ever had an undeniably supernatural experience?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm drawn to the numinous in books and nature, but if I'm honest with myself, I've never had something I couldn't eventually explain away."
+    },
+    {
+      "batch": 2,
+      "n": 13,
+      "type": "    ",
+      "q": "Have you ever fantasized about hooking up with a co-worker?",
+      "a": "Yes, and I have not acted on it",
+      "sentiment": "neutral",
+      "reasoning": "I freelance solo from home now, but back in my early twenties when I was less settled, sure, there were people I worked with who crossed my mind that way — though I never did anything about it."
+    },
+    {
+      "batch": 2,
+      "n": 14,
+      "type": "PROBE",
+      "q": "Was your first real concert more than 15 years ago?",
+      "a": "Definitely yes",
+      "sentiment": "affirmative",
+      "reasoning": "I'm 32, so if my first real concert was sometime in my teens — probably around 14 or 15 — that's well over 15 years ago."
+    },
+    {
+      "batch": 2,
+      "n": 15,
+      "type": "    ",
+      "q": "Do most tough life problems have a solution?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I've sat with enough grief and ambiguity — in therapy, in books, in just living — to know that some things don't resolve, they just change shape."
+    },
+    {
+      "batch": 2,
+      "n": 16,
+      "type": "    ",
+      "q": "Do you feel the urge to correct people who say stupid things?",
+      "a": "Sometimes",
+      "sentiment": "neutral",
+      "reasoning": "I notice the urge, but I usually hold back — I'd rather keep the peace than win an argument, though it does quietly gnaw at me."
+    },
+    {
+      "batch": 2,
+      "n": 17,
+      "type": "    ",
+      "q": "Do you still make a summer reading list?",
+      "a": "No, but I’d like to",
+      "sentiment": "non-affirmative",
+      "reasoning": "I love the idea of a curated summer list but honestly the bullet journal phases mean I start one and then drift away from it."
+    },
+    {
+      "batch": 2,
+      "n": 18,
+      "type": "    ",
+      "q": "When explaining something hard, do you reach for a metaphor before facts?",
+      "a": "Metaphor first",
+      "sentiment": "affirmative",
+      "reasoning": "As someone who thinks in images and designs book covers for a living, my instinct is always to find the shape of an idea before I hand someone the data."
+    },
+    {
+      "batch": 2,
+      "n": 19,
+      "type": "    ",
+      "q": "Do you sleep with a stuffed animal?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm a 32-year-old with a husband and a toddler — any stuffed animals in the bed belong to Mia, not me."
+    },
+    {
+      "batch": 2,
+      "n": 20,
+      "type": "    ",
+      "q": "Do you tend to think of people as belonging to certain categories, such as ‘Jocks’, ‘Nerds’, ‘Geeks’, etc?",
+      "a": "Sometimes.",
+      "sentiment": "neutral",
+      "reasoning": "I catch myself doing it occasionally even though I know it's reductive — old habits from growing up, I suppose, but I try not to lean on those boxes."
+    },
+    {
+      "batch": 3,
+      "n": 21,
+      "type": "    ",
+      "q": "Are we ever going to have those flying cars they’ve been promising us?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm skeptical by nature and I've watched enough overhyped tech promises fizzle out — plus I barely drive a regular car, so flying ones feel more like a sci-fi distraction than anything real."
+    },
+    {
+      "batch": 3,
+      "n": 22,
+      "type": "    ",
+      "q": "Do you feel there needs to be prison reform in the U.S.?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As someone who's politically progressive, I absolutely think the prison system needs serious reform — it's something I feel pretty strongly about."
+    },
+    {
+      "batch": 3,
+      "n": 23,
+      "type": "    ",
+      "q": "Do you dress up for Halloween almost every year?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "With a three-year-old, Halloween has become a whole thing again — I'm definitely dressing up with Mia."
+    },
+    {
+      "batch": 3,
+      "n": 24,
+      "type": "PROBE",
+      "q": "Have you helped a child with homework this week?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I literally sat with Mia on her counting worksheet this week, so yes, that counts."
+    },
+    {
+      "batch": 3,
+      "n": 25,
+      "type": "    ",
+      "q": "Are spirituality and religion one and the same?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "As someone drawn to interiority and meaning-making outside of organized structures — reading Robinson without necessarily attending church — I'd absolutely see spirituality as something broader and more personal than religion."
+    },
+    {
+      "batch": 3,
+      "n": 26,
+      "type": "    ",
+      "q": "Do you usually have a plan before starting a project?",
+      "a": "Loose plan",
+      "sentiment": "neutral",
+      "reasoning": "I keep a bullet journal and I'm a freelance designer, so I do sketch things out — but honestly my process is more intuitive than structured, so a loose plan is really where I live."
+    },
+    {
+      "batch": 3,
+      "n": 27,
+      "type": "    ",
+      "q": "Regardless of whether or not you smoke marijuana, do you think it should be legalized for adults?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "Politically progressive and not preachy about personal choices — of course adults should be able to make that call for themselves."
+    },
+    {
+      "batch": 3,
+      "n": 28,
+      "type": "    ",
+      "q": "When you don’t know a word, do you look up its definition?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As someone who reads literary fiction and cares deeply about language, I absolutely look up words I don't know."
+    },
+    {
+      "batch": 3,
+      "n": 29,
+      "type": "    ",
+      "q": "Is it possible for a person to fall in love with the first person they ever date, get married, and live happily ever after, even though they never dated anyone else much less “played the field”?",
+      "a": "Yes.",
+      "sentiment": "affirmative",
+      "reasoning": "Of course it's possible — love doesn't require a sample size, and I've seen enough Marilynne Robinson to know that deep, lasting devotion can root itself in a single person without needing comparison."
+    },
+    {
+      "batch": 3,
+      "n": 30,
+      "type": "PROBE",
+      "q": "Did you drive a car today?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I barely drive at all — used my license twice this whole year, and in Park Slope I walk everywhere anyway."
+    },
+    {
+      "batch": 4,
+      "n": 31,
+      "type": "    ",
+      "q": "After a long social event, do you feel genuinely energized rather than drained?",
+      "a": "No, I'm wiped out",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm a classic introvert — INFP through and through — and after a long social event I just need to go home, curl up, and decompress."
+    },
+    {
+      "batch": 4,
+      "n": 32,
+      "type": "    ",
+      "q": "When someone you care about is upset, is your first instinct to fix the problem rather than just sit with them?",
+      "a": "No, I just listen",
+      "sentiment": "non-affirmative",
+      "reasoning": "As a 4w5 INFP who values deep emotional presence and has done therapy, my instinct is to hold space and really listen rather than jump to fixing — I know from my own anxious inner life that sometimes you just need to be heard."
+    },
+    {
+      "batch": 4,
+      "n": 33,
+      "type": "    ",
+      "q": "When a group needs someone to take charge, do you usually step back and let others do it?",
+      "a": "Depends on the group",
+      "sentiment": "neutral",
+      "reasoning": "It really depends — with close friends or a project I care about I'll step up, but in a room full of strangers or loud personalities I'm more likely to let someone else take the reins."
+    },
+    {
+      "batch": 4,
+      "n": 34,
+      "type": "    ",
+      "q": "Do you keep a mental list of ways people have let you down, even if you never say it out loud?",
+      "a": "Kind of",
+      "sentiment": "neutral",
+      "reasoning": "I notice when people disappoint me and it lingers quietly, but I try not to hold onto it as a formal ledger — it's more like a soft, unspoken awareness than a list I tend."
+    },
+    {
+      "batch": 4,
+      "n": 35,
+      "type": "PROBE",
+      "q": "Have you been in a real-world (in-person) work meeting this month?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I freelance from home doing book covers — my 'meetings' are emails and the occasional video call, not in-person sit-downs."
+    },
+    {
+      "batch": 4,
+      "n": 36,
+      "type": "    ",
+      "q": "Do you tend to finish tasks well before their deadlines rather than close to them?",
+      "a": "It depends",
+      "sentiment": "neutral",
+      "reasoning": "With freelance deadlines I can push myself to finish early when anxiety kicks in, but honestly the bullet journal I keep returning to 'in waves' tells the real story — it really does depend on the project and my headspace."
+    },
+    {
+      "batch": 4,
+      "n": 37,
+      "type": "PROBE",
+      "q": "Have you opened a dating app in the last month?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm happily married to Tom — there's no dating app on my phone, hasn't been for years."
+    },
+    {
+      "batch": 4,
+      "n": 38,
+      "type": "    ",
+      "q": "When a decision feels right in your gut, do you trust that feeling even without a clear logical reason?",
+      "a": "Yes, often",
+      "sentiment": "affirmative",
+      "reasoning": "As an INFP 4w5 who navigates life through feeling and intuition, I almost always lead with my gut — logic is something I check in with after, not before."
+    },
+    {
+      "batch": 4,
+      "n": 39,
+      "type": "    ",
+      "q": "Are you comfortable being told your reasoning was wrong, even if it stings?",
+      "a": "It really stings",
+      "sentiment": "non-affirmative",
+      "reasoning": "I try to be open to feedback but honestly, being told I reasoned something wrong hits me somewhere tender — I care too much about getting things right to shrug it off."
+    },
+    {
+      "batch": 4,
+      "n": 40,
+      "type": "    ",
+      "q": "Do you find yourself mentally rehearsing conversations before they happen?",
+      "a": "All the time",
+      "sentiment": "affirmative",
+      "reasoning": "I'm anxious enough that I've basically had entire arguments with Tom in my head before they've even started — it's exhausting, honestly."
+    }
+  ],
+  "reports": [
+    {
+      "atFacts": 10,
+      "summary": "Quietly self-sufficient, with a literary streak and a low tolerance for small talk. Solitude is a resource, not a fallback.",
+      "portrait": "Stress sends them inward, not outward — recovery happens alone, in silence, and that's a preference, not a wound. They can recite a poem from memory, which means something lives in them that most people keep only on a shelf.\n\nThey want a partner whose politics align with theirs. That's not a dealbreaker demand — it's a shortcut past a conversation they've already had too many times and lost patience for.\n\nThe neighbours' names are unknown, not forgotten. There's a version of closeness they offer selectively, and proximity alone doesn't earn it. The tears during a film, though — that's the crack in the armour. Feeling is present; it just needs the right container.",
+      "highlights": [
+        "Restorative solitude",
+        "Selective closeness vs. emotional depth",
+        "Literary memory as identity",
+        "Values alignment as a filter, not a preference",
+        "Guarded warmth"
+      ],
+      "params": {
+        "warmth": 0.55,
+        "energy": 0.32,
+        "structure": 0.58,
+        "density": 0.68,
+        "extroversion": 0.22,
+        "symmetry": 0.6
+      },
+      "profile": {
+        "enneagram": {
+          "type": 4,
+          "wing": 5,
+          "confidence": 0.3
+        },
+        "mbti": {
+          "type": "INFJ",
+          "confidence": 0.45
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.35
+        },
+        "bigFive": {
+          "O": 0.62,
+          "C": 0.5,
+          "E": 0.28,
+          "A": 0.58,
+          "N": 0.5
+        },
+        "attachmentStyle": {
+          "type": "avoidant",
+          "confidence": 0.38
+        },
+        "ageRange": "40s–50s+",
+        "careerArchetypes": [
+          "Editor",
+          "Librarian",
+          "Counsellor",
+          "Academic Researcher",
+          "Independent Consultant"
+        ]
+      },
+      "predictions": [
+        "You have a playlist or folder you return to when the mood needs resetting.",
+        "You've ended a conversation early to avoid conflict you could see coming.",
+        "You know your neighbours' routines but have never introduced yourself."
+      ]
+    },
+    {
+      "atFacts": 20,
+      "summary": "Quietly literary and politically anchored, she knows not every hard problem bends toward resolution — and she's made a kind of peace with that. Solitude is maintenance, not withdrawal.",
+      "portrait": "She reaches for a metaphor before a fact — language is the first tool, not the last resort. She can pull a poem from memory but wouldn't bother making a summer reading list, which tells you something: the relationship to literature is lived, not performed. She wears her ring most days and doesn't know her neighbours' names. Committed to her inner circle, indifferent to the ambient social world beyond it.\n\nShe believes most hard problems don't have solutions, yet she still notices when people say something wrong. She doesn't always correct them. That restraint is the same thing that makes her trustworthy.\n\nPrivately, she suspects the world makes more sense as feeling than as fact — and she's not entirely sure that's a weakness.",
+      "highlights": [
+        "Metaphor-first thinker",
+        "Committed but not socially expansive",
+        "Literary without performing it",
+        "Sits with unresolvable things",
+        "Political alignment matters to her",
+        "Restraint as quiet power"
+      ],
+      "params": {
+        "warmth": 0.58,
+        "energy": 0.32,
+        "structure": 0.52,
+        "density": 0.72,
+        "extroversion": 0.22,
+        "symmetry": 0.55
+      },
+      "profile": {
+        "enneagram": {
+          "type": 4,
+          "wing": 5,
+          "confidence": 0.38
+        },
+        "mbti": {
+          "type": "IN",
+          "confidence": 0.5
+        },
+        "disc": {
+          "dominant": "C",
+          "secondary": "S",
+          "confidence": 0.38
+        },
+        "bigFive": {
+          "O": 0.68,
+          "C": 0.48,
+          "E": 0.28,
+          "A": 0.52,
+          "N": 0.5
+        },
+        "attachmentStyle": {
+          "type": "secure",
+          "confidence": 0.42
+        },
+        "ageRange": "late 40s–50s",
+        "careerArchetypes": [
+          "Editor",
+          "Librarian",
+          "Policy Analyst",
+          "Teacher",
+          "Independent Consultant"
+        ]
+      },
+      "predictions": [
+        "You've reread the same three or four books across different decades of your life.",
+        "You rehearse difficult conversations in your head before having them.",
+        "You've stayed in a room full of people and felt completely alone.",
+        "You've quietly judged someone's word choice and said nothing."
+      ]
+    },
+    {
+      "atFacts": 30,
+      "summary": "She reaches for metaphor before data and has a poem memorized that she's never told anyone about. Married, rooted, quietly certain about the things that matter — and under no illusion that life's hardest problems come with solutions.",
+      "portrait": "She recovers alone, which isn't coldness — it's the cost of paying close attention all day. She can recite something by heart, which means she has an inner life she's been curating for years. She dressed up for Halloween this year, probably for a child's benefit as much as her own.\n\nShe believes in political alignment in a partner and doesn't apologize for it. She also believes a person can love their first and only and be genuinely lucky. Both things are true to her simultaneously.\n\nShe knows the difference between spirituality and religion. She doesn't look up the supernatural, but she does look up words. She doesn't think most hard problems have solutions — and she's made her peace with that, which is either wisdom or a quiet grief she doesn't name.",
+      "highlights": [
+        "Introvert who recovers in solitude",
+        "Metaphor-first thinker",
+        "Has something memorized that matters to her",
+        "Pragmatic about life's limits, not bitter",
+        "Values political alignment — won't negotiate on it",
+        "Wears her commitments visibly"
+      ],
+      "params": {
+        "warmth": 0.68,
+        "energy": 0.32,
+        "structure": 0.44,
+        "density": 0.74,
+        "extroversion": 0.22,
+        "symmetry": 0.55
+      },
+      "profile": {
+        "enneagram": {
+          "type": 4,
+          "wing": 5,
+          "confidence": 0.38
+        },
+        "mbti": {
+          "type": "INFP",
+          "confidence": 0.58
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.38
+        },
+        "bigFive": {
+          "O": 0.72,
+          "C": 0.48,
+          "E": 0.28,
+          "A": 0.62,
+          "N": 0.45
+        },
+        "attachmentStyle": {
+          "type": "secure",
+          "confidence": 0.44
+        },
+        "ageRange": "early 40s–early 50s",
+        "careerArchetypes": [
+          "Editor",
+          "Social Policy Analyst",
+          "Librarian",
+          "Curriculum Designer",
+          "Nonprofit Program Manager"
+        ]
+      },
+      "predictions": [
+        "You have a playlist or album that belongs entirely to a specific year of your life.",
+        "You've written something — a letter, an essay, a journal entry — that no one has read.",
+        "You've silently corrected someone's grammar and said nothing.",
+        "You've looked up the etymology of a word mid-conversation.",
+        "You've already decided how you feel about someone before they finish their first sentence."
+      ]
+    },
+    {
+      "atFacts": 40,
+      "summary": "She reaches for metaphor before logic and trusts her gut even when it costs her — but criticism lands harder than she lets on. Married, grounded, privately restless.",
+      "portrait": "She recovers from people by retreating from them — a long social event leaves her genuinely wiped out, and she doesn't apologize for it. When someone she loves is hurting, she doesn't rush to fix it; she just stays. That capacity to sit with discomfort in others is real, and rare.\n\nShe can recite a poem from memory and reaches for metaphor when the facts alone feel insufficient. Warm with the people who've earned it, but she doesn't know her neighbors' names — proximity and intimacy are not the same thing to her.\n\nThe thing that looks like thin skin — feedback stings, criticism lingers — is also what makes her perceptive. She notices everything because she feels everything. She just doesn't broadcast it.",
+      "highlights": [
+        "Introvert who listens before fixing",
+        "Metaphor over data, always",
+        "Criticism lands harder than it shows",
+        "Warm at depth, guarded at the surface",
+        "Privately literary",
+        "Gut-trusting skeptic"
+      ],
+      "params": {
+        "warmth": 0.72,
+        "energy": 0.32,
+        "structure": 0.42,
+        "density": 0.75,
+        "extroversion": 0.22,
+        "symmetry": 0.45
+      },
+      "profile": {
+        "enneagram": {
+          "type": 4,
+          "wing": 5,
+          "confidence": 0.38
+        },
+        "mbti": {
+          "type": "INFP",
+          "confidence": 0.62
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.38
+        },
+        "bigFive": {
+          "O": 0.72,
+          "C": 0.48,
+          "E": 0.25,
+          "A": 0.65,
+          "N": 0.6
+        },
+        "attachmentStyle": {
+          "type": "anxious",
+          "confidence": 0.42
+        },
+        "ageRange": "early 40s–early 50s",
+        "careerArchetypes": [
+          "Educator",
+          "Writer",
+          "Counselor",
+          "Librarian",
+          "Social policy researcher"
+        ]
+      },
+      "predictions": [
+        "You have a poem memorized that you've never told anyone is your favorite.",
+        "You rehearse how to end a conversation before it starts.",
+        "You've stayed in a situation long past the point you knew it wasn't working.",
+        "You know your neighbors' routines without knowing their names.",
+        "You've cried at something you'd be embarrassed to admit out loud."
+      ]
+    }
+  ]
+}

@@ -125,12 +125,16 @@ test.describe("/api/generate source contract", () => {
         expect(typeof card.content.title).toBe("string");
       }
       if (body.source === "dynamic") {
-        // Dynamic cards must carry the reserved id prefix so they're
-        // visually distinct from the static bank — useful for debugging
-        // and for the seen-id dedupe in the prefetch buffer.
+        // Dynamic batches mix three id prefixes: "dyn_*" (LLM-generated),
+        // "probe_*" (demographic probes), and "mbtiprobe_*" (MBTI probes
+        // for personality framework disambiguation). All three are
+        // distinct from static-pool UUIDs and dedupe correctly.
         expect(
-          body.cards.every((c: { content: { id: string } }) =>
-            c.content.id.startsWith("dyn_")
+          body.cards.every(
+            (c: { content: { id: string } }) =>
+              c.content.id.startsWith("dyn_") ||
+              c.content.id.startsWith("probe_") ||
+              c.content.id.startsWith("mbtiprobe_")
           )
         ).toBe(true);
       }

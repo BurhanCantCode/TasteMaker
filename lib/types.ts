@@ -104,6 +104,37 @@ export interface ProbabilityState {
   attachment: Record<"secure" | "anxious" | "avoidant" | "disorganized", number>;
 }
 
+// Demographic priors triangulated by indirect-probe answers. Each dim is
+// a probability distribution that sums to ~1 after normalization. These
+// are NEVER surfaced to the user directly — they only anchor the LLM's
+// pronoun choice, age range, and probe-conditioned predictions in the
+// synthesis prompt. Stays empty/uniform until probes start landing.
+export interface DemographicState {
+  gender: { male: number; female: number; nonbinary: number };
+  ageBand: {
+    teen: number;
+    "20s": number;
+    "30s": number;
+    "40s": number;
+    "50plus": number;
+  };
+  relationshipStatus: {
+    single: number;
+    partnered: number;
+    married: number;
+    divorced: number;
+  };
+  hasKids: { yes: number; no: number };
+  geographyType: { urban: number; suburban: number; rural: number };
+  workStatus: {
+    student: number;
+    employed: number;
+    freelance: number;
+    retired: number;
+    unemployed: number;
+  };
+}
+
 // Stashed personality report
 export interface PersonalityReport {
   id: string;
@@ -130,6 +161,7 @@ export interface UserProfile {
   skippedIds?: string[];        // Question IDs the user chose to skip
   reports?: PersonalityReport[]; // Stashed personality reports
   probabilityState?: ProbabilityState; // running per-framework confidence
+  demographicState?: DemographicState; // running per-dim demographic priors
 }
 
 export type FactSentiment = "affirmative" | "neutral" | "non-affirmative";

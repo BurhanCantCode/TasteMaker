@@ -1,5 +1,12 @@
 import { BatchSource, Card, Question, UserProfile } from "./types";
 import { getNextQuestionBatch } from "./personalityQuestions";
+import { selectProbesForBatch, shuffleCards } from "./indirectProbes";
+import { selectMBTIProbesForBatch } from "./personalityProbes";
+
+// Per-batch probe budget — kept in sync with the server's split so
+// client-served and server-served batches feel identical.
+const DEMO_PROBES_PER_BATCH_CLIENT = 2;
+const MBTI_PROBES_PER_BATCH_CLIENT = 1;
 
 // Batches the sequencer hands out. Two batches per CHUNK_SIZE-answer
 // milestone; keep them in lockstep so a chunk is always static+dynamic.
@@ -59,20 +66,55 @@ export function buildSeenIds(profile: UserProfile): Set<string> {
   return seen;
 }
 
-// Drop ask cards whose questions are already in the user's seen set.
-// Non-ask cards pass through unchanged. The server already dedupes
-// during static / dynamic generation, but this is still useful on the
-// client:
+// Normalize a question title for fuzzy duplicate detection. Lowercases,
+// strips punctuation/diacritics, collapses whitespace. Two questions
+// that differ only in punctuation or capitalization will hash to the
+// same key — that's the point. The dynamic LLM occasionally invents a
+// "dyn_xxxx" card whose text is identical or near-identical to one the
+// user already answered (or to a starred static-pool question), and id
+// dedup alone can't catch that. Text dedup catches it.
+export function normalizeQuestionText(text: string): string {
+  return text
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "") // strip combining diacritics
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ") // strip punctuation
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Set of normalized question titles the user has already answered.
+// Pairs with buildSeenIds for belt-and-suspenders dedup against the
+// dynamic LLM occasionally re-asking a known question with a fresh id.
+export function buildSeenTexts(profile: UserProfile): Set<string> {
+  const out = new Set<string>();
+  for (const f of profile.facts ?? []) {
+    if (typeof f.question === "string") {
+      out.add(normalizeQuestionText(f.question));
+    }
+  }
+  return out;
+}
+
+// Drop ask cards whose questions are already in the user's seen set
+// (by id OR by normalized text). Non-ask cards pass through unchanged.
+// The server already dedupes during static / dynamic generation, but
+// this is still useful on the client:
 //   1. A prefetched buffer may have been generated against a smaller
 //      seen set than the user's current state (user answered while the
 //      prefetch was in flight).
 //   2. Defensively on the fresh-fetch path, in case the profile
 //      snapshot passed to the server was stale for the same reason.
+//   3. Text dedup catches dynamic-LLM rephrases of seen questions.
 export function filterSeenAskCards(cards: Card[], profile: UserProfile): Card[] {
-  const seen = buildSeenIds(profile);
+  const seenIds = buildSeenIds(profile);
+  const seenTexts = buildSeenTexts(profile);
   return cards.filter((c) => {
     if (c.type !== "ask") return true;
-    return !seen.has((c.content as Question).id);
+    const q = c.content as Question;
+    if (seenIds.has(q.id)) return false;
+    if (seenTexts.has(normalizeQuestionText(q.title))) return false;
+    return true;
   });
 }
 
@@ -90,6 +132,42 @@ export function nextStaticBatchClientSide(
   profile: UserProfile,
   batchSize: number = BATCH_SIZE
 ): Card[] {
-  const { questions } = getNextQuestionBatch(buildSeenIds(profile), batchSize);
-  return questions.map((q) => ({ type: "ask", content: q }));
+  const seenIds = buildSeenIds(profile);
+  const seenTexts = buildSeenTexts(profile);
+
+  const demoCount = Math.min(DEMO_PROBES_PER_BATCH_CLIENT, batchSize);
+  const demoProbes = selectProbesForBatch(
+    profile,
+    demoCount,
+    seenIds,
+    seenTexts
+  );
+  const mbtiCount = Math.min(
+    MBTI_PROBES_PER_BATCH_CLIENT,
+    batchSize - demoCount
+  );
+  const mbtiSeenTexts = new Set([
+    ...seenTexts,
+    ...demoProbes.map((q) => q.title.toLowerCase()),
+  ]);
+  const mbtiProbes = selectMBTIProbesForBatch(
+    profile.probabilityState,
+    mbtiCount,
+    seenIds,
+    mbtiSeenTexts
+  );
+
+  const probeQuestions = [...demoProbes, ...mbtiProbes];
+  const remaining = Math.max(0, batchSize - probeQuestions.length);
+  const { questions } = getNextQuestionBatch(seenIds, remaining);
+
+  const personalityCards: Card[] = questions.map((q) => ({
+    type: "ask",
+    content: q,
+  }));
+  const probeCards: Card[] = probeQuestions.map((q) => ({
+    type: "ask",
+    content: q,
+  }));
+  return shuffleCards([...personalityCards, ...probeCards]);
 }
