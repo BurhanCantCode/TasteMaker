@@ -11,6 +11,7 @@ import { SettingsGear } from "@/components/navigation/SettingsGear";
 import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { ReportStash } from "@/components/results/ReportStash";
 import { FrameworkProfile, PersonalityReport } from "@/lib/types";
+import { CHUNK_SIZE } from "@/lib/questionSequencer";
 import { Loader2, Sparkles, ArrowRight, RefreshCw } from "lucide-react";
 
 // Lazy-loaded — three.js + R3F is ~200KB gzipped and only needed on Results.
@@ -169,7 +170,7 @@ function LockedState({
   useEffect(() => {
     if (!fillRef.current) return;
     gsap.to(fillRef.current, {
-      width: `${(totalAnswered / 20) * 100}%`,
+      width: `${(totalAnswered / CHUNK_SIZE) * 100}%`,
       duration: 0.8,
       ease: "power3.out",
     });
@@ -184,16 +185,16 @@ function LockedState({
         <Sparkles className="w-10 h-10 text-gray-400" />
       </div>
       <h2 className="text-2xl font-bold tracking-tight text-[#171717]">
-        {20 - totalAnswered} more to unlock your first report
+        {CHUNK_SIZE - totalAnswered} more to unlock your first report
       </h2>
       <p className="text-base text-gray-500">
-        After 20 answers we generate a personality portrait based on how you responded.
+        After {CHUNK_SIZE} answers we generate a personality portrait based on how you responded.
       </p>
       <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
         <div ref={fillRef} className="bg-black h-3 rounded-full" style={{ width: "0%" }} />
       </div>
       <p className="text-sm font-medium text-gray-400 uppercase tracking-wide">
-        {totalAnswered} / 20 answered
+        {totalAnswered} / {CHUNK_SIZE} answered
       </p>
       <button
         onClick={onKeepAnswering}

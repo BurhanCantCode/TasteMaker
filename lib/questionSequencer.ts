@@ -8,22 +8,36 @@ import { selectMBTIProbesForBatch } from "./personalityProbes";
 const DEMO_PROBES_PER_BATCH_CLIENT = 2;
 const MBTI_PROBES_PER_BATCH_CLIENT = 1;
 
-// Batches the sequencer hands out. Two batches per CHUNK_SIZE-answer
-// milestone; keep them in lockstep so a chunk is always static+dynamic.
+// Batches the sequencer hands out. CHUNK_SIZE is the milestone where
+// the first personality report fires (and every subsequent report).
+// Three batches per chunk: 2 static (broad signal collection) + 1
+// dynamic (LLM-personalized) before the first report at fact 30.
 export const BATCH_SIZE = 10;
-export const CHUNK_SIZE = 20;
+export const CHUNK_SIZE = 30;
 
 export interface BatchPlan {
   source: BatchSource;
   size: number;
 }
 
-// First CHUNK_SIZE answers → all static (no context exists yet).
-// After that, each CHUNK_SIZE-answer window is static(first BATCH_SIZE) +
-// dynamic(last BATCH_SIZE). See docs/plans/2026-04-22-dynamic-question-batching.md.
+// First two batches → static (cards 0-19) for broad signal collection.
+// Batch 3 (cards 20-29) is the FIRST dynamic batch — informs the
+// 30-fact report with personalized questions instead of pure pool draw.
+// After that, batches alternate dynamic ↔ static every BATCH_SIZE cards.
+//
+// Pattern:
+//   batch 1 (0-9)    static
+//   batch 2 (10-19)  static
+//   batch 3 (20-29)  DYNAMIC   ← personalizes the first report
+//   ─── REPORT at 30 ───
+//   batch 4 (30-39)  static
+//   batch 5 (40-49)  dynamic
+//   batch 6 (50-59)  static
+//   ...
 function sourceForAnsweredCount(answeredCount: number): BatchSource {
-  if (answeredCount < CHUNK_SIZE) return "static";
-  return answeredCount % CHUNK_SIZE >= BATCH_SIZE ? "dynamic" : "static";
+  if (answeredCount < BATCH_SIZE * 2) return "static";
+  const batchIdx = Math.floor(answeredCount / BATCH_SIZE);
+  return batchIdx % 2 === 0 ? "dynamic" : "static";
 }
 
 /**

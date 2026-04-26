@@ -252,7 +252,7 @@ const PROBE_TABLE = {
   probe_purse: { primaryDim: "gender", onYes: [{ dim: "gender", key: "female", weight: 0.7 }], onNo: [{ dim: "gender", key: "male", weight: 0.5 }] },
   probe_mens_room: { primaryDim: "gender", onYes: [{ dim: "gender", key: "male", weight: 0.95 }], onNo: [{ dim: "gender", key: "female", weight: 0.6 }] },
   probe_pre_internet: { primaryDim: "ageBand", onYes: [{ dim: "ageBand", key: "30s", weight: 0.55 }, { dim: "ageBand", key: "40s", weight: 0.55 }, { dim: "ageBand", key: "50plus", weight: 0.4 }], onNo: [{ dim: "ageBand", key: "teen", weight: 0.5 }, { dim: "ageBand", key: "20s", weight: 0.7 }] },
-  probe_911_school: { primaryDim: "ageBand", onYes: [{ dim: "ageBand", key: "30s", weight: 0.7 }, { dim: "ageBand", key: "40s", weight: 0.5 }], onNo: [{ dim: "ageBand", key: "teen", weight: 0.7 }, { dim: "ageBand", key: "20s", weight: 0.6 }] },
+  probe_911_school: { primaryDim: "ageBand", onYes: [{ dim: "ageBand", key: "30s", weight: 0.55 }, { dim: "ageBand", key: "40s", weight: 0.7 }, { dim: "ageBand", key: "50plus", weight: 0.7 }], onNo: [{ dim: "ageBand", key: "teen", weight: 0.5 }, { dim: "ageBand", key: "20s", weight: 0.65 }] },
   probe_dating_app: { primaryDim: "ageBand", onYes: [{ dim: "ageBand", key: "20s", weight: 0.6 }, { dim: "ageBand", key: "30s", weight: 0.5 }, { dim: "relationshipStatus", key: "single", weight: 0.7 }], onNo: [{ dim: "relationshipStatus", key: "married", weight: 0.4 }, { dim: "relationshipStatus", key: "partnered", weight: 0.3 }] },
   probe_first_concert_ago: { primaryDim: "ageBand", onYes: [{ dim: "ageBand", key: "30s", weight: 0.55 }, { dim: "ageBand", key: "40s", weight: 0.55 }, { dim: "ageBand", key: "50plus", weight: 0.4 }], onNo: [{ dim: "ageBand", key: "teen", weight: 0.45 }, { dim: "ageBand", key: "20s", weight: 0.65 }] },
   probe_in_school_now: { primaryDim: "workStatus", onYes: [{ dim: "workStatus", key: "student", weight: 0.85 }, { dim: "ageBand", key: "teen", weight: 0.4 }, { dim: "ageBand", key: "20s", weight: 0.5 }], onNo: [{ dim: "workStatus", key: "employed", weight: 0.5 }] },
@@ -276,6 +276,9 @@ const PROBE_TABLE = {
   probe_retired: { primaryDim: "workStatus", onYes: [{ dim: "workStatus", key: "retired", weight: 0.6 }, { dim: "workStatus", key: "freelance", weight: 0.4 }, { dim: "ageBand", key: "50plus", weight: 0.3 }], onNo: [{ dim: "workStatus", key: "employed", weight: 0.5 }] },
   probe_pay_rent: { primaryDim: "workStatus", onYes: [{ dim: "workStatus", key: "employed", weight: 0.55 }, { dim: "ageBand", key: "20s", weight: 0.2 }, { dim: "ageBand", key: "30s", weight: 0.3 }], onNo: [{ dim: "workStatus", key: "student", weight: 0.5 }, { dim: "ageBand", key: "teen", weight: 0.4 }] },
   probe_priced_van: { primaryDim: "ageBand", onYes: [{ dim: "ageBand", key: "30s", weight: 0.4 }, { dim: "ageBand", key: "40s", weight: 0.4 }, { dim: "ageBand", key: "50plus", weight: 0.3 }], onNo: [] },
+  probe_grandkid: { primaryDim: "ageBand", onYes: [{ dim: "ageBand", key: "40s", weight: 0.4 }, { dim: "ageBand", key: "50plus", weight: 0.85 }], onNo: [] },
+  probe_misgendered_recent: { primaryDim: "gender", onYes: [{ dim: "gender", key: "nonbinary", weight: 0.6 }], onNo: [] },
+  probe_pronoun_correction: { primaryDim: "gender", onYes: [{ dim: "gender", key: "nonbinary", weight: 0.7 }], onNo: [] },
 };
 
 // ───────────────────────────────────────────────────────────────────────
@@ -433,12 +436,19 @@ async function run() {
   const transcript = [];
   const reports = [];
 
-  // The first batch is always static. After CHUNK_SIZE (20), we mix in
-  // dynamic batches per the engine's own routing.
+  // First two batches static (cards 0-19), batch 3 (20-29) dynamic
+  // — informs the first report at CHUNK_SIZE=30. After that, batches
+  // alternate dynamic ↔ static per BATCH_SIZE-card window. Mirrors
+  // sourceForAnsweredCount in lib/questionSequencer.ts.
   let batchNum = 1;
   while (profile.facts.length < TARGET_SWIPES) {
     const answered = profile.facts.length;
-    const source = answered < 20 ? "static" : answered % 20 < 10 ? "static" : "dynamic";
+    const source =
+      answered < 20
+        ? "static"
+        : Math.floor(answered / 10) % 2 === 0
+          ? "dynamic"
+          : "static";
 
     const batch = await postJson(
       "/api/generate",

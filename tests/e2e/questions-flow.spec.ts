@@ -6,18 +6,14 @@ import { expect, test } from "@playwright/test";
 // in app/page.tsx — if someone accidentally hard-codes source:"static"
 // or forgets to pass it to a call site, this test fails.
 //
-// Strategy:
-//   1. Intercept /api/generate via page.route().
-//   2. Start on an empty profile.
-//   3. Navigate to Questions tab.
-//   4. Assert the first /api/generate call has source:"static".
-//   5. Seed localStorage with 25 facts + 1 report (mid-chunk-2 state).
-//   6. Reload + navigate to Questions tab.
-//   7. Assert the next /api/generate call has source:"static" (first
-//      batch of chunk 2 — at 25 facts, batchSourceFor = "static").
-//   8. The mid-batch prefetch (fires once currentIndex passes halfBatch)
-//      should fire with source:"dynamic" — we verify this when the
-//      user answers past card 5.
+// CHUNK_SIZE = 30 (first report fires at 30 facts). The card-source
+// pattern is:
+//   batches 1-2 (0-19)   static  — broad signal, no LLM context yet
+//   batch 3   (20-29)    dynamic — first personalized batch, anchors report
+//   batch 4   (30-39)    static
+//   batch 5   (40-49)    dynamic
+//   batch 6   (50-59)    static  ← test target: mid-static-batch user
+//   batch 7   (60-69)    dynamic ← prefetch target from a 35-fact seed
 
 const EMPTY_PROFILE = {
   facts: [],
@@ -92,22 +88,22 @@ test.describe("question flow sends correct batch source", () => {
   test("mid-static-batch prefetch fires source:dynamic", async ({
     page,
   }) => {
-    // Seed a user mid-static-batch in chunk 2 (facts=25): they've just
-    // entered the first batch of chunk 2 (static, 20-29). The Phase B
-    // prefetch useEffect fires on batch mount and targets the NEXT
-    // batch (facts.length + BATCH_SIZE = 35), which is dynamic per
+    // Seed a user mid-static-batch (facts=35): they're inside batch 4
+    // (cards 30-39, static). The Phase B prefetch useEffect fires on
+    // batch mount and targets the NEXT batch (facts.length + BATCH_SIZE
+    // = 45), which lands inside batch 5 (cards 40-49) → dynamic per
     // batchSourceFor. That prefetch is the only path today that sends
     // source=dynamic to /api/generate — the foreground ensureBatch
     // serves static client-side without touching the network.
     const profile = {
-      facts: fakeFacts(25),
+      facts: fakeFacts(35),
       likes: [],
       skippedIds: [],
       reports: [
         {
           id: "rep1",
           createdAt: Date.now() - 10_000,
-          factsCount: 20,
+          factsCount: 30,
           summary: "Seed summary for test",
           portrait: "Seed portrait",
           highlights: ["a", "b"],
@@ -154,11 +150,11 @@ test.describe("question flow sends correct batch source", () => {
       .poll(() => generateBodies.find((b) => b.source === "dynamic"), {
         timeout: 15_000,
         message:
-          "expected a background /api/generate call with source=dynamic after entering Questions on a 25-fact profile",
+          "expected a background /api/generate call with source=dynamic after entering Questions on a 35-fact profile",
       })
       .toBeTruthy();
 
     const dyn = generateBodies.find((b) => b.source === "dynamic");
-    expect(dyn?.facts).toBe(25);
+    expect(dyn?.facts).toBe(35);
   });
 });

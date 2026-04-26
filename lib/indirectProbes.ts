@@ -99,16 +99,23 @@ export const INDIRECT_PROBES: readonly IndirectProbe[] = [
   },
   {
     id: "probe_911_school",
-    title: "Were you in school when 9/11 happened?",
-    answerLabels: ["No, before my time", "Wasn't around for it", "Yes"],
+    // Reworded 2026-04-26: original "in school when 9/11 happened?" had
+    // a fatal ambiguity — both teens (too young) AND 50+ (already
+    // adults) honestly answer No, but the probe pushed teen/20s. A 55yo
+    // tester answered No "before my time" meaning "I was an adult" and
+    // we sank his 50plus confidence to 0.02. New wording reliably
+    // bisects 30+ (Yes) vs <30 (No).
+    title: "Were you old enough to remember 9/11 happening?",
+    answerLabels: ["No, too young", "Vaguely", "Yes, clearly"],
     primaryDim: "ageBand",
     onYes: [
-      { dim: "ageBand", key: "30s", weight: 0.7 },
-      { dim: "ageBand", key: "40s", weight: 0.5 },
+      { dim: "ageBand", key: "30s", weight: 0.55 },
+      { dim: "ageBand", key: "40s", weight: 0.7 },
+      { dim: "ageBand", key: "50plus", weight: 0.7 },
     ],
     onNo: [
-      { dim: "ageBand", key: "teen", weight: 0.7 },
-      { dim: "ageBand", key: "20s", weight: 0.6 },
+      { dim: "ageBand", key: "teen", weight: 0.5 },
+      { dim: "ageBand", key: "20s", weight: 0.65 },
     ],
   },
   {
@@ -389,7 +396,7 @@ export const INDIRECT_PROBES: readonly IndirectProbe[] = [
     ],
   },
 
-  // ===== MISC (1, age-revealing) =====
+  // ===== MISC (age-revealing) =====
   {
     id: "probe_priced_van",
     title: "Have you seriously priced out a sailboat, van, or RV?",
@@ -400,6 +407,47 @@ export const INDIRECT_PROBES: readonly IndirectProbe[] = [
       { dim: "ageBand", key: "40s", weight: 0.4 },
       { dim: "ageBand", key: "50plus", weight: 0.3 },
     ],
+    onNo: [],
+  },
+  {
+    // Strong 50plus-only signal. The other age probes (pre_internet,
+    // first_concert, 911) all spread weight across 30s/40s/50plus
+    // because their threshold-based wording is satisfied by everyone
+    // older than ~30. A 55yo persona had three of those land Yes and
+    // 50plus only got to 0.42 because it was always tied with 30s/40s.
+    // Grandparenthood is a near-deterministic 45+ signal that
+    // concentrates weight where we actually need it.
+    id: "probe_grandkid",
+    title: "Have you held a grandchild this year?",
+    answerLabels: ["No", "Maybe a friend's", "Yes"],
+    primaryDim: "ageBand",
+    onYes: [
+      { dim: "ageBand", key: "40s", weight: 0.4 },
+      { dim: "ageBand", key: "50plus", weight: 0.85 },
+    ],
+    onNo: [],
+  },
+
+  // ===== NONBINARY-DISCRIMINATING (2) =====
+  // External-treatment gender probes (catcalled, men's room, pregnancy)
+  // measure assigned-at-birth presentation, NOT identity. AFAB nonbinary
+  // users get treated as female by the world but don't identify that
+  // way. These probes give them a way to actively push nonbinary so
+  // they're not forced into a binary commitment by behavioral noise.
+  {
+    id: "probe_misgendered_recent",
+    title: "Have you been misgendered in the past month in a way that bothered you?",
+    answerLabels: ["No", "Maybe once", "Yes"],
+    primaryDim: "gender",
+    onYes: [{ dim: "gender", key: "nonbinary", weight: 0.6 }],
+    onNo: [],
+  },
+  {
+    id: "probe_pronoun_correction",
+    title: "Have you ever asked someone to use different pronouns for you than they assumed?",
+    answerLabels: ["No", "Considered it", "Yes"],
+    primaryDim: "gender",
+    onYes: [{ dim: "gender", key: "nonbinary", weight: 0.7 }],
     onNo: [],
   },
 ];
@@ -479,22 +527,73 @@ export function selectProbesForBatch(
     workStatus: dimEntropy(state, "workStatus"),
   };
 
-  // Which dims has the user already been asked about (any probe in that
-  // dim is in seenIds)? Derived from the probe registry, so we don't
-  // need any extra plumbing.
+  // Which dims have CONFIDENT signal? Computed from the state itself,
+  // not from probe history. A dim is treated as "covered" only when
+  // its top value is ≥ 0.55 — meaningful lean, not just "moved off
+  // uniform." Two reasons:
+  //   1. Some probes' answers don't push their primaryDim at all (e.g.
+  //      probe_dating_app onNo only updates relationshipStatus, not
+  //      ageBand). Counting probes-asked-as-covered locks out real age
+  //      probes after such a No.
+  //   2. For dims like ageBand where multiple probes each contribute
+  //      partial signal (pre_internet/concert/grandkid all push 50plus
+  //      with weights 0.4–0.85), we WANT cumulative probes to land
+  //      until a clear leader emerges. A 0.55 threshold means we keep
+  //      probing the dim until one bucket is decisively ahead.
+  const COVERED_THRESHOLD = 0.55;
+  const isCovered = (bag: Record<string, number>): boolean => {
+    return Math.max(...Object.values(bag)) >= COVERED_THRESHOLD;
+  };
   const probedDims = new Set<keyof DemographicState>();
-  for (const probe of INDIRECT_PROBES) {
-    if (seenIds.has(probe.id)) probedDims.add(probe.primaryDim);
+  for (const dim of ALL_DIMS) {
+    if (isCovered(state[dim] as Record<string, number>)) {
+      probedDims.add(dim);
+    }
   }
   const unprobedDims = ALL_DIMS.filter((d) => !probedDims.has(d));
 
-  // Round-robin tier: only consider probes targeting unprobed dims.
-  // Falls through to full pool if we've already covered everything.
+  // Sustained gender priority — see scoreProbes() below for the full
+  // rationale. We compute it up-front so the tier-one pool can include
+  // unanswered gender probes even after gender has technically been
+  // touched once (otherwise the round-robin filter would exclude them).
+  const genderState = state.gender;
+  const genderTopValue = Math.max(
+    genderState.male,
+    genderState.female,
+    genderState.nonbinary
+  );
+  let genderProbesAnswered = 0;
+  for (const probe of INDIRECT_PROBES) {
+    if (probe.primaryDim === "gender" && seenIds.has(probe.id)) {
+      genderProbesAnswered += 1;
+    }
+  }
+  const genderStillUncertain =
+    genderTopValue < 0.75 && genderProbesAnswered < 3;
+
+  // Round-robin tier: probes targeting dims we haven't covered yet.
+  // PLUS gender probes whenever gender is still uncertain — pronouns
+  // are the highest-stakes decision and we want gender probes back in
+  // the candidate pool even after one weak signal landed.
   const tierOnePool =
-    unprobedDims.length > 0
-      ? INDIRECT_PROBES.filter((p) => unprobedDims.includes(p.primaryDim))
+    unprobedDims.length > 0 || genderStillUncertain
+      ? INDIRECT_PROBES.filter(
+          (p) =>
+            unprobedDims.includes(p.primaryDim) ||
+            (genderStillUncertain && p.primaryDim === "gender")
+        )
       : INDIRECT_PROBES;
 
+  // Per-probe scorer: entropy of the probe's dim plus a small random
+  // jitter (so identical-entropy ties break differently each call) and
+  // a sustained gender boost while pronouns are still in question.
+  // The original boost only applied when gender was unprobed; that
+  // stalled confidence at ~0.60–0.67 in eval because it switched off
+  // after the first probe (even a weak one). genderStillUncertain
+  // computed above captures the right semantics: keep boosting until
+  // confidence is decisive (≥0.75) OR the user has answered 3 gender
+  // probes (which respects nonbinary signal — if no value crossed 0.75
+  // after 3 tries, stop probing and let they/them stand).
   const scoreProbes = (
     pool: readonly IndirectProbe[]
   ): Array<{ probe: IndirectProbe; score: number }> => {
@@ -503,16 +602,8 @@ export function selectProbesForBatch(
       if (seenIds.has(probe.id)) continue;
       if (seenTexts.has(normalizeQuestionText(probe.title))) continue;
       const jitter = Math.random() * 0.1;
-      // Gender-first priority: while gender is still unprobed, give
-      // gender probes a fixed score boost so they win the first slot.
-      // Pronouns are the highest-impact UX decision in the report —
-      // one strong gender probe (pregnant / catcalled / men's room)
-      // crosses the 0.70 confidence threshold in a single answer, so
-      // landing one early avoids 2-3 batches of gender-neutral
-      // portraits. Boost decays to 0 as soon as gender has been probed.
       const isGenderProbe = probe.primaryDim === "gender";
-      const genderUnprobed = unprobedDims.includes("gender");
-      const genderBoost = isGenderProbe && genderUnprobed ? 1.0 : 0;
+      const genderBoost = isGenderProbe && genderStillUncertain ? 1.0 : 0;
       out.push({
         probe,
         score: entropy[probe.primaryDim] + jitter + genderBoost,

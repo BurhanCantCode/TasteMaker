@@ -1,0 +1,625 @@
+{
+  "ground_truth": {
+    "gender": "female",
+    "ageBand": "30s",
+    "relationshipStatus": "married",
+    "hasKids": "yes",
+    "geographyType": "urban",
+    "workStatus": "freelance",
+    "mbti": "INFP",
+    "enneagramType": 4
+  },
+  "transcript": [
+    {
+      "batch": 1,
+      "n": 1,
+      "type": "    ",
+      "q": "Do you wash your sheets regularly?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I try to keep a tidy home — with Mia and Pepper around, regular washing just feels necessary."
+    },
+    {
+      "batch": 1,
+      "n": 2,
+      "type": "PROBE",
+      "q": "Have you been catcalled walking somewhere this year?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "Yes, it happened — I remember it clearly, that particular kind of gross alertness it puts you in for the rest of the walk."
+    },
+    {
+      "batch": 1,
+      "n": 3,
+      "type": "    ",
+      "q": "Do you believe that humans are the most important animal species on Earth?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "As someone who reads deeply, shops at a food co-op, and thinks ecologically, I find the idea of human supremacy over other species pretty hard to defend — we're part of an interconnected web, not above it."
+    },
+    {
+      "batch": 1,
+      "n": 4,
+      "type": "    ",
+      "q": "Do you want to visit Area 51?",
+      "a": "No, the truth is not out there",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm more drawn to a quiet walk through a Vermont forest than a dusty Nevada conspiracy pilgrimage — that's just not my kind of thing."
+    },
+    {
+      "batch": 1,
+      "n": 5,
+      "type": "PROBE",
+      "q": "Was your first real concert more than 15 years ago?",
+      "a": "Definitely yes",
+      "sentiment": "affirmative",
+      "reasoning": "I'm 32, so my first real concert was almost certainly in my early-to-mid teens, well over 15 years ago."
+    },
+    {
+      "batch": 1,
+      "n": 6,
+      "type": "    ",
+      "q": "Does it typically take you a little while to get to know people, before you become yourself around them?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As an INFP 4w5 who prefers three deep friends over thirty acquaintances, I definitely need time to warm up and feel safe before I let my real self show."
+    },
+    {
+      "batch": 1,
+      "n": 7,
+      "type": "    ",
+      "q": "If given the opportunity, would you take lessons on how to swing-dance?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I've always been a little curious about swing dance — it seems like the kind of embodied, joyful thing I'd love in theory even if I'd feel awkward at first."
+    },
+    {
+      "batch": 1,
+      "n": 8,
+      "type": "    ",
+      "q": "After a party, do you feel energized rather than drained?",
+      "a": "Drained",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm a classic introvert — INFP through and through — and honestly I love a good gathering but I always need a quiet morning after to recover."
+    },
+    {
+      "batch": 1,
+      "n": 9,
+      "type": "    ",
+      "q": "Have you attended a protest march?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I'm politically progressive and have lived in NYC through years of marches — there's no way I haven't shown up at least once."
+    },
+    {
+      "batch": 1,
+      "n": 10,
+      "type": "    ",
+      "q": "Could Evolution and Intelligent Design both be right?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I think evolution is real science, but I'm open to the idea that something larger might be at work underneath it all — I'm not a strict materialist, and I hold that question with some humility."
+    },
+    {
+      "batch": 2,
+      "n": 11,
+      "type": "    ",
+      "q": "Professional athletes often demand large salaries, often one hundred or more times that of an average person. Do you think that such large salaries are appropriate?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "As someone politically progressive who thinks about economic equity, I'd find those salary disparities pretty hard to justify when so many people are struggling."
+    },
+    {
+      "batch": 2,
+      "n": 12,
+      "type": "    ",
+      "q": "Is it easy for you to apologize when you know you have made a mistake?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As someone with anxious tendencies and a deep sense of integrity, I actually find it easier to apologize than to sit with the discomfort of knowing I've wronged someone — the guilt would eat at me otherwise."
+    },
+    {
+      "batch": 2,
+      "n": 13,
+      "type": "    ",
+      "q": "If while visiting a friend’s house, you notice a painting hanging slightly off kilter. Do you adjust it?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'd notice it immediately and it would quietly bother me the whole visit, but I'd never actually touch something in someone else's home — that feels presumptuous."
+    },
+    {
+      "batch": 2,
+      "n": 14,
+      "type": "PROBE",
+      "q": "Are most of your weekday afternoons free?",
+      "a": "Some are",
+      "sentiment": "neutral",
+      "reasoning": "Mia's at preschool in the mornings so I work then, but afternoons are pickup time and Mia-time, though occasionally I get a free stretch if Tom's home early or she naps — so it really depends on the day."
+    },
+    {
+      "batch": 2,
+      "n": 15,
+      "type": "    ",
+      "q": "Do you have any gay, bisexual, or transgender friends?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "Growing up in Vermont, moving to NYC at 24, working in indie publishing, being politically progressive — of course I have queer friends, that's just my world."
+    },
+    {
+      "batch": 2,
+      "n": 16,
+      "type": "    ",
+      "q": "Could you date someone with no long-term goals?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I need someone who's thinking about the future — we have a mortgage, a kid, a life we're building together, and I can't imagine being with someone who's just drifting."
+    },
+    {
+      "batch": 2,
+      "n": 17,
+      "type": "    ",
+      "q": "If you really liked someone, would you make an effort to clean up before they saw your place for the first time?",
+      "a": "Yes, I’d want to make a good first impression.",
+      "sentiment": "affirmative",
+      "reasoning": "I care about my space and how I present myself to people I genuinely want to connect with — I'd absolutely tidy up, light a candle, maybe put some flowers on the table."
+    },
+    {
+      "batch": 2,
+      "n": 18,
+      "type": "    ",
+      "q": "When facing a complicated situation, can you easily put yourself in another person’s shoes and consequently see things from his or her point of view?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As an INFP and someone who's done therapy and values deep connection, empathy comes pretty naturally to me — it's almost how I process the world."
+    },
+    {
+      "batch": 2,
+      "n": 19,
+      "type": "    ",
+      "q": "When you make a decision, do you usually go with what feels right rather than what's logically optimal?",
+      "a": "Feeling first",
+      "sentiment": "affirmative",
+      "reasoning": "As an INFP 4w5, I almost always trust my gut and what resonates emotionally — logic is a check I run after, not the starting point."
+    },
+    {
+      "batch": 2,
+      "n": 20,
+      "type": "PROBE",
+      "q": "Have you run into an ex unexpectedly this year?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I've been pretty rooted in Park Slope routines — preschool drop-off, the co-op, the park with Pepper — and my exes are scattered elsewhere, so no, I haven't run into anyone."
+    },
+    {
+      "batch": 3,
+      "n": 21,
+      "type": "PROBE",
+      "q": "Do you have a yard or outdoor space attached to where you live?",
+      "a": "A balcony",
+      "sentiment": "neutral",
+      "reasoning": "We're in a Park Slope apartment — likely a condo or co-op unit, so a balcony is more plausible than a full yard, though not impossible; but 'owned apartment' really does suggest a unit, not a townhouse with a yard."
+    },
+    {
+      "batch": 3,
+      "n": 22,
+      "type": "    ",
+      "q": "Do you often feel like something important is missing from your life, even when things are going well?",
+      "a": "At times",
+      "sentiment": "neutral",
+      "reasoning": "As a 4w5 with anxious notes, that wistful sense of something just out of reach visits me sometimes, but I have Tom and Mia and work I care about, so it's not a constant ache — more like a familiar guest that shows up occasionally."
+    },
+    {
+      "batch": 3,
+      "n": 23,
+      "type": "    ",
+      "q": "When someone close to you is struggling, do you find yourself absorbing their stress as if it were your own?",
+      "a": "Absolutely",
+      "sentiment": "affirmative",
+      "reasoning": "As a 4w5 with anxious undertones and deep empathy, I feel other people's pain almost as a physical thing — it just lives in me until I can process it out."
+    },
+    {
+      "batch": 3,
+      "n": 24,
+      "type": "    ",
+      "q": "Do you find it hard to ask for help, even when you genuinely need it?",
+      "a": "Yes, I resist asking",
+      "sentiment": "affirmative",
+      "reasoning": "As a 4w5 with anxious notes, I tend to internalize and manage things quietly on my own — asking for help feels like admitting I can't hold it all together, which is exactly the kind of thing I struggle with."
+    },
+    {
+      "batch": 3,
+      "n": 25,
+      "type": "PROBE",
+      "q": "Have you been to a kid's birthday party this year?",
+      "a": "Yes, my own kid's",
+      "sentiment": "affirmative",
+      "reasoning": "Mia just turned three, so we definitely had a birthday party for her this year."
+    },
+    {
+      "batch": 3,
+      "n": 26,
+      "type": "    ",
+      "q": "When a group you are part of is heading in the wrong direction, do you tend to speak up rather than go along to keep the peace?",
+      "a": "Depends on the stakes",
+      "sentiment": "neutral",
+      "reasoning": "I care deeply about doing what's right, but I'm also quietly anxious and not naturally confrontational — so whether I say something really depends on how much it matters and who's in the room."
+    },
+    {
+      "batch": 3,
+      "n": 27,
+      "type": "    ",
+      "q": "Have you reread a sentence in a book in the past month just for the wording?",
+      "a": "Often",
+      "sentiment": "affirmative",
+      "reasoning": "I do this constantly — with Robinson especially, sometimes a sentence just stops me cold and I have to sit with it."
+    },
+    {
+      "batch": 3,
+      "n": 28,
+      "type": "    ",
+      "q": "When you have a free weekend with no plans, do you usually fill it with activities rather than letting it stay open?",
+      "a": "Rarely",
+      "sentiment": "non-affirmative",
+      "reasoning": "A free, unstructured weekend feels like a gift to me — I'd rather let it breathe and see what emerges than pack it with plans."
+    },
+    {
+      "batch": 3,
+      "n": 29,
+      "type": "    ",
+      "q": "Do you tend to think about future possibilities more than you dwell on what has already happened?",
+      "a": "About equal",
+      "sentiment": "neutral",
+      "reasoning": "I'm an Enneagram 4 — I'm always processing the past, the meaning of things, what's already happened — but I also drift into imagining how life could be different, so it's honestly about equal for me."
+    },
+    {
+      "batch": 3,
+      "n": 30,
+      "type": "    ",
+      "q": "Do you prefer having a clear plan before starting a project rather than figuring it out as you go?",
+      "a": "It varies",
+      "sentiment": "neutral",
+      "reasoning": "I use a bullet journal but I also work freelance and creative — sometimes the cover design only reveals itself as I go, so honestly it really does vary depending on the project."
+    },
+    {
+      "batch": 4,
+      "n": 31,
+      "type": "    ",
+      "q": "Would you consider dating someone who is a full-time student?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm married to Tom, so dating anyone isn't really on the table for me."
+    },
+    {
+      "batch": 4,
+      "n": 32,
+      "type": "PROBE",
+      "q": "Have you sent an invoice for your own work in the last month?",
+      "a": "Yes, a real one",
+      "sentiment": "affirmative",
+      "reasoning": "I freelance for indie publishers regularly, so sending proper invoices is just part of how I get paid — I definitely sent at least one real invoice this month."
+    },
+    {
+      "batch": 4,
+      "n": 33,
+      "type": "    ",
+      "q": "When you get home, do you usually want to tell someone about your day?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I usually want to debrief with Tom when he's home — even just a few minutes of talking through the day helps me process everything."
+    },
+    {
+      "batch": 4,
+      "n": 34,
+      "type": "    ",
+      "q": "Have you ever tried silent dating?",
+      "a": "No.",
+      "sentiment": "non-affirmative",
+      "reasoning": "Silent dating sounds like exactly the kind of trendy NYC social experiment I'd read about but never actually do — I met Tom the old-fashioned way and I've never been one for organized singles events."
+    },
+    {
+      "batch": 4,
+      "n": 35,
+      "type": "    ",
+      "q": "Would you date someone who states up front that they will never be willing to go dancing?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "Dancing isn't really my thing anyway — I'd much rather have a long conversation over tea than be on a dance floor, so that wouldn't be a dealbreaker at all."
+    },
+    {
+      "batch": 4,
+      "n": 36,
+      "type": "    ",
+      "q": "Would you consider buying a genetically engineered pet?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I already have Pepper from a rescue, and the whole idea of engineering an animal to spec feels uncomfortable to me — like it's missing the point of what a pet actually is."
+    },
+    {
+      "batch": 4,
+      "n": 37,
+      "type": "    ",
+      "q": "Are traditional gender roles important in a romantic relationship?",
+      "a": "No, they’re outdated",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm politically progressive and built a life on my own terms — traditional gender roles feel like a constraint, not a foundation."
+    },
+    {
+      "batch": 4,
+      "n": 38,
+      "type": "    ",
+      "q": "Do you usually have a plan before starting a project?",
+      "a": "Loose plan",
+      "sentiment": "neutral",
+      "reasoning": "I keep a bullet journal and think things through, but as a freelance designer I know projects shift — so I sketch a direction, not a blueprint."
+    },
+    {
+      "batch": 4,
+      "n": 39,
+      "type": "    ",
+      "q": "Would you continue to date someone who you felt would always put their pet(s) before you?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I love Pepper deeply, but a partnership needs to feel like we're each other's priority — someone who consistently puts their pet above me would leave me feeling unseen, and that quiet ache would eventually become too much."
+    },
+    {
+      "batch": 4,
+      "n": 40,
+      "type": "PROBE",
+      "q": "Have you been on a first date with someone new in the last year?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I've been married to Tom for four years — there's no first date with anyone new happening in my life."
+    }
+  ],
+  "reports": [
+    {
+      "atFacts": 10,
+      "summary": "She shows up, does the quiet work, and holds her values with more conviction than she lets on. The march and the sheet-washing live in the same person — principled and grounded.",
+      "portrait": "She takes a little while to let people in — she said so directly — but once she does, she's fully present. The kind of person who attends the protest and also makes the bed. Both things matter to her, and she doesn't see the contradiction.\n\nShe rejects the idea that humans sit above other species, and she left Area 51 behind without nostalgia. She's not chasing spectacle. But she'll say yes to swing-dance lessons without hesitation — she wants joy, she just prefers to find it on her own terms.\n\nThe quiet cost of her self-containment is that people underestimate how much she's already decided. She processes privately, which can read as open — but the convictions are already formed.",
+      "highlights": [
+        "Principled but not preachy",
+        "Introversion as deliberate filter, not shyness",
+        "Grounded values, light footprint",
+        "Tension: open-seeming but already decided",
+        "Civic engagement beneath a calm surface",
+        "Finds joy without needing an audience"
+      ],
+      "params": {
+        "warmth": 0.68,
+        "energy": 0.35,
+        "structure": 0.62,
+        "density": 0.6,
+        "extroversion": 0.22,
+        "symmetry": 0.58
+      },
+      "profile": {
+        "enneagram": {
+          "type": 9,
+          "wing": 1,
+          "confidence": 0.38
+        },
+        "mbti": {
+          "type": "INFJ",
+          "confidence": 0.52
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.38
+        },
+        "bigFive": {
+          "O": 0.62,
+          "C": 0.58,
+          "E": 0.28,
+          "A": 0.65,
+          "N": 0.5
+        },
+        "attachmentStyle": {
+          "type": "secure",
+          "confidence": 0.38
+        },
+        "ageRange": "mid 40s–50s",
+        "careerArchetypes": [
+          "Educator",
+          "Nonprofit Program Manager",
+          "Healthcare Coordinator",
+          "Social Worker",
+          "Writer or Editor"
+        ]
+      },
+      "predictions": [
+        "You've stayed in a conversation you wanted to leave rather than cause friction.",
+        "You have a playlist you return to when you need to reset.",
+        "You've drafted a strongly worded message and deleted it before sending.",
+        "You remember the exact song that played at that first concert."
+      ]
+    },
+    {
+      "atFacts": 20,
+      "summary": "She leads with empathy and values, not volume — the person who notices what's wrong in the room before anyone else does. She's slow to open up and faster to forgive than she probably should be.",
+      "portrait": "She showed up to a protest march and rejected the idea that humans sit at the top of the animal kingdom — both in the same breath. That's not contradiction; that's a consistent moral compass pointing outward. She cares about things bigger than herself and acts on it quietly.\n\nShe'll warm up a space before someone she likes comes over, but leave a crooked painting alone at a stranger's house. Generous with people she's chosen, careful with everyone else. She goes with feeling first and knows it — and that instinct is both her sharpest tool and the thing that occasionally costs her.\n\nPrivately, she probably worries she's too much for some people and not enough for others. Neither is true.",
+      "highlights": [
+        "Empathy before logic",
+        "Moral conviction, low noise",
+        "Socially cautious, deeply warm once trusted",
+        "Acts on values — protests, inclusion, care",
+        "Feeling-led decision maker",
+        "High standards for partners, low tolerance for aimlessness"
+      ],
+      "params": {
+        "warmth": 0.82,
+        "energy": 0.35,
+        "structure": 0.48,
+        "density": 0.68,
+        "extroversion": 0.22,
+        "symmetry": 0.55
+      },
+      "profile": {
+        "enneagram": {
+          "type": 2,
+          "wing": 1,
+          "confidence": 0.42
+        },
+        "mbti": {
+          "type": "INFJ",
+          "confidence": 0.55
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "I",
+          "confidence": 0.38
+        },
+        "bigFive": {
+          "O": 0.62,
+          "C": 0.52,
+          "E": 0.28,
+          "A": 0.78,
+          "N": 0.52
+        },
+        "attachmentStyle": {
+          "type": "secure",
+          "confidence": 0.42
+        },
+        "ageRange": "late 40s–mid 50s",
+        "careerArchetypes": [
+          "Counselor or therapist",
+          "Nonprofit program coordinator",
+          "Educator or curriculum designer",
+          "Community organizer",
+          "Healthcare case manager"
+        ]
+      },
+      "predictions": [
+        "You've written a message and deleted it before sending.",
+        "You keep a mental list of people you've been let down by.",
+        "You've stayed in a role longer than you should because leaving felt like abandoning someone.",
+        "You've stood in a march alone, without telling most people you went."
+      ]
+    },
+    {
+      "atFacts": 30,
+      "summary": "She absorbs the world through feeling first and processes it in private — warm at depth, guarded at the door. The same sensitivity that makes her a soft landing for others is the thing she rarely lets anyone tend to.",
+      "portrait": "She said 'absolutely' to absorbing others' stress as her own, and admitted she resists asking for help — those two facts live together uncomfortably and she knows it. She goes with feeling first when decisions get hard, and she's reread sentences in books just for the wording. There's a reader and a feeler running the operation.\n\nShe leaves the crooked painting alone at a friend's house but would clean her own place before someone she liked walked in. She cares about impression, just not at the cost of someone else's walls.\n\nPrivately, there's a low hum of something missing even when things are objectively fine. That restlessness isn't dissatisfaction — it's the cost of living with a lot of interior space.",
+      "highlights": [
+        "Empathy as a reflex, not a choice",
+        "Resists receiving the care she gives",
+        "Feeling-first decision-making",
+        "Language as a private pleasure",
+        "Guarded warmth — real once earned",
+        "Quiet civic backbone"
+      ],
+      "params": {
+        "warmth": 0.82,
+        "energy": 0.32,
+        "structure": 0.45,
+        "density": 0.74,
+        "extroversion": 0.22,
+        "symmetry": 0.48
+      },
+      "profile": {
+        "enneagram": {
+          "type": 2,
+          "wing": 1,
+          "confidence": 0.42
+        },
+        "mbti": {
+          "type": "INFJ",
+          "confidence": 0.72
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.45
+        },
+        "bigFive": {
+          "O": 0.72,
+          "C": 0.52,
+          "E": 0.28,
+          "A": 0.78,
+          "N": 0.62
+        },
+        "attachmentStyle": {
+          "type": "anxious",
+          "confidence": 0.48
+        },
+        "ageRange": "late 30s–50s",
+        "careerArchetypes": [
+          "Counselor or therapist",
+          "Nonprofit program manager",
+          "Educator or curriculum designer",
+          "Writer or editor",
+          "Community organizer"
+        ]
+      },
+      "predictions": [
+        "You've apologized to someone who never apologized back.",
+        "You've drafted a message, decided not to send it, and kept the draft.",
+        "You carry other people's moods home without meaning to.",
+        "You've stayed at an event longer than you wanted to avoid seeming rude."
+      ]
+    },
+    {
+      "atFacts": 40,
+      "summary": "She absorbs other people's emotional weather as if it were her own — a gift that costs her. She makes decisions from feeling first and justifies them with logic second, if at all.",
+      "portrait": "She reread a sentence this month just for how it was built — not what it meant, how it was made. That kind of attention is the baseline. She went to her own kid's birthday party this year, sent a real invoice, and still somehow managed to feel, at times, like something important is missing. That's not ingratitude. That's the particular ache of someone whose inner life moves faster than her outer circumstances.\n\nShe'll absorb a friend's stress completely and resist asking anyone to absorb hers. Warm with the people who've earned it, but slow to let new ones earn it at all.\n\nThe resistance to asking for help looks like self-sufficiency from the outside. It isn't. It's the cost of being the person others rely on — and quietly not knowing how to reverse the current.",
+      "highlights": [
+        "Feels first, justifies second",
+        "Slow to open, deeply loyal once in",
+        "Absorbs others' stress as her own",
+        "Resists asking for help",
+        "Notices language at the sentence level",
+        "Quiet tension between fullness and a sense of missing"
+      ],
+      "params": {
+        "warmth": 0.82,
+        "energy": 0.35,
+        "structure": 0.42,
+        "density": 0.74,
+        "extroversion": 0.28,
+        "symmetry": 0.45
+      },
+      "profile": {
+        "enneagram": {
+          "type": 2,
+          "wing": 1,
+          "confidence": 0.38
+        },
+        "mbti": {
+          "type": "INFP",
+          "confidence": 0.72
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "I",
+          "confidence": 0.38
+        },
+        "bigFive": {
+          "O": 0.72,
+          "C": 0.48,
+          "E": 0.32,
+          "A": 0.78,
+          "N": 0.58
+        },
+        "attachmentStyle": {
+          "type": "anxious",
+          "confidence": 0.44
+        },
+        "ageRange": "late 30s–50s",
+        "careerArchetypes": [
+          "Independent Consultant",
+          "Freelance Writer or Editor",
+          "Creative Director",
+          "Therapist or Coach",
+          "Nonprofit Strategist"
+        ]
+      },
+      "predictions": [
+        "You apologize and then privately replay whether the apology landed.",
+        "You've cried at something you didn't expect to cry at this year.",
+        "You check your invoices more carefully than you check your own calendar.",
+        "You know exactly which friend to call for which kind of crisis.",
+        "You've started a personal project you haven't told anyone about yet."
+      ]
+    }
+  ]
+}

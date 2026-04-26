@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { CHUNK_SIZE } from "@/lib/questionSequencer";
 
 interface RecommendationInterstitialCardProps {
   onViewRecommendations: () => void;
@@ -52,7 +53,7 @@ export function RecommendationInterstitialCard({
   useEffect(() => {
     if (!ringRef.current) return;
     const circumference = 2 * Math.PI * 46;
-    const ratio = ((answeredCount % 20) / 20) || 1; // show full ring at exact milestone
+    const ratio = ((answeredCount % CHUNK_SIZE) / CHUNK_SIZE) || 1; // show full ring at exact milestone
     gsap.to(ringRef.current, {
       strokeDashoffset: circumference * (1 - ratio),
       duration: 0.9,

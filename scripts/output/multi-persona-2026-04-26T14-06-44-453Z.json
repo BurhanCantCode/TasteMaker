@@ -1,0 +1,836 @@
+{
+  "results": [
+    {
+      "name": "daniel",
+      "label": "Daniel — 28, cis male, software engineer, Austin",
+      "pass": true,
+      "checks": [
+        "gender.male ≥ 0.8 → got 0.97 ✅",
+        "pronouns expected he/them → got [he, they] ✅"
+      ],
+      "finalDemo": {
+        "gender": {
+          "male": 0.9666666666666668,
+          "female": 0.016666666666666607,
+          "nonbinary": 0.016666666666666607
+        },
+        "ageBand": {
+          "teen": 0.21000000000000002,
+          "20s": 0.685,
+          "30s": 0.03499999999999999,
+          "40s": 0.03499999999999999,
+          "50plus": 0.03499999999999999
+        },
+        "relationshipStatus": {
+          "single": 0.5425,
+          "partnered": 0.05250000000000003,
+          "married": 0.05250000000000003,
+          "divorced": 0.35250000000000004
+        },
+        "hasKids": {
+          "yes": 0.275,
+          "no": 0.725
+        },
+        "geographyType": {
+          "urban": 0.40640624999999997,
+          "suburban": 0.2628125,
+          "rural": 0.33078124999999997
+        },
+        "workStatus": {
+          "student": 0.09,
+          "employed": 0.6400000000000001,
+          "freelance": 0.09,
+          "retired": 0.09,
+          "unemployed": 0.09
+        }
+      },
+      "probesAnswered": [
+        {
+          "id": "probe_mens_room",
+          "type": "demo",
+          "title": "Have you used a public men's restroom in the last week?",
+          "answer": "Yes"
+        },
+        {
+          "id": "probe_office_meeting",
+          "type": "demo",
+          "title": "Have you been in a real-world (in-person) work meeting this month?",
+          "answer": "Yes"
+        },
+        {
+          "id": "mbtiprobe_reread_for_wording",
+          "type": "mbti",
+          "title": "Have you reread a sentence in a book in the past month just for the wording?",
+          "answer": "No"
+        },
+        {
+          "id": "probe_911_school",
+          "type": "demo",
+          "title": "Were you old enough to remember 9/11 happening?",
+          "answer": "No, too young"
+        },
+        {
+          "id": "probe_first_dates",
+          "type": "demo",
+          "title": "Have you been on a first date with someone new in the last year?",
+          "answer": "Yes"
+        },
+        {
+          "id": "mbtiprobe_decide_by_feeling",
+          "type": "mbti",
+          "title": "When you make a decision, do you usually go with what feels right rather than what's logically optimal?",
+          "answer": "Logic wins"
+        },
+        {
+          "id": "probe_kid_pickup",
+          "type": "demo",
+          "title": "Did you pick up a child from school or daycare this month?",
+          "answer": "No"
+        },
+        {
+          "id": "mbtiprobe_keep_options_open",
+          "type": "mbti",
+          "title": "Do you prefer to keep options open rather than commit to one path?",
+          "answer": "Commit early"
+        },
+        {
+          "id": "probe_neighbor_name",
+          "type": "demo",
+          "title": "Do you know your immediate neighbor's first name?",
+          "answer": "I know their face"
+        }
+      ],
+      "pronounsUsed": [
+        "he",
+        "they"
+      ],
+      "report": {
+        "summary": "He moves fast, commits early, and fixes problems before feelings get a turn. The ambition is real — so is the restlessness underneath it.",
+        "portrait": "He said no when asked if his life right now is as good as it gets. That one answer does a lot of work. He's in his early 20s, already in the room at work meetings, already going on first dates — and already sure this isn't the ceiling. When someone close to him is hurting, his first move is to solve it, not sit with it. That's not coldness; it's how he shows up.\n\nHe can work a party full of strangers and walk out with five new contacts. But he Googles people before meeting them. Warm in motion, cautious in advance.\n\nHe doesn't linger over prose or follow strangers down the street. His attention goes where there's traction. The impatience that makes him skip the slow lane is the same thing that gets things done when nobody else will.",
+        "highlights": [
+          "Logic-first decision making",
+          "Commits early, hates drift",
+          "Natural organizer in group settings",
+          "Socially fluent but pre-screens people",
+          "Fixes before he feels",
+          "Ambition outrunning current circumstances"
+        ],
+        "params": {
+          "warmth": 0.52,
+          "energy": 0.74,
+          "structure": 0.78,
+          "density": 0.45,
+          "extroversion": 0.68,
+          "symmetry": 0.64
+        },
+        "profile": {
+          "enneagram": {
+            "type": 3,
+            "wing": 8,
+            "confidence": 0.38
+          },
+          "mbti": {
+            "type": "ESTJ",
+            "confidence": 0.58
+          },
+          "disc": {
+            "dominant": "D",
+            "secondary": "C",
+            "confidence": 0.42
+          },
+          "bigFive": {
+            "O": 0.42,
+            "C": 0.72,
+            "E": 0.65,
+            "A": 0.45,
+            "N": 0.38
+          },
+          "attachmentStyle": {
+            "type": "secure",
+            "confidence": 0.44
+          },
+          "ageRange": "early–mid 20s",
+          "careerArchetypes": [
+            "Project Manager",
+            "Operations Analyst",
+            "Sales Engineer",
+            "Military or Law Enforcement Officer",
+            "Business Development Manager"
+          ]
+        },
+        "predictions": [
+          "You've ended a situationship by just going quiet.",
+          "You check the scoreboard before the final buzzer.",
+          "You've Googled a date's name before meeting them.",
+          "You've taken over a group chat when nobody else stepped up.",
+          "You've told someone 'I'm fine' the same day you weren't."
+        ]
+      }
+    },
+    {
+      "name": "marcus",
+      "label": "Marcus — 55, cis male, retired Marine, Phoenix suburbs",
+      "pass": false,
+      "checks": [
+        "gender.male ≥ 0.85 → got 0.83 ❌",
+        "age.50plus ≥ 0.6 → got 0.42 ❌",
+        "pronouns expected he/them → got [he, they] ✅"
+      ],
+      "finalDemo": {
+        "gender": {
+          "male": 0.8333333333333334,
+          "female": 0.08333333333333331,
+          "nonbinary": 0.08333333333333331
+        },
+        "ageBand": {
+          "teen": 0.0243,
+          "20s": 0.0243,
+          "30s": 0.17279999999999998,
+          "40s": 0.3543,
+          "50plus": 0.42430000000000007
+        },
+        "relationshipStatus": {
+          "single": 0.25,
+          "partnered": 0.25,
+          "married": 0.25,
+          "divorced": 0.25
+        },
+        "hasKids": {
+          "yes": 0.5,
+          "no": 0.5
+        },
+        "geographyType": {
+          "urban": 0.07499999999999998,
+          "suburban": 0.3500000000000001,
+          "rural": 0.575
+        },
+        "workStatus": {
+          "student": 0.12,
+          "employed": 0.52,
+          "freelance": 0.12,
+          "retired": 0.12,
+          "unemployed": 0.12
+        }
+      },
+      "probesAnswered": [
+        {
+          "id": "probe_invoice",
+          "type": "demo",
+          "title": "Have you sent an invoice for your own work in the last month?",
+          "answer": "No"
+        },
+        {
+          "id": "mbtiprobe_concrete_steps",
+          "type": "mbti",
+          "title": "Do you prefer step-by-step instructions over a description of the goal?",
+          "answer": "Yes, step by step"
+        },
+        {
+          "id": "probe_purse",
+          "type": "demo",
+          "title": "Do you carry something resembling a purse most days?",
+          "answer": "No"
+        },
+        {
+          "id": "probe_pregnant",
+          "type": "demo",
+          "title": "Have you ever been pregnant?",
+          "answer": "No"
+        },
+        {
+          "id": "probe_pre_internet",
+          "type": "demo",
+          "title": "Do you remember everyday life before smartphones existed?",
+          "answer": "Yes, clearly"
+        },
+        {
+          "id": "mbtiprobe_friend_upset_focus",
+          "type": "mbti",
+          "title": "When a friend is upset, do you sit with their feelings rather than try to fix the problem?",
+          "answer": "I try to fix it"
+        },
+        {
+          "id": "probe_ex_run_in",
+          "type": "demo",
+          "title": "Have you run into an ex unexpectedly this year?",
+          "answer": "No"
+        },
+        {
+          "id": "probe_drove_today",
+          "type": "demo",
+          "title": "Did you drive a car today?",
+          "answer": "Yes"
+        },
+        {
+          "id": "mbtiprobe_change_plans_late",
+          "type": "mbti",
+          "title": "Are you comfortable changing plans last-minute?",
+          "answer": "No, it bothers me"
+        }
+      ],
+      "pronounsUsed": [
+        "he",
+        "they"
+      ],
+      "report": {
+        "summary": "He knows what he thinks and says it plainly — no performance, no hedging. Correctness matters more to him than speed, and he's been right enough times to trust that instinct.",
+        "portrait": "He remembers the world before everyone had a glowing rectangle in their pocket, and that memory quietly shapes how he judges the present. Technology news doesn't interest him — what matters is whether something works. When a friend is in pain, his instinct is to fix the problem, not sit in the feeling; he means it as care, even if it doesn't always land that way.\n\nHe plans his weeks and dislikes last-minute changes — a man who finds comfort in knowing what comes next. But he's not rigid out of fear; he's direct when something is wrong, and he doesn't let a grievance fester in silence.\n\nThe quiet criticism: he can move past ambiguity faster than ambiguity deserves. That same impatience is exactly why he gets things done when others are still deliberating.",
+        "highlights": [
+          "Plans before acting, correctness over speed",
+          "Direct confronter — doesn't swallow grievances",
+          "Natural group leader, not always by choice",
+          "Low tolerance for lifestyle incompatibility",
+          "Practical care: fixes problems rather than mirrors feelings",
+          "Skeptical of metaphysics, trusts what he can verify"
+        ],
+        "params": {
+          "warmth": 0.52,
+          "energy": 0.42,
+          "structure": 0.82,
+          "density": 0.55,
+          "extroversion": 0.5,
+          "symmetry": 0.74
+        },
+        "profile": {
+          "enneagram": {
+            "type": 1,
+            "wing": 8,
+            "confidence": 0.42
+          },
+          "mbti": {
+            "type": "ISTJ",
+            "confidence": 0.68
+          },
+          "disc": {
+            "dominant": "C",
+            "secondary": "D",
+            "confidence": 0.48
+          },
+          "bigFive": {
+            "O": 0.35,
+            "C": 0.78,
+            "E": 0.48,
+            "A": 0.52,
+            "N": 0.28
+          },
+          "attachmentStyle": {
+            "type": "secure",
+            "confidence": 0.48
+          },
+          "ageRange": "late 40s–mid 50s",
+          "careerArchetypes": [
+            "Operations Manager",
+            "Project Manager",
+            "Field Supervisor",
+            "Quality Control Analyst",
+            "Law Enforcement Officer"
+          ]
+        },
+        "predictions": [
+          "You've told someone uncomfortable news they didn't want to hear.",
+          "You still own a tool you bought once for a specific job and never returned.",
+          "You've sat through a meeting knowing the plan was wrong before it started.",
+          "You've driven the same route so many times you can't remember the last trip."
+        ]
+      }
+    },
+    {
+      "name": "sam",
+      "label": "Sam — 26, nonbinary, freelance illustrator, Portland (AFAB)",
+      "pass": true,
+      "checks": [
+        "max(male,female) < 0.7 → got 0.27 ✅",
+        "pronouns expected they/them → got [they, you] ✅"
+      ],
+      "finalDemo": {
+        "gender": {
+          "male": 0.10666666666666672,
+          "female": 0.2666666666666667,
+          "nonbinary": 0.6266666666666666
+        },
+        "ageBand": {
+          "teen": 0.18000000000000005,
+          "20s": 0.73,
+          "30s": 0.03,
+          "40s": 0.03,
+          "50plus": 0.03
+        },
+        "relationshipStatus": {
+          "single": 0.25,
+          "partnered": 0.25,
+          "married": 0.25,
+          "divorced": 0.25
+        },
+        "hasKids": {
+          "yes": 0.5,
+          "no": 0.5
+        },
+        "geographyType": {
+          "urban": 0.3333333333333333,
+          "suburban": 0.3333333333333333,
+          "rural": 0.3333333333333333
+        },
+        "workStatus": {
+          "student": 0.1,
+          "employed": 0.6000000000000001,
+          "freelance": 0.1,
+          "retired": 0.1,
+          "unemployed": 0.1
+        }
+      },
+      "probesAnswered": [
+        {
+          "id": "probe_in_school_now",
+          "type": "demo",
+          "title": "Are you currently a student of some kind?",
+          "answer": "No"
+        },
+        {
+          "id": "mbtiprobe_metaphor_first",
+          "type": "mbti",
+          "title": "When explaining something hard, do you reach for a metaphor before facts?",
+          "answer": "Metaphor first"
+        },
+        {
+          "id": "probe_pregnant",
+          "type": "demo",
+          "title": "Have you ever been pregnant?",
+          "answer": "No"
+        },
+        {
+          "id": "mbtiprobe_friend_upset_focus",
+          "type": "mbti",
+          "title": "When a friend is upset, do you sit with their feelings rather than try to fix the problem?",
+          "answer": "I sit with feelings"
+        },
+        {
+          "id": "probe_grandkid",
+          "type": "demo",
+          "title": "Have you held a grandchild this year?",
+          "answer": "No"
+        },
+        {
+          "id": "probe_mens_room",
+          "type": "demo",
+          "title": "Have you used a public men's restroom in the last week?",
+          "answer": "No"
+        },
+        {
+          "id": "mbtiprobe_solo_recharge",
+          "type": "mbti",
+          "title": "When stressed, do you mostly want to be alone to recover?",
+          "answer": "Yes, alone"
+        },
+        {
+          "id": "probe_misgendered_recent",
+          "type": "demo",
+          "title": "Have you been misgendered in the past month in a way that bothered you?",
+          "answer": "Yes"
+        },
+        {
+          "id": "probe_pre_internet",
+          "type": "demo",
+          "title": "Do you remember everyday life before smartphones existed?",
+          "answer": "No"
+        }
+      ],
+      "pronounsUsed": [
+        "they",
+        "you"
+      ],
+      "report": {
+        "summary": "Someone who feels deeply, holds ethics fiercely, and carries their inner world like a second body. The warmth is real — but it costs them.",
+        "portrait": "They reach for metaphors before facts, which tells you something: meaning matters more than mechanism. When a friend is hurting, they don't troubleshoot — they stay in the room with the feeling. That's rare, and they know it. They've also quietly kept a problem to themselves for weeks before letting anyone in, which is the contradiction at the center: genuinely warm and attentive to others, but guarded when it comes to their own weight. The worry that people they care about are secretly disappointed in them isn't occasional — it's a low hum. That same sensitivity, the one that makes them hard to trust with their own pain, is exactly what makes them worth trusting with yours.",
+        "highlights": [
+          "Ethics over profit, no exceptions",
+          "Metaphor-first thinker",
+          "Sits with feelings, doesn't fix them",
+          "Holds problems alone too long",
+          "Fears quiet disappointment from loved ones",
+          "Feels things more intensely than the room does"
+        ],
+        "params": {
+          "warmth": 0.82,
+          "energy": 0.32,
+          "structure": 0.44,
+          "density": 0.76,
+          "extroversion": 0.22,
+          "symmetry": 0.38
+        },
+        "profile": {
+          "enneagram": {
+            "type": 4,
+            "wing": 2,
+            "confidence": 0.42
+          },
+          "mbti": {
+            "type": "INFJ",
+            "confidence": 0.58
+          },
+          "disc": {
+            "dominant": "S",
+            "secondary": "I",
+            "confidence": 0.38
+          },
+          "bigFive": {
+            "O": 0.72,
+            "C": 0.48,
+            "E": 0.28,
+            "A": 0.74,
+            "N": 0.68
+          },
+          "attachmentStyle": {
+            "type": "anxious",
+            "confidence": 0.42
+          },
+          "ageRange": "early–mid 20s",
+          "careerArchetypes": [
+            "Counselor or therapist",
+            "Writer or editor",
+            "UX researcher",
+            "Social worker",
+            "Arts educator"
+          ]
+        },
+        "predictions": [
+          "You've reread a message you sent and immediately regretted the wording.",
+          "You've kept a problem to yourself until it was almost too late to fix.",
+          "You notice when a friend's energy is off before they say a word.",
+          "You've talked yourself out of reaching out to someone because you didn't want to seem needy."
+        ]
+      }
+    },
+    {
+      "name": "aria",
+      "label": "Aria — 34, trans woman, marketing manager, NYC",
+      "pass": true,
+      "checks": [
+        "gender.female ≥ 0.7 → got 0.80 ✅",
+        "pronouns expected she/them → got [she] ✅"
+      ],
+      "finalDemo": {
+        "gender": {
+          "male": 0.09999999999999998,
+          "female": 0.8,
+          "nonbinary": 0.09999999999999998
+        },
+        "ageBand": {
+          "teen": 0.013219199999999997,
+          "20s": 0.013219199999999997,
+          "30s": 0.1782432,
+          "40s": 0.36387420000000004,
+          "50plus": 0.43144420000000006
+        },
+        "relationshipStatus": {
+          "single": 0.5425,
+          "partnered": 0.05250000000000003,
+          "married": 0.05250000000000003,
+          "divorced": 0.35250000000000004
+        },
+        "hasKids": {
+          "yes": 0.5,
+          "no": 0.5
+        },
+        "geographyType": {
+          "urban": 0.7333333333333334,
+          "suburban": 0.1333333333333333,
+          "rural": 0.1333333333333333
+        },
+        "workStatus": {
+          "student": 0.09,
+          "employed": 0.6400000000000001,
+          "freelance": 0.09,
+          "retired": 0.09,
+          "unemployed": 0.09
+        }
+      },
+      "probesAnswered": [
+        {
+          "id": "probe_set_alarm",
+          "type": "demo",
+          "title": "Do you set a weekday alarm before 8am most weeks?",
+          "answer": "Yes"
+        },
+        {
+          "id": "mbtiprobe_small_talk_tiring",
+          "type": "mbti",
+          "title": "Do you find small talk physically tiring?",
+          "answer": "No, I enjoy it"
+        },
+        {
+          "id": "probe_purse",
+          "type": "demo",
+          "title": "Do you carry something resembling a purse most days?",
+          "answer": "Yes"
+        },
+        {
+          "id": "probe_priced_van",
+          "type": "demo",
+          "title": "Have you seriously priced out a sailboat, van, or RV?",
+          "answer": "Just dreaming"
+        },
+        {
+          "id": "probe_first_dates",
+          "type": "demo",
+          "title": "Have you been on a first date with someone new in the last year?",
+          "answer": "Yes"
+        },
+        {
+          "id": "mbtiprobe_imagined_paths",
+          "type": "mbti",
+          "title": "When you read a story, do you imagine the paths it didn't take?",
+          "answer": "Yes, often"
+        },
+        {
+          "id": "mbtiprobe_decide_by_feeling",
+          "type": "mbti",
+          "title": "When you make a decision, do you usually go with what feels right rather than what's logically optimal?",
+          "answer": "Feeling first"
+        },
+        {
+          "id": "probe_pre_internet",
+          "type": "demo",
+          "title": "Do you remember everyday life before smartphones existed?",
+          "answer": "Yes, clearly"
+        },
+        {
+          "id": "probe_yard",
+          "type": "demo",
+          "title": "Do you have a yard or outdoor space attached to where you live?",
+          "answer": "No"
+        }
+      ],
+      "pronounsUsed": [
+        "she"
+      ],
+      "report": {
+        "summary": "She leads with warmth and steps in when things fall apart — not out of duty, but because it genuinely matters to her. She holds more than she lets on, and she replays conversations long after everyone else has moved on.",
+        "portrait": "She enjoys small talk without apology and lights up when a stranger becomes interesting — the party energizes her rather than draining her. She also carries a quiet pride in being the one people call when the wheels come off, a role she didn't audition for but has never handed back. When she reads a story, she's already tracking the roads not taken. That same imagination keeps her future picture vivid but slightly out of focus — not from lack of vision, but from too many compelling versions of it. She holds on to things she doesn't use anymore, which is less about clutter and more about what objects carry. The tension: she steps up before anyone asks, but asking for herself is a different conversation entirely. That instinct to absorb other people's crises is her greatest gift and the thing most likely to leave her running on empty.",
+        "highlights": [
+          "Leads from the front, quietly",
+          "Feeling over logic — every time",
+          "Replays conflict long after it ends",
+          "Holds on to things that carry meaning",
+          "Socially fluent, emotionally porous",
+          "Strong political conscience"
+        ],
+        "params": {
+          "warmth": 0.85,
+          "energy": 0.65,
+          "structure": 0.38,
+          "density": 0.72,
+          "extroversion": 0.78,
+          "symmetry": 0.44
+        },
+        "profile": {
+          "enneagram": {
+            "type": 2,
+            "wing": 3,
+            "confidence": 0.52
+          },
+          "mbti": {
+            "type": "ENFP",
+            "confidence": 0.68
+          },
+          "disc": {
+            "dominant": "I",
+            "secondary": "S",
+            "confidence": 0.52
+          },
+          "bigFive": {
+            "O": 0.72,
+            "C": 0.42,
+            "E": 0.78,
+            "A": 0.74,
+            "N": 0.58
+          },
+          "attachmentStyle": {
+            "type": "secure",
+            "confidence": 0.48
+          },
+          "ageRange": "late 40s–mid 50s",
+          "careerArchetypes": [
+            "Social Worker",
+            "HR Business Partner",
+            "Nonprofit Program Director",
+            "Therapist or Counselor",
+            "Community Organizer"
+          ]
+        },
+        "predictions": [
+          "You still have clothes in your closet from a relationship that ended years ago.",
+          "You've talked someone off a ledge at 1am and told no one about it.",
+          "You replay a compliment you gave someone, wondering if it landed wrong.",
+          "You've started a group chat to organize something no one else would have organized."
+        ]
+      }
+    },
+    {
+      "name": "katherine",
+      "label": "Katherine — 32, cis female, freelance designer, Brooklyn",
+      "pass": true,
+      "checks": [
+        "gender.female ≥ 0.7 → got 0.99 ✅",
+        "pronouns expected she/them → got [she, they] ✅"
+      ],
+      "finalDemo": {
+        "gender": {
+          "male": 0.0033333333333332993,
+          "female": 0.9933333333333334,
+          "nonbinary": 0.0033333333333332993
+        },
+        "ageBand": {
+          "teen": 0.03136,
+          "20s": 0.17556,
+          "30s": 0.43035999999999996,
+          "40s": 0.33136,
+          "50plus": 0.03136
+        },
+        "relationshipStatus": {
+          "single": 0.024999999999999994,
+          "partnered": 0.024999999999999994,
+          "married": 0.925,
+          "divorced": 0.024999999999999994
+        },
+        "hasKids": {
+          "yes": 0.6,
+          "no": 0.4
+        },
+        "geographyType": {
+          "urban": 0.8333333333333335,
+          "suburban": 0.08333333333333333,
+          "rural": 0.08333333333333333
+        },
+        "workStatus": {
+          "student": 0.013500000000000002,
+          "employed": 0.096,
+          "freelance": 0.8635000000000002,
+          "retired": 0.013500000000000002,
+          "unemployed": 0.013500000000000002
+        }
+      },
+      "probesAnswered": [
+        {
+          "id": "probe_set_alarm",
+          "type": "demo",
+          "title": "Do you set a weekday alarm before 8am most weeks?",
+          "answer": "Yes"
+        },
+        {
+          "id": "probe_pregnant",
+          "type": "demo",
+          "title": "Have you ever been pregnant?",
+          "answer": "Yes"
+        },
+        {
+          "id": "mbtiprobe_small_talk_tiring",
+          "type": "mbti",
+          "title": "Do you find small talk physically tiring?",
+          "answer": "Yes, draining"
+        },
+        {
+          "id": "probe_walk_grocery",
+          "type": "demo",
+          "title": "Did you walk to a grocery store this week?",
+          "answer": "Yes"
+        },
+        {
+          "id": "probe_wedding_ring",
+          "type": "demo",
+          "title": "Do you wear a wedding ring or equivalent most days?",
+          "answer": "Yes"
+        },
+        {
+          "id": "mbtiprobe_value_harmony",
+          "type": "mbti",
+          "title": "Is keeping group harmony more important than being right?",
+          "answer": "Depends"
+        },
+        {
+          "id": "probe_invoice",
+          "type": "demo",
+          "title": "Have you sent an invoice for your own work in the last month?",
+          "answer": "Yes, a real one"
+        },
+        {
+          "id": "mbtiprobe_plan_before_starting",
+          "type": "mbti",
+          "title": "Do you usually have a plan before starting a project?",
+          "answer": "Loose plan"
+        },
+        {
+          "id": "probe_baby_shower",
+          "type": "demo",
+          "title": "Have you been to a baby shower this year?",
+          "answer": "Yes, in person"
+        }
+      ],
+      "pronounsUsed": [
+        "she",
+        "they"
+      ],
+      "report": {
+        "summary": "She reads the room before speaking and the big picture before acting — a quiet observer who finds small talk genuinely costly. Warm inside a narrow circle, she holds the line between caring deeply and revealing too much.",
+        "portrait": "She finds small talk physically draining — not antisocial, just allergic to surface. When she does let someone in, it's deliberate and earned. She walked to the grocery store, wears her ring, and sent a real invoice this month: a life assembled with intention, even if the budget is only sometimes tracked.\n\nShe believes in fate and admits she lies to herself — both true at once, and she knows it. That self-awareness is her sharpest tool and occasionally her escape hatch. Warm with people who've earned it, but she waits to see how a room moves before she commits to a direction.\n\nPrivately, she wants to understand why people do what they do — not to judge, but because human motivation is the most interesting puzzle she's found. She rarely lets on how much she's already figured out.",
+        "highlights": [
+          "Introversion as a hard limit, not a preference",
+          "Fate-believer who also self-audits ruthlessly",
+          "Big-picture thinker who moves at a measured pace",
+          "Warmth rationed carefully — not withheld, just protected",
+          "Quiet observer who's already three steps ahead",
+          "Freelance self-reliance masking high sensitivity to disconnection"
+        ],
+        "params": {
+          "warmth": 0.68,
+          "energy": 0.42,
+          "structure": 0.55,
+          "density": 0.72,
+          "extroversion": 0.22,
+          "symmetry": 0.58
+        },
+        "profile": {
+          "enneagram": {
+            "type": 6,
+            "wing": 5,
+            "confidence": 0.38
+          },
+          "mbti": {
+            "type": "INTP",
+            "confidence": 0.48
+          },
+          "disc": {
+            "dominant": "C",
+            "secondary": "S",
+            "confidence": 0.38
+          },
+          "bigFive": {
+            "O": 0.62,
+            "C": 0.52,
+            "E": 0.28,
+            "A": 0.6,
+            "N": 0.55
+          },
+          "attachmentStyle": {
+            "type": "secure",
+            "confidence": 0.42
+          },
+          "ageRange": "mid 30s–mid 40s",
+          "careerArchetypes": [
+            "Freelance consultant",
+            "Independent researcher",
+            "Creative strategist",
+            "Content writer or editor",
+            "Brand or communications advisor"
+          ]
+        },
+        "predictions": [
+          "You've mentally rehearsed a difficult conversation you never actually had.",
+          "You check your phone after sending an invoice, then close the app and open it again.",
+          "You notice when someone is performing confidence they don't actually have.",
+          "You've stayed in a professional relationship longer than you should have out of loyalty.",
+          "You've Googled something mid-conversation just to confirm what you already knew."
+        ]
+      }
+    }
+  ]
+}
