@@ -1,0 +1,623 @@
+{
+  "ground_truth": {
+    "gender": "female",
+    "ageBand": "30s",
+    "relationshipStatus": "married",
+    "hasKids": "yes",
+    "geographyType": "urban",
+    "workStatus": "freelance",
+    "mbti": "INFP",
+    "enneagramType": 4
+  },
+  "transcript": [
+    {
+      "batch": 1,
+      "n": 1,
+      "type": "    ",
+      "q": "Could you date someone who needs a great deal of alone time?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As a 4w5 who values depth over breadth and needs her own quiet morning hours to work, I deeply understand the need for solitude and would find that compatible rather than threatening."
+    },
+    {
+      "batch": 1,
+      "n": 2,
+      "type": "    ",
+      "q": "Do you think it’s wrong to use someone’s wi-fi without permission?",
+      "a": "Yes.",
+      "sentiment": "affirmative",
+      "reasoning": "It's someone else's resource and using it without asking feels like a small but real violation of trust — I'd want someone to ask me first."
+    },
+    {
+      "batch": 1,
+      "n": 3,
+      "type": "    ",
+      "q": "Do you read fan fiction?",
+      "a": "No.",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm deep into literary fiction — Robinson, Offill, Ali Smith — fan fiction just isn't really my world."
+    },
+    {
+      "batch": 1,
+      "n": 4,
+      "type": "    ",
+      "q": "Have you kept something about yourself secret, most of your life, because you were afraid of others rejecting you?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As a 4w5 with anxious undertones, I've always felt like there's a core strangeness in me I've carefully curated around — certain fears, certain intensities — that I've never fully let people see for fear they'd find it too much."
+    },
+    {
+      "batch": 1,
+      "n": 5,
+      "type": "    ",
+      "q": "Would you or have you ever been best/good friends with someone you used to date?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I've had a couple of relationships that ended gently enough that we stayed close for a while — that kind of slow fade into genuine friendship feels very much like something I'd have navigated in my twenties."
+    },
+    {
+      "batch": 1,
+      "n": 6,
+      "type": "    ",
+      "q": "When facing a complicated situation, can you easily put yourself in another person’s shoes and consequently see things from his or her point of view?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As an INFP and a 4w5, empathy and perspective-taking are basically how I move through the world — it's almost reflexive for me."
+    },
+    {
+      "batch": 1,
+      "n": 7,
+      "type": "    ",
+      "q": "Do you prefer ending a discussion on a clear decision over leaving it open?",
+      "a": "Mix",
+      "sentiment": "neutral",
+      "reasoning": "As a 4w5 INFP I genuinely value sitting with complexity, but I also carry quiet anxiety that makes unresolved things linger uncomfortably — so it really depends on the conversation."
+    },
+    {
+      "batch": 1,
+      "n": 8,
+      "type": "    ",
+      "q": "Biting?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "That's not really my thing — I'm not sure what context this is even meant in, but my instinct is a firm no."
+    },
+    {
+      "batch": 1,
+      "n": 9,
+      "type": "    ",
+      "q": "Would you consider attending a clothing-optional costume party where the dress code permits guests to wear nothing more than body paint?",
+      "a": "Yes, but I’d wear a more traditional costume.",
+      "sentiment": "neutral",
+      "reasoning": "I'd go if Tom wanted to and it seemed like a fun creative crowd, but I'd absolutely be in a real costume — I'm not a body-paint person."
+    },
+    {
+      "batch": 1,
+      "n": 10,
+      "type": "PROBE",
+      "q": "Have you been in a real-world (in-person) work meeting this month?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I freelance from home doing book covers — my 'meetings' are basically emails and the occasional video call, not in-person sit-downs."
+    },
+    {
+      "batch": 2,
+      "n": 11,
+      "type": "    ",
+      "q": "Are you comfortable being told your reasoning was wrong, even if it stings?",
+      "a": "It really stings",
+      "sentiment": "non-affirmative",
+      "reasoning": "I try to stay open to being wrong, but honestly, as someone who tends to internalize things and has that anxious undercurrent, being told my reasoning was off does sting, even when I know it's useful."
+    },
+    {
+      "batch": 2,
+      "n": 12,
+      "type": "    ",
+      "q": "Imagine you have a partner who is able to provide financially for you and any children. Would you consider taking a stay-at-home role?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "Tom's income could theoretically cover us, and honestly the idea of being fully present for Mia and having uninterrupted creative time isn't unappealing — I'd probably lean yes, even if I'd want to keep some design work going on my own terms."
+    },
+    {
+      "batch": 2,
+      "n": 13,
+      "type": "    ",
+      "q": "Would you continue to date someone who you felt would always put their pet(s) before you?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I love Pepper deeply, but I know what it feels like to want a real partner — someone who sees you first — and I couldn't build a life with someone whose priorities were that skewed."
+    },
+    {
+      "batch": 2,
+      "n": 14,
+      "type": "    ",
+      "q": "Have you ever considered suicide?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I've had dark stretches — therapy on and off for a reason — and I'd be lying if I said those thoughts had never crossed my mind, even fleetingly."
+    },
+    {
+      "batch": 2,
+      "n": 15,
+      "type": "PROBE",
+      "q": "Do you remember everyday life before smartphones existed?",
+      "a": "Yes, clearly",
+      "sentiment": "affirmative",
+      "reasoning": "I grew up in rural Vermont and didn't get my first smartphone until 17, so I have a solid decade-plus of childhood memories without one — landlines, MapQuest printouts, just showing up and hoping your friend was home."
+    },
+    {
+      "batch": 2,
+      "n": 16,
+      "type": "    ",
+      "q": "Is it easy for you to dispose of things that you really don’t use anymore?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "As a 4w5 INFP, I get attached to objects for their meaning and memory — letting go of things feels like losing a piece of a story, even when I know I should."
+    },
+    {
+      "batch": 2,
+      "n": 17,
+      "type": "    ",
+      "q": "Do you like the taste of beer?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I don't really drink anymore, and honestly beer was never my thing even back when I did."
+    },
+    {
+      "batch": 2,
+      "n": 18,
+      "type": "    ",
+      "q": "Should sex education be taught in schools?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As a progressive parent with a young daughter, I absolutely think comprehensive sex ed belongs in schools — it's about health, safety, and giving kids real information."
+    },
+    {
+      "batch": 2,
+      "n": 19,
+      "type": "    ",
+      "q": "Would you ever start a relationship with someone who was still living with an ex for financial reasons? Assume they slept in separate beds.",
+      "a": "I’m Not Sure",
+      "sentiment": "neutral",
+      "reasoning": "I'd want to believe the situation, but honestly the ambiguity and emotional complexity would make me really hesitant — I couldn't say a flat no, but I couldn't say yes easily either."
+    },
+    {
+      "batch": 2,
+      "n": 20,
+      "type": "    ",
+      "q": "Do you like to watch sports on television?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "Sports on TV just isn't really my thing — I'd much rather have a book open or be working on a cover layout."
+    },
+    {
+      "batch": 3,
+      "n": 21,
+      "type": "    ",
+      "q": "Would you ever date someone who’s had cosmetic surgery?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I don't think someone's personal choices about their own body would be a dealbreaker for me — that feels judgmental in a way I'm not comfortable with."
+    },
+    {
+      "batch": 3,
+      "n": 22,
+      "type": "    ",
+      "q": "Can you name any ballet other than the Nutcracker?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I grew up in Vermont with some cultural exposure and I've been living in Brooklyn for years around arts and culture — Swan Lake, Sleeping Beauty, Giselle come to mind easily."
+    },
+    {
+      "batch": 3,
+      "n": 23,
+      "type": "    ",
+      "q": "After a party, do you feel energized rather than drained?",
+      "a": "Drained",
+      "sentiment": "non-affirmative",
+      "reasoning": "As an INFP who prefers three deep friends over thirty acquaintances, parties leave me needing quiet time to recover, not buzzing with energy."
+    },
+    {
+      "batch": 3,
+      "n": 24,
+      "type": "    ",
+      "q": "Sleeping under the stars:",
+      "a": "Maybe!",
+      "sentiment": "neutral",
+      "reasoning": "I grew up in Vermont and I love the idea of it, but with Mia and Pepper and my anxiety, actually doing it feels more romantic in theory than in practice."
+    },
+    {
+      "batch": 3,
+      "n": 25,
+      "type": "    ",
+      "q": "Is it important to pay ongoing respect to family and friends who have died (for example, visiting burial places or displaying urns)?",
+      "a": "Yes.",
+      "sentiment": "affirmative",
+      "reasoning": "As someone who's introspective, values deep connection, and leans toward meaning-making in everyday life, I do think honoring the people we've lost matters — it's part of how I hold relationships as sacred."
+    },
+    {
+      "batch": 3,
+      "n": 26,
+      "type": "    ",
+      "q": "Would you be interested in someone who is highly involved with their large, extended family?",
+      "a": "I’m Not Sure",
+      "sentiment": "neutral",
+      "reasoning": "I can see the warmth in that, but honestly it would depend on the person — I tend to need a lot of quiet and space, and a big, constantly-present extended family sounds both beautiful and exhausting to me."
+    },
+    {
+      "batch": 3,
+      "n": 27,
+      "type": "    ",
+      "q": "Could you ever date a person who was desperately unsure of themselves?",
+      "a": "Maybe",
+      "sentiment": "neutral",
+      "reasoning": "I've had my own anxious seasons, so I get it, but 'desperately' unsure is a lot to hold — I'd want to believe they were working on it."
+    },
+    {
+      "batch": 3,
+      "n": 28,
+      "type": "PROBE",
+      "q": "When you go out to dinner, do you usually split the bill with someone?",
+      "a": "Depends on who",
+      "sentiment": "neutral",
+      "reasoning": "It really depends — with Tom we just put it on one card, but with friends we usually split, so it genuinely varies by who I'm out with."
+    },
+    {
+      "batch": 3,
+      "n": 29,
+      "type": "    ",
+      "q": "Would you date somebody who was a virgin at the age of 25?",
+      "a": "Yes, definitely",
+      "sentiment": "affirmative",
+      "reasoning": "I'm married and not dating anyone, but if I imagine my values — I'd never judge someone for that, it's just not something that would matter to me at all."
+    },
+    {
+      "batch": 3,
+      "n": 30,
+      "type": "    ",
+      "q": "Do you usually carry a concealed weapon other than a gun?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "That's just not part of my life at all — I'm carrying tote bags and sippy cups, not weapons."
+    },
+    {
+      "batch": 4,
+      "n": 31,
+      "type": "    ",
+      "q": "When you imagine your ideal Saturday, does it involve mostly being alone or with just one other person rather than a group?",
+      "a": "Yes, definitely",
+      "sentiment": "affirmative",
+      "reasoning": "As an INFP 4w5 who prefers three deep friends over thirty acquaintances, my ideal Saturday is absolutely a quiet morning with Tom or a solo walk with Pepper, not a crowded group thing."
+    },
+    {
+      "batch": 4,
+      "n": 32,
+      "type": "    ",
+      "q": "When a friend is upset, is your first instinct to fix the problem rather than just listen and sit with them?",
+      "a": "No, I just listen",
+      "sentiment": "non-affirmative",
+      "reasoning": "As a 4w5 INFP who values deep emotional presence and has done therapy, my instinct is always to sit with someone in their feeling first, not rush to solutions."
+    },
+    {
+      "batch": 4,
+      "n": 33,
+      "type": "    ",
+      "q": "Do you find yourself replaying past conversations and thinking of what you should have said?",
+      "a": "All the time",
+      "sentiment": "affirmative",
+      "reasoning": "As a quietly anxious INFP 4w5, I absolutely spiral on conversations after the fact — it's basically my default setting."
+    },
+    {
+      "batch": 4,
+      "n": 34,
+      "type": "    ",
+      "q": "When you have a strong opinion, do you usually keep it to yourself rather than voice it unprompted?",
+      "a": "Depends on the stakes",
+      "sentiment": "neutral",
+      "reasoning": "I care deeply about things but I'm not going to broadcast my politics on social media or push my views on people who didn't ask — though if something really matters, I'll find my moment to say it."
+    },
+    {
+      "batch": 4,
+      "n": 35,
+      "type": "PROBE",
+      "q": "Did you drive a car today?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I barely drive at all anymore — I used my license maybe twice this whole year, and today was definitely not one of those times."
+    },
+    {
+      "batch": 4,
+      "n": 36,
+      "type": "    ",
+      "q": "Do you often sense what someone is feeling before they say anything out loud?",
+      "a": "Often",
+      "sentiment": "affirmative",
+      "reasoning": "As an INFP and someone who's quietly attuned to emotional undercurrents — whether with Tom, Mia, or clients — I pick up on shifts in mood almost instinctively, it's just how I move through the world."
+    },
+    {
+      "batch": 4,
+      "n": 37,
+      "type": "    ",
+      "q": "Do you prefer step-by-step instructions over a description of the goal?",
+      "a": "No, just the goal",
+      "sentiment": "non-affirmative",
+      "reasoning": "As a creative freelancer and INFP, I'd rather understand what we're trying to achieve and find my own way there — rigid step-by-step instructions feel constraining to me."
+    },
+    {
+      "batch": 4,
+      "n": 38,
+      "type": "    ",
+      "q": "When someone close to you pulls away without explanation, do you usually assume you did something wrong?",
+      "a": "Yes, I blame myself first",
+      "sentiment": "affirmative",
+      "reasoning": "With my anxious undertones and that 4w5 tendency to internalize everything, my first instinct is always to replay every recent interaction and wonder what I said or did wrong."
+    },
+    {
+      "batch": 4,
+      "n": 39,
+      "type": "    ",
+      "q": "Do you tend to hold onto objects, messages, or mementos long after most people would have let them go?",
+      "a": "Yes, I keep a lot",
+      "sentiment": "affirmative",
+      "reasoning": "I'm a 4w5 who bullet journals and reads Jenny Offill — of course I have boxes of old letters, saved voicemails, and ticket stubs I can't bring myself to throw away."
+    },
+    {
+      "batch": 4,
+      "n": 40,
+      "type": "    ",
+      "q": "Do you tend to imagine many possible futures for your life rather than following one clear plan?",
+      "a": "Yes, lots of possible paths",
+      "sentiment": "affirmative",
+      "reasoning": "As a 4w5 INFP freelancer who keeps a bullet journal in waves and chose a deliberately unconventional creative path, I'm always half-living in imagined alternate versions of my life — different cities, different projects, different rhythms — even while I love what I actually have."
+    }
+  ],
+  "reports": [
+    {
+      "atFacts": 10,
+      "summary": "Someone who extends empathy easily but guards their own interior carefully. The warmth is real — the access to it is earned.",
+      "portrait": "You can step into someone else's situation and genuinely feel the weight of it — that's not a skill you learned, it's just how you're wired. And yet you've held something back about yourself for most of your life, afraid the real version of you would be too much, or not enough. That contradiction sits quietly at the center of things.\n\nYou'd rather leave a conversation a little open than force a clean ending that doesn't fit — which can read as indecision, but it's actually a refusal to oversimplify. That same quality makes you a fair witness to messy situations other people want to write off.\n\nPrivately, there's a fear that full visibility costs too much. So you offer warmth in careful portions.",
+      "highlights": [
+        "Long-held private secret",
+        "Empathy as instinct, not performance",
+        "Comfortable with relational ambiguity",
+        "Ethical clarity on small things, open questions on big ones",
+        "Boundaries disguised as flexibility"
+      ],
+      "params": {
+        "warmth": 0.68,
+        "energy": 0.32,
+        "structure": 0.44,
+        "density": 0.62,
+        "extroversion": 0.33,
+        "symmetry": 0.52
+      },
+      "profile": {
+        "enneagram": {
+          "type": 5,
+          "wing": 4,
+          "confidence": 0.35
+        },
+        "mbti": {
+          "type": "INFP",
+          "confidence": 0.36
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.35
+        },
+        "bigFive": {
+          "O": 0.52,
+          "C": 0.48,
+          "E": 0.38,
+          "A": 0.62,
+          "N": 0.55
+        },
+        "attachmentStyle": {
+          "type": "secure",
+          "confidence": 0.35
+        },
+        "ageRange": "20s–50s",
+        "careerArchetypes": [
+          "Writer",
+          "Researcher",
+          "Counselor",
+          "Independent Consultant",
+          "Archivist"
+        ]
+      },
+      "predictions": [
+        "You've rehearsed a difficult conversation in your head and never had it.",
+        "You've kept a friendship alive almost entirely through your own effort.",
+        "You carry a secret you've never typed out loud, even anonymously."
+      ]
+    },
+    {
+      "atFacts": 20,
+      "summary": "Empathetic and quietly self-protective, you lead with warmth but keep certain rooms locked. The secret you've carried most of your life isn't just a fact — it's shaped how you read every room you've walked into.",
+      "portrait": "You remember life before smartphones clearly — which means you've watched the world accelerate past something you quietly valued. That memory isn't nostalgia exactly; it's a measuring stick. You use it. You're capable of genuine empathy, the kind that lets you step fully into someone else's logic even when it costs you something — and it does cost you, because criticism still stings more than you'd like it to.\n\nYou've kept a significant secret for most of your life out of fear of rejection, and yet you've also stayed friends with people you once loved romantically. That tension is the whole story: deeply afraid of being turned away, and somehow still choosing closeness anyway.\n\nYou hold onto things — objects, people, versions of the past — not out of weakness but because letting go feels like admitting something is truly over. That same quality makes you someone others feel safe with.",
+      "highlights": [
+        "Long-held secret self",
+        "Empathy that costs something",
+        "Rejection sensitivity running deep",
+        "Holds on — to things, to people, to before",
+        "Closeness chosen despite fear of it",
+        "Criticism lands harder than it looks"
+      ],
+      "params": {
+        "warmth": 0.74,
+        "energy": 0.32,
+        "structure": 0.38,
+        "density": 0.65,
+        "extroversion": 0.34,
+        "symmetry": 0.44
+      },
+      "profile": {
+        "enneagram": {
+          "type": 4,
+          "wing": 9,
+          "confidence": 0.38
+        },
+        "mbti": {
+          "type": "INFP",
+          "confidence": 0.48
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "I",
+          "confidence": 0.38
+        },
+        "bigFive": {
+          "O": 0.52,
+          "C": 0.42,
+          "E": 0.38,
+          "A": 0.68,
+          "N": 0.62
+        },
+        "attachmentStyle": {
+          "type": "anxious",
+          "confidence": 0.42
+        },
+        "ageRange": "mid 40s–50s+",
+        "careerArchetypes": [
+          "Counselor or therapist",
+          "Educator",
+          "Caregiver or social worker",
+          "Writer or editor",
+          "Non-profit coordinator"
+        ]
+      },
+      "predictions": [
+        "You still own something that belonged to someone who hurt you.",
+        "You've rehearsed a difficult conversation that never happened.",
+        "You've forgiven someone out loud before you actually meant it.",
+        "You carry a version of yourself from before that secret that most people never see."
+      ]
+    },
+    {
+      "atFacts": 30,
+      "summary": "Quietly empathetic and long-memoried, carrying more than is visible on the surface. The secret kept for years is the key to almost everything else.",
+      "portrait": "There's a person here who remembers life before the noise — clearly, without nostalgia being the only reason they remember it. They can step into someone else's point of view with genuine ease, which makes them useful to people in pain, and occasionally exhausting to themselves. Warmth is present, but it's earned warmth, not broadcast warmth.\n\nThe contradiction lives here: high empathy paired with real difficulty absorbing correction. Seeing others clearly doesn't make it easier to be seen — especially in the wrong light.\n\nThe hoarding of things that aren't used anymore isn't clutter. It's loyalty to previous versions of a life. Privately, there's a fear that letting go of an object means admitting something is over. That same instinct is what makes them a keeper of people, too.",
+      "highlights": [
+        "Long-term secret shaping the interior life",
+        "Empathy as both skill and burden",
+        "Introversion confirmed, not performed",
+        "Loyalty to the past expressed through objects",
+        "Correction stings more than admitted",
+        "Pre-digital memory as quiet marker of depth"
+      ],
+      "params": {
+        "warmth": 0.68,
+        "energy": 0.28,
+        "structure": 0.42,
+        "density": 0.72,
+        "extroversion": 0.22,
+        "symmetry": 0.45
+      },
+      "profile": {
+        "enneagram": {
+          "type": 4,
+          "wing": 5,
+          "confidence": 0.38
+        },
+        "mbti": {
+          "type": "INFP",
+          "confidence": 0.52
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.38
+        },
+        "bigFive": {
+          "O": 0.58,
+          "C": 0.42,
+          "E": 0.28,
+          "A": 0.65,
+          "N": 0.62
+        },
+        "attachmentStyle": {
+          "type": "anxious",
+          "confidence": 0.42
+        },
+        "ageRange": "mid 40s–50s+",
+        "careerArchetypes": [
+          "Counselor or Social Worker",
+          "Educator",
+          "Writer or Editor",
+          "Artist or Designer",
+          "Librarian or Archivist"
+        ]
+      },
+      "predictions": [
+        "You still have objects from people who are no longer in your life.",
+        "You've rehearsed a hard conversation in your head and never had it.",
+        "You know the names of more ballets than most people you've told that to.",
+        "You've stayed somewhere — a relationship, a role, a place — longer than you should have."
+      ]
+    },
+    {
+      "atFacts": 40,
+      "summary": "Someone who listens before they speak and feels before they reason — but carries more privately than anyone around them suspects. The warmth is real; so is the weight.",
+      "portrait": "The ideal Saturday is quiet, close, and chosen — one person at most, no performance required. You clearly remember a world before everything was a notification, and some part of you is still living there. There's a long habit of keeping a secret about yourself, held close out of fear of what honesty might cost — and that habit has shaped more decisions than you'd care to count.\n\nYou sense what people feel before they say it, and your first move when someone hurts is to listen, not fix. Warm with the people who've earned it, but the door to that warmth has a longer hallway than most people realize.\n\nYou replay conversations. You keep things. You imagine many possible lives running in parallel. That resistance to letting go — of objects, of versions of yourself, of what might have been — is the same quality that makes you loyal past the point others would have moved on.",
+      "highlights": [
+        "Deep empathy, quietly deployed",
+        "Carries private weight for years",
+        "Replays conversations compulsively",
+        "Holds on longer than most",
+        "Self-blame as a first reflex",
+        "Imaginative about futures, cautious about plans"
+      ],
+      "params": {
+        "warmth": 0.78,
+        "energy": 0.28,
+        "structure": 0.32,
+        "density": 0.74,
+        "extroversion": 0.15,
+        "symmetry": 0.38
+      },
+      "profile": {
+        "enneagram": {
+          "type": 4,
+          "wing": 9,
+          "confidence": 0.41
+        },
+        "mbti": {
+          "type": "INFP",
+          "confidence": 0.67
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.38
+        },
+        "bigFive": {
+          "O": 0.72,
+          "C": 0.38,
+          "E": 0.18,
+          "A": 0.74,
+          "N": 0.68
+        },
+        "attachmentStyle": {
+          "type": "anxious",
+          "confidence": 0.52
+        },
+        "ageRange": "late 40s–mid 50s",
+        "careerArchetypes": [
+          "Counselor or therapist",
+          "Librarian or archivist",
+          "Writer or editor",
+          "Social worker",
+          "Arts administrator"
+        ]
+      },
+      "predictions": [
+        "You have a draft — message, letter, or document — you've never sent.",
+        "You've kept an ex's number saved under a different name.",
+        "You've walked into a room and quietly catalogued who looked uncomfortable.",
+        "You've rehearsed a hard conversation in your head and then never had it.",
+        "You still own something that belonged to someone who is gone."
+      ]
+    }
+  ]
+}

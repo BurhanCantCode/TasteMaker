@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useCardQueue } from "@/hooks/useCardQueue";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,52 +10,80 @@ import { Dashboard } from "@/components/Dashboard";
 import { ResultsView } from "@/components/views/ResultsView";
 import { CardStack } from "@/components/cards/CardStack";
 import { ProgressBar } from "@/components/navigation/ProgressBar";
-import { ResetButton } from "@/components/navigation/ResetButton";
 import { SettingsGear } from "@/components/navigation/SettingsGear";
 import { PromptEditor } from "@/components/navigation/PromptEditor";
 import { PhoneSignIn } from "@/components/auth/PhoneSignIn";
 import { TabBar, Tab } from "@/components/navigation/TabBar";
 import { RecommendationInterstitialCard } from "@/components/cards/RecommendationInterstitialCard";
-import { Question, ResultItem, UserProfile } from "@/lib/types";
+import { Card, FrameworkProfile, Gesture, PersonalityParams, PersonalityReport, Question } from "@/lib/types";
 import { clearSummary, clearCardSession, loadPendingCards, clearPendingCards } from "@/lib/cookies";
-import { getAskBatchSize } from "@/lib/batching";
 import { deleteCloudProfile } from "@/lib/firestore";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { sentimentForAnswer } from "@/lib/personalityQuestions";
+import { BATCH_SIZE, CHUNK_SIZE, isMilestoneAnswer } from "@/lib/questionSequencer";
+import { ArrowLeft, Loader2, SkipForward, Undo2 } from "lucide-react";
 
 export default function Home() {
-  const { profile, isLoaded, addFact, addLike, setInitialFacts, setUserLocation, reset: resetProfile } = useUserProfile();
+  const {
+    profile,
+    isLoaded,
+    addFact,
+    addSkip,
+    undoLast,
+    addReport,
+    setInitialFacts,
+    reset: resetProfile,
+  } = useUserProfile();
+
   const {
     cards,
     currentIndex,
     currentCard,
     isLoading,
     error,
-    progress,
     mode,
     hasMoreCards,
-    fetchCards,
+    ensureBatch,
     nextCard,
     reset: resetQueue,
     hydrateFromPending,
-    prefetchNextBatch,
+    prefetchAhead,
   } = useCardQueue();
 
   const { user, isAuthLoading } = useAuth();
   const { initialSyncDone, hasPendingMerge } = useSync();
-  const router = useRouter();
 
   const [systemPrompt, setSystemPrompt] = useState<string | undefined>();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("me"); // Default to 'Me' (Dashboard)
+  const [activeTab, setActiveTab] = useState<Tab>("me");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPhoneSignIn, setShowPhoneSignIn] = useState(false);
   const [showInterstitial, setShowInterstitial] = useState(false);
 
-  // Check if user is new (no profile data at all) — wait for sync to finish
+  const [latestReport, setLatestReport] = useState<PersonalityReport | null>(null);
+  const [isReportGenerating, setIsReportGenerating] = useState(false);
+  // Per-session record of factsCount snapshots whose /api/summary call
+  // failed. Without this, the milestone effect re-fires every render
+  // (because no report ever lands in profile.reports), retrying the
+  // 500 indefinitely → dev-overlay spam + visible flicker.
+  const failedReportFactsRef = useRef<Set<number>>(new Set());
+
+  const answeredCount = profile.facts.length;
+  const chunkProgress = ((answeredCount % CHUNK_SIZE) / CHUNK_SIZE) * 100;
+
+  // Seed latest report from profile on load.
+  useEffect(() => {
+    const reports = profile.reports ?? [];
+    if (reports.length > 0) {
+      setLatestReport(reports[reports.length - 1]);
+    }
+  }, [profile.reports]);
+
+  // Onboarding for new users after initial sync.
   useEffect(() => {
     if (isLoaded && initialSyncDone && !hasPendingMerge) {
-      const isNewUser = profile.facts.length === 0 &&
-        profile.likes.length === 0 &&
+      const isNewUser =
+        profile.facts.length === 0 &&
+        (profile.skippedIds?.length ?? 0) === 0 &&
         !profile.initialFacts;
       if (isNewUser) {
         setShowOnboarding(true);
@@ -65,161 +92,235 @@ export default function Home() {
     }
   }, [isLoaded, initialSyncDone, hasPendingMerge, profile]);
 
-  // PRE-FETCH: Load first batch of questions when new user is on welcome screen
+  // Pre-fetch first batch when new user is on welcome screen.
+  // Always static — a brand-new user has no facts for the LLM to ground on
+  // (and planNextBatch returns "static" for facts.length=0, so no override needed).
   useEffect(() => {
     if (showOnboarding && isLoaded && !currentCard && !isLoading) {
-      const isNewUser = profile.facts.length === 0 && profile.likes.length === 0;
-      if (isNewUser) {
-        fetchCards(profile, "ask", getAskBatchSize(profile.facts.length), systemPrompt);
+      if (profile.facts.length === 0 && (profile.skippedIds?.length ?? 0) === 0) {
+        ensureBatch(profile, { systemPrompt });
       }
     }
-  }, [showOnboarding, isLoaded, currentCard, isLoading, profile, systemPrompt, fetchCards]);
+  }, [showOnboarding, isLoaded, currentCard, isLoading, profile, systemPrompt, ensureBatch]);
 
-  // Restore from persisted questions (survives refresh) or fetch when transitioning to questions tab
+  // Restore/fetch when entering questions tab.
   useEffect(() => {
     if (!isLoaded || activeTab !== "questions" || currentCard || isLoading) return;
 
     const pending = loadPendingCards();
     if (pending && pending.mode === "ask" && pending.cards.length > 0) {
-      const answeredIds = new Set(profile.facts.map((f) => f.questionId));
+      const seen = new Set(profile.facts.map((f) => f.questionId));
+      for (const id of profile.skippedIds ?? []) seen.add(id);
       let firstUnanswered = 0;
       while (firstUnanswered < pending.cards.length) {
-        const card = pending.cards[firstUnanswered];
-        if (card.type === "ask") {
-          const q = card.content as Question;
-          if (!answeredIds.has(q.id)) break;
+        const c = pending.cards[firstUnanswered];
+        if (c.type === "ask") {
+          const q = c.content as Question;
+          if (!seen.has(q.id)) break;
         }
         firstUnanswered++;
       }
       if (firstUnanswered >= pending.cards.length) {
         clearPendingCards();
-        fetchCards(profile, "ask", getAskBatchSize(profile.facts.length), systemPrompt);
+        ensureBatch(profile, { systemPrompt });
       } else {
         hydrateFromPending({ ...pending, currentIndex: firstUnanswered });
       }
       return;
     }
 
-    fetchCards(profile, "ask", getAskBatchSize(profile.facts.length), systemPrompt);
-  }, [isLoaded, activeTab, currentCard, isLoading, profile, systemPrompt, fetchCards, hydrateFromPending]);
+    ensureBatch(profile, { systemPrompt });
+  }, [isLoaded, activeTab, currentCard, isLoading, profile, systemPrompt, ensureBatch, hydrateFromPending]);
 
-  // Prefetch orchestration for ASK mode — single mid-batch trigger, never force
+  // Prefetch next batch AS EARLY AS POSSIBLE in the current batch.
+  // "Next" is the batch after what the user is answering now, so plan
+  // for `answeredCount + BATCH_SIZE`. Previously this waited until
+  // currentIndex >= halfBatch (card 5 of 10), giving the LLM only
+  // ~5 cards of runway — a fast answerer could outpace dynamic
+  // generation and hit a spinner. Firing at currentIndex >= 0 gives
+  // the full ~10 cards of runway and eliminates most prefetch misses.
+  // prefetchAhead internally skips static batches (instant client-side)
+  // and dedupes against in-flight / already-ready buffers, so this is
+  // safe to fire every render.
   useEffect(() => {
     if (activeTab !== "questions" || mode !== "ask" || cards.length === 0) return;
     if (showInterstitial || showOnboarding) return;
 
-    const halfBatch = Math.ceil(cards.length / 2);
-    if (currentIndex >= halfBatch) {
-      const predictedFacts = profile.facts.length + (cards.length - currentIndex);
-      const nextBatchSize = getAskBatchSize(predictedFacts);
-      // Non-force: skipped if already prefetching or buffer exists
-      prefetchNextBatch(profile, "ask", nextBatchSize, systemPrompt, { reason: "mid-batch-auto" });
-    }
-  }, [activeTab, mode, cards.length, currentIndex, profile, systemPrompt, prefetchNextBatch, showInterstitial, showOnboarding]);
+    prefetchAhead(profile, {
+      systemPrompt,
+      delta: BATCH_SIZE,
+      reason: "batch-start-auto",
+    });
+  }, [activeTab, mode, cards.length, currentIndex, profile, systemPrompt, prefetchAhead, showInterstitial, showOnboarding]);
 
-  const handleAnswer = async (answer: string) => {
-    if (!currentCard) return;
-
-    if (currentCard.type === "ask") {
-      const question = currentCard.content as Question;
-
-      if (question.answerType === "text_input" &&
-        (question.title.toLowerCase().includes("city") ||
-          question.title.toLowerCase().includes("where") ||
-          question.title.toLowerCase().includes("location"))) {
-        const locationParts = answer.split(',').map(p => p.trim());
-        if (locationParts.length >= 2) {
-          setUserLocation(locationParts[0], locationParts[1]);
-        } else if (locationParts[0] && locationParts[0].length > 0) {
-          setUserLocation(locationParts[0]);
+  const generateReport = useCallback(
+    async (factsCountSnapshot: number) => {
+      setIsReportGenerating(true);
+      try {
+        const res = await fetch("/api/summary", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userProfile: profile, mode: "full" }),
+        });
+        if (!res.ok) {
+          failedReportFactsRef.current.add(factsCountSnapshot);
+          // console.warn (not error) so this doesn't trigger the Next.js
+          // dev-overlay every time the API key is missing or the server
+          // hiccups. Caller has already finally{}'d isReportGenerating.
+          console.warn(`[Tastemaker] summary ${res.status}; skipping milestone @ ${factsCountSnapshot}`);
+          return;
         }
+        const data: {
+          summary: string;
+          portrait: string;
+          highlights: string[];
+          params?: PersonalityParams;
+          profile?: FrameworkProfile;
+          predictions?: string[];
+        } = await res.json();
+
+        const stored = addReport({
+          summary: data.summary ?? "",
+          portrait: data.portrait ?? "",
+          highlights: data.highlights ?? [],
+          params: data.params,
+          profile: data.profile,
+          predictions: data.predictions,
+          factsCount: factsCountSnapshot,
+        });
+        setLatestReport(stored);
+      } catch (e) {
+        failedReportFactsRef.current.add(factsCountSnapshot);
+        console.warn("[Tastemaker] Failed to generate report:", e);
+      } finally {
+        setIsReportGenerating(false);
       }
+    },
+    [profile, addReport]
+  );
 
-      const positive = [
-        "yes", "like", "superlike", "want", "really_want",
-        "interested", "want_to_try", "loved_it", "already_use",
-        "want_to_visit", "been_loved", "want_to_watch", "seen_loved",
-        "want_to_read", "read_loved", "id_listen", "already_fan",
-        "love_them", "curious", "already_loyal", "id_try",
-        "love_doing", "already_do", "already_have",
-        "3", "4", "5"
-      ].includes(answer.toLowerCase());
+  // Kick off pre-generation of the report at EXACT milestones (20, 40, 60, ...).
+  // Dedupe against profile.reports — NOT a useRef. A useRef resets to its
+  // initial value on every component mount, which in practice means every
+  // page refresh AND every dev Fast Refresh wipes the guard. If the user
+  // lands on the page with answeredCount already at a milestone (e.g. 20
+  // facts in localStorage), the old ref-based guard fired a fresh
+  // generateReport call every mount — producing duplicate reports for the
+  // same factsCount. Checking the stored reports is durable across reloads.
+  useEffect(() => {
+    if (answeredCount === 0) return;
+    if (answeredCount % CHUNK_SIZE !== 0) return;
+    if (isReportGenerating) return;
+    if (failedReportFactsRef.current.has(answeredCount)) return;
+    const alreadyReported = (profile.reports ?? []).some(
+      (r) => r.factsCount === answeredCount
+    );
+    if (alreadyReported) return;
+    generateReport(answeredCount);
+  }, [answeredCount, isReportGenerating, profile.reports, generateReport]);
 
-      addFact({
+  const commitAnswer = (
+    answer: string,
+    meta?: { index: number; gesture: Gesture }
+  ) => {
+    if (!currentCard || currentCard.type !== "ask") return;
+    const question = currentCard.content as Question;
+
+    const isSuper = answer === "super_yes" || answer === "superlike";
+    const sentiment = isSuper
+      ? "affirmative"
+      : sentimentForAnswer(question, answer, meta?.index);
+    const isPositive = sentiment === "affirmative";
+    const lastIdx = (question.answerLabels?.length ?? 1) - 1;
+    const displayAnswer = isSuper
+      ? `${question.answerLabels?.[lastIdx] ?? "Yes"} (super)`
+      : answer;
+
+    addFact(
+      {
         questionId: question.id,
         question: question.title,
-        answer,
-        positive,
+        answer: displayAnswer,
+        positive: isPositive,
+        sentiment,
+        answerIndex: meta?.index,
+        gesture: meta?.gesture,
+      },
+      question
+    );
+  };
+
+  const advance = async (projectedAnswered: number) => {
+    if (isMilestoneAnswer(projectedAnswered)) {
+      setShowInterstitial(true);
+      // After the interstitial the user pulls the FIRST batch of the new
+      // chunk, which is always static — projectedAnswered is a multiple
+      // of CHUNK_SIZE, and projectedAnswered = facts.length + 1 because
+      // the new fact is committed but the closure still holds the stale
+      // profile, so we pass delta=1 to compensate.
+      prefetchAhead(profile, {
+        systemPrompt,
+        delta: 1,
+        reason: "post-milestone",
       });
-    } else if (currentCard.type === "result") {
-      const item = currentCard.content as ResultItem;
-      addLike({
-        itemId: item.id,
-        item: item.name,
-        category: item.category,
-        rating: answer,
-      });
+      return;
     }
 
     if (hasMoreCards) {
       nextCard();
     } else {
-      const factsAfterThis = profile.facts.length + 1;
-      // After each batch, check if we've reached 20 total
-      if (factsAfterThis >= 20) {
-        setShowInterstitial(true);
-        // Kick off prefetch now so it's ready when "Keep Answering" is clicked
-        const projectedProfile: UserProfile = {
-          ...profile,
-          facts: [
-            ...profile.facts,
-            ...(currentCard.type === "ask"
-              ? [{
-                  questionId: (currentCard.content as Question).id,
-                  question: (currentCard.content as Question).title,
-                  answer,
-                  positive: [
-                    "yes", "like", "superlike", "want", "really_want",
-                    "interested", "want_to_try", "loved_it", "already_use",
-                    "want_to_visit", "been_loved", "want_to_watch", "seen_loved",
-                    "want_to_read", "read_loved", "id_listen", "already_fan",
-                    "love_them", "curious", "already_loyal", "id_try",
-                    "love_doing", "already_do", "already_have",
-                    "3", "4", "5"
-                  ].includes(answer.toLowerCase()),
-                  timestamp: Date.now(),
-                }]
-              : []),
-          ],
-        };
-        // Do not force here: preserve any ready prefetched batch for instant "Keep Answering".
-        // If there's no buffer yet, this will still start a prefetch with projected latest context.
-        prefetchNextBatch(
-          projectedProfile,
-          "ask",
-          getAskBatchSize(factsAfterThis),
-          systemPrompt,
-          { reason: "post-batch-interstitial" }
-        );
-      } else {
-        // Build a projected profile with the just-answered fact so generation has fresh context
-        const nextProfile: UserProfile = {
-          ...profile,
-          facts: [
-            ...profile.facts,
-            ...(currentCard.type === "ask"
-              ? [{
-                  questionId: (currentCard.content as Question).id,
-                  question: (currentCard.content as Question).title,
-                  answer,
-                  positive: answer.toLowerCase() === "yes",
-                  timestamp: Date.now(),
-                }]
-              : []),
-          ],
-        };
-        await fetchCards(nextProfile, "ask", getAskBatchSize(factsAfterThis), systemPrompt);
-      }
+      // projectedAnswered = facts.length + 1 (see above); pass delta=1.
+      await ensureBatch(profile, { systemPrompt, delta: 1 });
+    }
+  };
+
+  const handleAnswer = async (
+    answer: string,
+    meta?: { index: number; gesture: Gesture }
+  ) => {
+    if (!currentCard) return;
+    if (currentCard.type !== "ask") return;
+
+    commitAnswer(answer, meta);
+    const projected = answeredCount + 1;
+    await advance(projected);
+  };
+
+  const handleSkip = async () => {
+    if (!currentCard || currentCard.type !== "ask") return;
+    const q = currentCard.content as Question;
+    addSkip(q.id);
+    if (hasMoreCards) {
+      nextCard();
+    } else {
+      // Count this skip + existing skips as they shift the projected
+      // answered count across chunk boundaries (profile closure is stale
+      // until React re-renders).
+      await ensureBatch(profile, {
+        systemPrompt,
+        delta: (profile.skippedIds?.length ?? 0) + 1,
+      });
+    }
+  };
+
+  const handleUndo = () => {
+    const undid = undoLast();
+    if (!undid) return;
+    // Rewind index so the previously-answered card becomes current again.
+    // Note: If we're at index 0 of the current batch, the prior card was in a
+    // previous batch that's been discarded; in that case we just re-fetch.
+    if (currentIndex > 0) {
+      // Mutate queue via hydrate: decrement index.
+      hydrateFromPending({
+        cards,
+        currentIndex: currentIndex - 1,
+        mode,
+        batchSize: BATCH_SIZE,
+      });
+    } else {
+      // Undo at the very start of a batch — re-pull with the current
+      // batch source for where we are now.
+      ensureBatch(profile, { systemPrompt });
     }
   };
 
@@ -239,24 +340,24 @@ export default function Home() {
   };
 
   const handleReset = () => {
-    if (confirm("Are you sure? This will delete your local profile and preferences.")) {
+    if (confirm("Are you sure? This will delete your local profile, skip list, and all stashed reports.")) {
       resetProfile();
       resetQueue();
       clearSummary();
       clearCardSession();
+      setLatestReport(null);
       if (user) {
         deleteCloudProfile(user.uid);
       }
-      setActiveTab("me"); // Reset to dashboard/me view
+      setActiveTab("me");
       window.location.reload();
     }
   };
 
-  const handleBackToDashboard = () => {
-    setActiveTab("me");
-  };
+  const handleBackToDashboard = () => setActiveTab("me");
 
-  // Loading state
+  const nextPreview: Card | null = hasMoreCards ? cards[currentIndex + 1] ?? null : null;
+
   const isSyncing = !initialSyncDone || hasPendingMerge;
   if (!isLoaded || isAuthLoading || isSyncing) {
     return (
@@ -269,7 +370,6 @@ export default function Home() {
     );
   }
 
-  // Welcome Screen (Modal-like)
   if (showOnboarding) {
     return (
       <>
@@ -288,23 +388,22 @@ export default function Home() {
     );
   }
 
-  // Recommendation Interstitial
   if (showInterstitial) {
     return (
       <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
         <div className="w-full max-w-[500px] h-[600px]">
           <RecommendationInterstitialCard
+            answeredCount={answeredCount}
+            reportsCount={profile.reports?.length ?? 0}
+            isReportLoading={isReportGenerating}
+            previewLine={latestReport?.summary}
             onViewRecommendations={() => {
               setShowInterstitial(false);
               setActiveTab("results");
             }}
             onKeepAnswering={async () => {
               setShowInterstitial(false);
-              // Interstitial only appears once user reaches 20+, so always resume with 10-card batches.
-              // This avoids a one-tick stale profile count causing a 5-card request and missing the prefetch.
-              const resumeFactsCount = Math.max(profile.facts.length, 20);
-              const resumeBatchSize = getAskBatchSize(resumeFactsCount);
-              await fetchCards(profile, "ask", resumeBatchSize, systemPrompt);
+              await ensureBatch(profile, { systemPrompt });
             }}
           />
         </div>
@@ -312,7 +411,6 @@ export default function Home() {
     );
   }
 
-  // Main App View (Tabs)
   return (
     <div className="min-h-screen bg-[#F3F4F6]">
       <div className="pb-24">
@@ -327,13 +425,11 @@ export default function Home() {
         )}
 
         {activeTab === "questions" && (
-          <div className="fixed inset-0 bg-[#F3F4F6] flex flex-col items-center justify-center pb-32 pt-14">
-            {/* Progress Bar - Fixed at top */}
+          <div className="fixed inset-0 bg-[#F3F4F6] flex flex-col items-center justify-center pb-32 pt-20">
             <div className="absolute top-0 left-0 right-0 z-10">
-              <ProgressBar progress={progress} />
+              <ProgressBar progress={chunkProgress} />
             </div>
 
-            {/* Back Button (to Me) */}
             <button
               onClick={handleBackToDashboard}
               className="fixed top-4 left-4 z-50 w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-blue-600 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95"
@@ -341,6 +437,35 @@ export default function Home() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
+
+            <div className="fixed top-4 left-[76px] z-50 flex flex-col items-center gap-1">
+              <button
+                onClick={handleUndo}
+                disabled={answeredCount === 0}
+                className="w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Undo last answer"
+                title="Undo"
+              >
+                <Undo2 className="w-5 h-5" />
+              </button>
+              <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                Undo
+              </span>
+            </div>
+
+            <div className="fixed top-4 right-[76px] z-50 flex flex-col items-center gap-1">
+              <button
+                onClick={handleSkip}
+                className="w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95"
+                aria-label="Skip question"
+                title="Skip"
+              >
+                <SkipForward className="w-5 h-5" />
+              </button>
+              <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                Skip
+              </span>
+            </div>
 
             <SettingsGear onClick={() => setIsSettingsOpen(true)} />
 
@@ -351,7 +476,6 @@ export default function Home() {
               onSave={handleSavePrompt}
             />
 
-            {/* Card Stack Container - Centered and contained */}
             <div className="w-full max-w-[500px] flex-1 flex items-center justify-center px-4 overflow-visible">
               {error && (
                 <div className="absolute top-20 left-4 right-4 z-20 p-4 bg-red-100 text-red-700 rounded-[24px]">
@@ -362,7 +486,11 @@ export default function Home() {
 
               <CardStack
                 card={currentCard}
+                nextCard={nextPreview}
                 onAnswer={handleAnswer}
+                onSkip={handleSkip}
+                onUndo={handleUndo}
+                canUndo={answeredCount > 0}
                 isLoading={isLoading}
               />
             </div>
@@ -374,6 +502,9 @@ export default function Home() {
             onKeepAnswering={() => setActiveTab("questions")}
             systemPrompt={systemPrompt}
             onSavePrompt={handleSavePrompt}
+            latestReport={latestReport}
+            isGeneratingReport={isReportGenerating}
+            onRegenerate={() => generateReport(answeredCount)}
           />
         )}
       </div>

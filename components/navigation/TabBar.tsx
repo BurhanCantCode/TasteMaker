@@ -1,4 +1,4 @@
-import { MessageCircle, Sparkles, User } from "lucide-react";
+import { ClipboardList, MessageCircle, User } from "lucide-react";
 
 export type Tab = "questions" | "results" | "me";
 
@@ -11,24 +11,24 @@ export function TabBar({ activeTab, onTabChange }: TabBarProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-md border-t border-gray-200/50 safe-area-bottom">
       <div className="max-w-2xl mx-auto flex">
-        {/* Questions Tab */}
+        {/* Answer Tab (formerly Questions) */}
         <button
           onClick={() => onTabChange("questions")}
           className={`flex-1 flex flex-col items-center py-3 gap-1 transition-colors ${activeTab === "questions" ? "text-[#171717]" : "text-gray-400"
             }`}
         >
           <MessageCircle className="w-6 h-6" />
-          <span className="text-xs font-medium">Questions</span>
+          <span className="text-xs font-medium">Answer</span>
         </button>
 
-        {/* Results Tab */}
+        {/* Reports Tab (formerly Results) */}
         <button
           onClick={() => onTabChange("results")}
           className={`flex-1 flex flex-col items-center py-3 gap-1 transition-colors ${activeTab === "results" ? "text-[#171717]" : "text-gray-400"
             }`}
         >
-          <Sparkles className="w-6 h-6" />
-          <span className="text-xs font-medium">Results</span>
+          <ClipboardList className="w-6 h-6" />
+          <span className="text-xs font-medium">Reports</span>
         </button>
 
         {/* Me Tab */}

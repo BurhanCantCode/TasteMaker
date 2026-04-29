@@ -1,0 +1,622 @@
+{
+  "ground_truth": {
+    "gender": "female",
+    "ageBand": "30s",
+    "relationshipStatus": "married",
+    "hasKids": "yes",
+    "geographyType": "urban",
+    "workStatus": "freelance",
+    "mbti": "INFP",
+    "enneagramType": 4
+  },
+  "transcript": [
+    {
+      "batch": 1,
+      "n": 1,
+      "type": "    ",
+      "q": "Do you find body hair attractive?",
+      "a": "Depends on where the hair is",
+      "sentiment": "neutral",
+      "reasoning": "It really does depend — I'm not bothered by it in general, but I don't have a blanket yes or no about it."
+    },
+    {
+      "batch": 1,
+      "n": 2,
+      "type": "PROBE",
+      "q": "Do you pay rent or a mortgage from your own income?",
+      "a": "Partly",
+      "sentiment": "neutral",
+      "reasoning": "Tom and I both contribute to the mortgage, so it's not entirely from my income alone — my freelance work covers part of it."
+    },
+    {
+      "batch": 1,
+      "n": 3,
+      "type": "    ",
+      "q": "Would you cheat on your taxes, if you were absolutely 100% sure you could get away with it?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'd still know I did it, and that's not something I could just live with quietly — it would sit in me wrong."
+    },
+    {
+      "batch": 1,
+      "n": 4,
+      "type": "    ",
+      "q": "Do you feel that animals are more important than humans?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I care deeply about Pepper and animals in general, but I wouldn't say they matter *more* than people — that's not how I hold it."
+    },
+    {
+      "batch": 1,
+      "n": 5,
+      "type": "    ",
+      "q": "Would you buy your partner perfume or cologne as a gift?",
+      "a": "Yes, a scent that they love.",
+      "sentiment": "neutral",
+      "reasoning": "I'd want Tom to actually enjoy wearing it, so I'd pick something he loves, not just something I like smelling on him."
+    },
+    {
+      "batch": 1,
+      "n": 6,
+      "type": "    ",
+      "q": "Would you be open to dating someone who does drag?",
+      "a": "Yas, queen!",
+      "sentiment": "affirmative",
+      "reasoning": "I'm married to Tom, but hypothetically I'm politically progressive and genuinely celebratory of queer expression — drag would be a non-issue, probably even a delight."
+    },
+    {
+      "batch": 1,
+      "n": 7,
+      "type": "    ",
+      "q": "Have you ever asked a stranger if you could have a cigarette?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "Growing up and moving to NYC in my early twenties when I was drinking and less settled, I almost certainly bummed a cigarette from a stranger at some point."
+    },
+    {
+      "batch": 1,
+      "n": 8,
+      "type": "PROBE",
+      "q": "Have you seriously priced out a sailboat, van, or RV?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "The bio explicitly states she has not seriously priced out a sailboat or van."
+    },
+    {
+      "batch": 1,
+      "n": 9,
+      "type": "    ",
+      "q": "Would it bother you if a date made gender-biased remarks?",
+      "a": "Yes.",
+      "sentiment": "affirmative",
+      "reasoning": "As someone politically progressive who cares deeply about equality, gender-biased remarks would absolutely bother me — accuracy isn't the point, the bias itself is the problem."
+    },
+    {
+      "batch": 1,
+      "n": 10,
+      "type": "    ",
+      "q": "Would you be comfortable being poor for the rest of your life?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I have a daughter, a mortgage, and real responsibilities — the idea of permanent financial insecurity isn't romantic, it's frightening."
+    },
+    {
+      "batch": 2,
+      "n": 11,
+      "type": "    ",
+      "q": "Do you hang out with the same group of friends almost every time you go out?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I don't really 'go out' in a regular social circuit kind of way — it's more like occasional one-on-one time with a few close people, not a recurring group thing."
+    },
+    {
+      "batch": 2,
+      "n": 12,
+      "type": "    ",
+      "q": "Do you believe in fate?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm drawn to meaning and narrative in life, but I think I make my own choices — fate feels too deterministic, too much like it lets people off the hook for the hard work of actually living."
+    },
+    {
+      "batch": 2,
+      "n": 13,
+      "type": "PROBE",
+      "q": "Did you drive a car today?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I barely drive at all — used my license twice this whole year, and in Park Slope I walk everywhere anyway."
+    },
+    {
+      "batch": 2,
+      "n": 14,
+      "type": "    ",
+      "q": "Your significant other’s ex is coming into town and he/she wants to go out to dinner with them alone. How do you react?",
+      "a": "Not thrilled, but go ahead.",
+      "sentiment": "neutral",
+      "reasoning": "I'd want to trust Tom completely, but I'd be lying if I said a little anxious knot didn't form in my stomach — I'd tell him to go, but it'd sit with me quietly until he was home."
+    },
+    {
+      "batch": 2,
+      "n": 15,
+      "type": "    ",
+      "q": "When talking to somebody, do you touch them a lot?",
+      "a": "No / not more than most people",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm pretty reserved physically with most people — I'm more of a deep-conversation person than a hugger-of-acquaintances type."
+    },
+    {
+      "batch": 2,
+      "n": 16,
+      "type": "    ",
+      "q": "Are the holidays a romantic time of year?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "With Tom, Mia, the apartment feeling cozy, and that quiet Vermont nostalgia in me, the holidays do carry a kind of warmth that tips into romantic — even if it's more tender than sparkly."
+    },
+    {
+      "batch": 2,
+      "n": 17,
+      "type": "    ",
+      "q": "Would you consider dating someone who has extensive facial tattoos?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm married to Tom and not dating anyone, but even setting that aside, extensive facial tattoos would feel like a mismatch with the quiet, bookish life I've built — it's just not the aesthetic or signal I'd be drawn to."
+    },
+    {
+      "batch": 2,
+      "n": 18,
+      "type": "PROBE",
+      "q": "Did you celebrate an anniversary with a partner this year?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "Tom and I have been married four years, so yes, we definitely marked our anniversary this year — probably something low-key but intentional."
+    },
+    {
+      "batch": 2,
+      "n": 19,
+      "type": "    ",
+      "q": "Do you like to surround yourself with pictures of loved ones?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As a visually-oriented designer and sentimental 4w5 who values deep connection over breadth, I'd absolutely have a few meaningful photos of Mia, Tom, and maybe Pepper tucked into my space — not in a cluttered way, but intentionally placed."
+    },
+    {
+      "batch": 2,
+      "n": 20,
+      "type": "    ",
+      "q": "Have you ever stolen anything from a partner?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I'm not someone who takes things that aren't mine — that kind of breach of trust would sit really badly with me."
+    },
+    {
+      "batch": 3,
+      "n": 21,
+      "type": "    ",
+      "q": "Would you ever consider hiring a detective to find out if someone is cheating on you?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I think if I had that kind of suspicion I'd want to have the hard conversation directly — hiring a detective feels like a violation of the intimacy I'd be trying to protect."
+    },
+    {
+      "batch": 3,
+      "n": 22,
+      "type": "    ",
+      "q": "Would you consider dating someone who has undergone surgery to induce sterility?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I'm already married to Tom and not dating anyone, but hypothetically I wouldn't rule someone out for that — I already have Mia and family planning wouldn't be the dealbreaker it might be for someone younger."
+    },
+    {
+      "batch": 3,
+      "n": 23,
+      "type": "    ",
+      "q": "If someone compliments you, aren’t they usually trying to get something from you?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I don't move through the world assuming bad faith — most compliments feel genuine to me, even if they sometimes come with awkward energy."
+    },
+    {
+      "batch": 3,
+      "n": 24,
+      "type": "    ",
+      "q": "Have you ever brought a stray animal home?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I adopted Pepper as a rescue, and honestly that whole impulse — seeing an animal that needs a home and just... bringing them in — that's very much me."
+    },
+    {
+      "batch": 3,
+      "n": 25,
+      "type": "    ",
+      "q": "Would you risk your life for an animal?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "Pepper is family, and honestly if Mia were in danger I'd throw myself in front of anything — I think that instinct extends to the dog too, even if the rational part of me knows it's complicated."
+    },
+    {
+      "batch": 3,
+      "n": 26,
+      "type": "PROBE",
+      "q": "Have you been to a kid's birthday party this year?",
+      "a": "Yes, my own kid's",
+      "sentiment": "affirmative",
+      "reasoning": "Mia just turned three, so we definitely had a birthday party for her this year."
+    },
+    {
+      "batch": 3,
+      "n": 27,
+      "type": "    ",
+      "q": "When planning activities with your partner do you generally like to take the lead?",
+      "a": "Share equally",
+      "sentiment": "neutral",
+      "reasoning": "Tom and I tend to figure things out together — I'm not the type to need control, but I'm also not helpless about it, so we usually land somewhere in the middle."
+    },
+    {
+      "batch": 3,
+      "n": 28,
+      "type": "    ",
+      "q": "Would you consider yourself child like (not to be confused with childish), that is having an aura of innocence, a playful attitude, and an expression/feeling of awe at new things.",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "As a 4w5 INFP who reads deeply, keeps a bullet journal, and finds meaning in small daily rituals, I do hold onto that sense of wonder and awe — it's actually central to how I move through the world."
+    },
+    {
+      "batch": 3,
+      "n": 29,
+      "type": "PROBE",
+      "q": "Have you ever been pregnant?",
+      "a": "Yes",
+      "sentiment": "affirmative",
+      "reasoning": "I have Mia, so yes, I've been pregnant."
+    },
+    {
+      "batch": 3,
+      "n": 30,
+      "type": "    ",
+      "q": "Do you like true crime shows, podcasts, books, etc.?",
+      "a": "No",
+      "sentiment": "non-affirmative",
+      "reasoning": "I've tried a few but they feel exploitative to me — I'd rather sit with a quiet novel than spend my headspace on that kind of darkness."
+    },
+    {
+      "batch": 4,
+      "n": 31,
+      "type": "    ",
+      "q": "When conflict comes up with someone you care about, do you tend to bring it up quickly rather than letting it sit?",
+      "a": "Depends on the issue",
+      "sentiment": "neutral",
+      "reasoning": "With Tom I might sit with it a day or two, but with a close friend it really does depend on how much it's eating at me — I'm anxious enough that I can't always just let things go, but I'm also not someone who rushes in."
+    },
+    {
+      "batch": 4,
+      "n": 32,
+      "type": "    ",
+      "q": "Do you tend to stick to a routine and feel off when your schedule gets disrupted?",
+      "a": "Yes, routines matter to me",
+      "sentiment": "affirmative",
+      "reasoning": "My mornings while Mia's at preschool are my whole work rhythm, and when that gets thrown off I can feel it in my chest for the rest of the day."
+    },
+    {
+      "batch": 4,
+      "n": 33,
+      "type": "    ",
+      "q": "Do you often sense how a situation will unfold before you have enough facts to explain why?",
+      "a": "Occasionally",
+      "sentiment": "neutral",
+      "reasoning": "I get those flickers of intuition sometimes, especially in social situations, but I wouldn't say it's a constant thing — more like occasional quiet signals I've learned to half-trust."
+    },
+    {
+      "batch": 4,
+      "n": 34,
+      "type": "    ",
+      "q": "Do you tend to think about what could go wrong before committing to something new?",
+      "a": "Almost always",
+      "sentiment": "affirmative",
+      "reasoning": "With my anxious streak and 4w5 tendency to retreat inward and anticipate, I almost always run through the what-ifs before I commit to anything new."
+    },
+    {
+      "batch": 4,
+      "n": 35,
+      "type": "    ",
+      "q": "Do you usually make decisions based on what feels right rather than what seems most logical?",
+      "a": "Yes, usually",
+      "sentiment": "affirmative",
+      "reasoning": "As an INFP and Enneagram 4, I lead with feeling and values — logic matters, but my gut and heart almost always have the final word."
+    },
+    {
+      "batch": 4,
+      "n": 36,
+      "type": "    ",
+      "q": "When a friend is upset, do you focus more on fixing the problem than on just sitting with how they feel?",
+      "a": "No, I focus on feelings",
+      "sentiment": "non-affirmative",
+      "reasoning": "As a 4w5 INFP who values deep connection and has done therapy, I naturally want to hold space for someone's feelings first — jumping to solutions would feel like dismissing what they're actually going through."
+    },
+    {
+      "batch": 4,
+      "n": 37,
+      "type": "    ",
+      "q": "When you have a free evening with no plans, do you usually prefer to spend it alone rather than with other people?",
+      "a": "Depends on my mood",
+      "sentiment": "neutral",
+      "reasoning": "As an INFP 4w5 with anxious notes, I genuinely crave solitude some evenings but other times I want Tom nearby or a quiet call with a close friend — it really does depend on how depleted I'm feeling."
+    },
+    {
+      "batch": 4,
+      "n": 38,
+      "type": "PROBE",
+      "q": "Are most of your weekday afternoons free?",
+      "a": "Some are",
+      "sentiment": "neutral",
+      "reasoning": "Mia's at preschool in the mornings so I work then, but afternoons are pickup time and Mia time — not exactly free, though occasionally I get a pocket of quiet if she naps or Tom's home early."
+    },
+    {
+      "batch": 4,
+      "n": 39,
+      "type": "    ",
+      "q": "Do you find that you need people to check in on you emotionally, even when nothing is obviously wrong?",
+      "a": "Once in a while",
+      "sentiment": "neutral",
+      "reasoning": "I'm mostly functional on my own and wouldn't say I need it, but there are those quieter anxious stretches where a friend just reaching out unprompted means more than I'd admit out loud."
+    },
+    {
+      "batch": 4,
+      "n": 40,
+      "type": "PROBE",
+      "q": "Was your first real concert more than 15 years ago?",
+      "a": "Definitely yes",
+      "sentiment": "affirmative",
+      "reasoning": "I'm 32, so my first real concert was almost certainly in my early-to-mid teens, well over 15 years ago."
+    }
+  ],
+  "reports": [
+    {
+      "atFacts": 10,
+      "summary": "Someone with a clear ethical floor — the tax question and the gender-bias question both landed the same way, without hesitation. Principled, but not preachy about it.",
+      "portrait": "The drag question got an enthusiastic yes, which says something. Not tolerant in a polite, performative way — genuinely warm toward people who don't fit the mold. And yet the gender-bias question hit a hard no just as fast, which means that warmth has limits and standards behind it. Those two things coexist without contradiction.\n\nThere's a tension between openness and security-seeking. Comfortable enough to ask a stranger for a cigarette, but firm that poverty isn't acceptable long-term. Curious about people, cautious about outcomes.\n\nThe reluctance to commit fully — on hair, on gifts, on housing costs — reads less like indecision and more like precision. They don't want to get it wrong. That carefulness is occasionally slow, but it's also why they're rarely wrong about people.",
+      "highlights": [
+        "Principled without moralizing",
+        "Genuine warmth vs. clear personal standards",
+        "Caution mistaken for indecision",
+        "Security-conscious beneath the openness",
+        "Socially curious, ethically grounded"
+      ],
+      "params": {
+        "warmth": 0.68,
+        "energy": 0.44,
+        "structure": 0.52,
+        "density": 0.55,
+        "extroversion": 0.48,
+        "symmetry": 0.54
+      },
+      "profile": {
+        "enneagram": {
+          "type": 6,
+          "wing": 7,
+          "confidence": 0.38
+        },
+        "mbti": {
+          "type": "INFP",
+          "confidence": 0.35
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.35
+        },
+        "bigFive": {
+          "O": 0.58,
+          "C": 0.52,
+          "E": 0.48,
+          "A": 0.62,
+          "N": 0.45
+        },
+        "attachmentStyle": {
+          "type": "secure",
+          "confidence": 0.35
+        },
+        "ageRange": "teens–30s",
+        "careerArchetypes": [
+          "Student",
+          "Service worker",
+          "Coordinator",
+          "Administrative assistant"
+        ]
+      },
+      "predictions": [
+        "You've defended someone in a group chat at personal cost.",
+        "You check your spending more carefully than you admit to people.",
+        "You've held a cigarette at a party when you don't really smoke."
+      ]
+    },
+    {
+      "atFacts": 20,
+      "summary": "Principled without being preachy, warm in a quiet and deliberate way. The pictures of loved ones say more than most answers do.",
+      "portrait": "Surrounding yourself with photos of the people you love isn't decoration — it's architecture. The home you build around yourself is intentional. You wouldn't cheat on your taxes even with a guarantee of no consequences, and you wouldn't steal from a partner. That consistency isn't performance; it's load-bearing.\n\nOpen to a date who does drag, bothered by gender bias — but no to extensive facial tattoos. There's a real tension there: genuine social openness running up against a line drawn somewhere aesthetic. Both are honest.\n\nYou don't touch people much when you talk. Privately, connection matters more to you than you tend to show on the surface.",
+      "highlights": [
+        "Quietly values-driven without broadcasting it",
+        "Warmth expressed through environment, not touch",
+        "Openness with a visible aesthetic limit",
+        "Partnered and marking it — anniversaries mean something",
+        "Urban, not driving — place-rooted",
+        "Tension: inclusive values vs. conventional appearance standards"
+      ],
+      "params": {
+        "warmth": 0.72,
+        "energy": 0.38,
+        "structure": 0.62,
+        "density": 0.55,
+        "extroversion": 0.35,
+        "symmetry": 0.65
+      },
+      "profile": {
+        "enneagram": {
+          "type": 6,
+          "wing": 7,
+          "confidence": 0.38
+        },
+        "mbti": {
+          "type": "ISFJ",
+          "confidence": 0.38
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.38
+        },
+        "bigFive": {
+          "O": 0.48,
+          "C": 0.55,
+          "E": 0.42,
+          "A": 0.6,
+          "N": 0.45
+        },
+        "attachmentStyle": {
+          "type": "secure",
+          "confidence": 0.38
+        },
+        "ageRange": "teens–30s",
+        "careerArchetypes": [
+          "Administrative Coordinator",
+          "Healthcare Technician",
+          "Social Services Worker",
+          "Retail Manager",
+          "Office Specialist"
+        ]
+      },
+      "predictions": [
+        "You've looked up the lyrics to a song you've known for years.",
+        "You've drafted a message to someone and deleted it without sending.",
+        "You screenshot things you mean to deal with and never do.",
+        "You've kept a gift from someone you no longer talk to."
+      ]
+    },
+    {
+      "atFacts": 30,
+      "summary": "She's warm without being naive — a person who surrounds herself with photos of people she loves and means it. Her ethics are quiet and firm, not performed.",
+      "portrait": "She said yes to her kid's birthday party and yes to pictures of loved ones on the walls — this is someone who builds her world around specific people, not social performance in general. She doesn't touch strangers much and doesn't stick to a fixed friend group, which means her warmth is curated, not broadcast. She's open to drag queens and sterilization and dating outside convention, but draws a line at facial tattoos — not prudishness, just a private aesthetic threshold she doesn't apologize for. She accepts her partner going to dinner with an ex without loving it. That's not indifference. That's discipline. The quiet fear: that being financially dependent, even partly, means being vulnerable in a way she doesn't fully trust yet.",
+      "highlights": [
+        "Warmth aimed inward at chosen people, not outward at crowds",
+        "Ethics that hold even when no one's watching",
+        "Open-minded but not boundaryless",
+        "Tension between security-seeking and genuine adventurousness",
+        "Playful self-awareness — owns the childlike label without embarrassment",
+        "Protective instinct extends to animals, not just people"
+      ],
+      "params": {
+        "warmth": 0.78,
+        "energy": 0.42,
+        "structure": 0.58,
+        "density": 0.62,
+        "extroversion": 0.38,
+        "symmetry": 0.62
+      },
+      "profile": {
+        "enneagram": {
+          "type": 2,
+          "wing": 1,
+          "confidence": 0.42
+        },
+        "mbti": {
+          "type": "ISFJ",
+          "confidence": 0.38
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "I",
+          "confidence": 0.38
+        },
+        "bigFive": {
+          "O": 0.55,
+          "C": 0.58,
+          "E": 0.44,
+          "A": 0.72,
+          "N": 0.42
+        },
+        "attachmentStyle": {
+          "type": "secure",
+          "confidence": 0.44
+        },
+        "ageRange": "late 20s–late 30s",
+        "careerArchetypes": [
+          "Nurse or healthcare worker",
+          "Early childhood educator",
+          "Social worker",
+          "Office administrator",
+          "Community program coordinator"
+        ]
+      },
+      "predictions": [
+        "You have a photo of your kid as your phone wallpaper.",
+        "You've taken in a friend's pet during a crisis.",
+        "You've let a conflict go unresolved to keep the peace.",
+        "You feel mild guilt spending money on yourself."
+      ]
+    },
+    {
+      "atFacts": 40,
+      "summary": "She's rooted, warm, and quietly principled — the kind of person who surrounds herself with photos of people she loves and means it. Her ethics are non-negotiable, but she holds them without needing to announce them.",
+      "portrait": "She doesn't drive today, and she doesn't need to — her world is close enough. Photos of loved ones are up on the walls, not because it's decorative, but because proximity to the people she cares about is how she calibrates herself. She celebrated an anniversary this year. She went to her own kid's birthday party. These aren't checkboxes; they're the architecture of a life she's actively chosen.\n\nShe runs on feeling over logic and admits it freely, yet she thinks hard about what could go wrong before committing to anything new. Emotionally generous, structurally cautious — both are true at once.\n\nThe hesitation before hard conversations isn't avoidance exactly — it's the cost of caring too much about the outcome. That same care is what makes her worth trusting.",
+      "highlights": [
+        "Feelings-first decision-maker",
+        "Routine as anchor, not cage",
+        "Quietly principled — no performance required",
+        "Warmth that's earned, not broadcast",
+        "Tension: emotionally open yet pre-emptively risk-averse",
+        "Rescuer instinct — strays, people, lost things"
+      ],
+      "params": {
+        "warmth": 0.82,
+        "energy": 0.38,
+        "structure": 0.65,
+        "density": 0.6,
+        "extroversion": 0.42,
+        "symmetry": 0.67
+      },
+      "profile": {
+        "enneagram": {
+          "type": 2,
+          "wing": 1,
+          "confidence": 0.45
+        },
+        "mbti": {
+          "type": "ISFJ",
+          "confidence": 0.45
+        },
+        "disc": {
+          "dominant": "S",
+          "secondary": "C",
+          "confidence": 0.44
+        },
+        "bigFive": {
+          "O": 0.52,
+          "C": 0.62,
+          "E": 0.45,
+          "A": 0.72,
+          "N": 0.48
+        },
+        "attachmentStyle": {
+          "type": "secure",
+          "confidence": 0.48
+        },
+        "ageRange": "late 40s–mid 50s",
+        "careerArchetypes": [
+          "Educator",
+          "Healthcare coordinator",
+          "Social worker",
+          "Community organizer",
+          "Office manager"
+        ]
+      },
+      "predictions": [
+        "You still have a photo up somewhere that needs a new frame.",
+        "You've apologized for something that wasn't your fault this month.",
+        "You know exactly which drawer the birthday candles are in.",
+        "You've talked yourself out of a hard conversation by deciding it wasn't worth it.",
+        "You've rescued something — plant, animal, object — that someone else gave up on."
+      ]
+    }
+  ]
+}
