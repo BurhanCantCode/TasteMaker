@@ -1,15 +1,15 @@
 "use client";
 
-import { useRef } from "react";
+import { ReactNode, useRef } from "react";
 import { Question } from "@/lib/types";
-import { Star } from "lucide-react";
 
 interface AskCardProps {
   question: Question;
   disabled?: boolean;
+  footer?: ReactNode;
 }
 
-export function AskCard({ question, disabled }: AskCardProps) {
+export function AskCard({ question, disabled, footer }: AskCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   void disabled;
 
@@ -35,25 +35,10 @@ export function AskCard({ question, disabled }: AskCardProps) {
       ref={ref}
       className="bg-white rounded-[28px] p-7 shadow-[0_10px_36px_rgba(0,0,0,0.06)] w-full h-full flex flex-col"
     >
-      <div className="flex items-center justify-between" data-card-fade>
-        {category ? (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-900 text-white text-[10px] font-bold uppercase tracking-[0.14em]">
-            {category}
-          </span>
-        ) : (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-[0.14em]">
-            Question
-          </span>
-        )}
-        {question.superLikeEnabled && (
-          <span
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-[0.08em]"
-            title="Swipe up for Super Yes"
-          >
-            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-            Super
-          </span>
-        )}
+      <div className="flex items-center justify-center" data-card-fade>
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-500/25 text-white text-[10px] font-bold uppercase tracking-[0.14em]">
+          {category ?? "Question"}
+        </span>
       </div>
 
       <div className="flex-1 flex items-center justify-center">
@@ -64,6 +49,8 @@ export function AskCard({ question, disabled }: AskCardProps) {
           {question.title}
         </h2>
       </div>
+
+      {footer && <div className="flex-shrink-0 pt-4 pb-7">{footer}</div>}
     </div>
   );
 }

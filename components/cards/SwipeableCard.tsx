@@ -194,6 +194,12 @@ export function SwipeableCard({
 
     const onPointerDown = (e: PointerEvent) => {
       if (committed || !enabled) return;
+      // Ignore taps that originate on interactive controls inside the card
+      // (action buttons live on the card now). Without this, setPointerCapture
+      // on the root retargets the click event off the button and onClick
+      // never fires.
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("button, [data-no-drag]")) return;
       state.dragging = true;
       state.startX = e.clientX;
       state.startY = e.clientY;
@@ -245,11 +251,101 @@ export function SwipeableCard({
       if (detail) dismiss(detail, false);
     };
 
+    // Horizontal scroll → swipe. Trackpad two-finger swipes and
+    // mouse-wheel-with-shift surface as `wheel` events with deltaX. We
+    // accumulate that delta into a virtual horizontal drag and decide
+    // ONCE per gesture: when the wheel goes idle (lift + momentum settle)
+    // the accumulator is checked against the threshold and either
+    // commits or snaps back. We do NOT commit mid-gesture — a single
+    // trackpad flick produces a long tail of momentum events, and
+    // committing on threshold-cross would cascade dismisses across
+    // multiple cards from one physical swipe.
+    //
+    // Vertical scroll produces a small bounded nudge (capped at 10% of
+    // card height) — purely tactile feedback so the card visibly
+    // responds without committing anything.
+    let wheelAccX = 0;
+    let wheelAccY = 0;
+    let wheelIdleTimer: ReturnType<typeof setTimeout> | null = null;
+    // Wait long enough for trackpad momentum to fully settle. ~280ms
+    // covers a typical Mac inertial tail without feeling laggy.
+    const WHEEL_IDLE_MS = 280;
+    // Wheel needs a longer travel than touch — light momentum bursts
+    // shouldn't dismiss. Touch drag still uses SWIPE_THRESHOLD (110px).
+    const WHEEL_COMMIT_THRESHOLD = 180;
+    const VERTICAL_NUDGE_RATIO = 0.1; // ±10% of card height
+    const VERTICAL_DAMPING = 0.35;
+
+    const clearWheelIdle = () => {
+      if (wheelIdleTimer) {
+        clearTimeout(wheelIdleTimer);
+        wheelIdleTimer = null;
+      }
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (committed || !enabled || state.dragging) return;
+      // Ignore vanishingly small noise (some trackpads emit zero-deltas).
+      if (Math.abs(e.deltaX) < 0.1 && Math.abs(e.deltaY) < 0.1) return;
+      e.preventDefault();
+
+      // Gentle ramp: 1× while |acc| ≤ 100px, easing to 1.5× by |acc|
+      // = 240px. Keeps small flicks near 1:1 with subtle assist on
+      // sustained input. Lower multiplier than v1 because we now wait
+      // for finger-up before committing — there's no need for a strong
+      // ramp to "snap" through the threshold.
+      const absAccX = Math.abs(wheelAccX);
+      const ramp = gsap.utils.clamp(0, 1, (absAccX - 100) / 140);
+      const mult = 1 + ramp * 0.5;
+      wheelAccX += e.deltaX * mult;
+
+      // Vertical nudge: damped, capped at ±10% of card height, bidirectional.
+      const cap = el.clientHeight * VERTICAL_NUDGE_RATIO;
+      wheelAccY = gsap.utils.clamp(-cap, cap, wheelAccY + e.deltaY * VERTICAL_DAMPING);
+
+      setters.x(wheelAccX);
+      setters.y(wheelAccY);
+      setters.rot(gsap.utils.clamp(-MAX_ROTATION, MAX_ROTATION, wheelAccX / 18));
+
+      const leftP = gsap.utils.clamp(0, 1, -wheelAccX / 200);
+      const rightP = gsap.utils.clamp(0, 1, wheelAccX / 200);
+      setters.leftOpacity?.(leftP * 0.7);
+      setters.rightOpacity?.(rightP * 0.7);
+      setters.noOpacity?.(leftP);
+      setters.yesOpacity?.(rightP);
+      // Vertical nudge is tactile-only — don't drive button highlights.
+
+      onDragProgressRef.current?.({
+        x: gsap.utils.clamp(-1, 1, wheelAccX / WHEEL_COMMIT_THRESHOLD),
+        y: 0,
+      });
+
+      // Decision deferred to idle: when the wheel stops firing for
+      // WHEEL_IDLE_MS, treat the gesture as complete. Past threshold →
+      // commit. Otherwise → snap back. Resetting this timer on every
+      // event means momentum keeps the card "live" until it actually
+      // settles, then we decide once.
+      clearWheelIdle();
+      wheelIdleTimer = setTimeout(() => {
+        if (committed) return;
+        if (Math.abs(wheelAccX) >= WHEEL_COMMIT_THRESHOLD) {
+          dismiss(wheelAccX > 0 ? "right" : "left", true);
+          return;
+        }
+        wheelAccX = 0;
+        wheelAccY = 0;
+        snapBack();
+      }, WHEEL_IDLE_MS);
+    };
+
     if (enabled) {
       el.addEventListener("pointerdown", onPointerDown);
       el.addEventListener("pointermove", onPointerMove);
       el.addEventListener("pointerup", finish);
       el.addEventListener("pointercancel", finish);
+      // passive:false because we preventDefault to stop the page from
+      // scrolling horizontally while the card is consuming wheel input.
+      el.addEventListener("wheel", onWheel, { passive: false });
     }
     el.addEventListener("tm:trigger-swipe", onTrigger as EventListener);
 
@@ -257,10 +353,12 @@ export function SwipeableCard({
       // Kill tweens on unmount so a half-finished dismiss doesn't outlive
       // the component and land opacity:0 on the replaced DOM node.
       gsap.killTweensOf(el);
+      clearWheelIdle();
       el.removeEventListener("pointerdown", onPointerDown);
       el.removeEventListener("pointermove", onPointerMove);
       el.removeEventListener("pointerup", finish);
       el.removeEventListener("pointercancel", finish);
+      el.removeEventListener("wheel", onWheel);
       el.removeEventListener("tm:trigger-swipe", onTrigger as EventListener);
     };
   }, [enabled]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useCardQueue } from "@/hooks/useCardQueue";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +20,7 @@ import { clearSummary, clearCardSession, loadPendingCards, clearPendingCards } f
 import { deleteCloudProfile } from "@/lib/firestore";
 import { sentimentForAnswer } from "@/lib/personalityQuestions";
 import { BATCH_SIZE, CHUNK_SIZE, isMilestoneAnswer } from "@/lib/questionSequencer";
-import { ArrowLeft, Loader2, Undo2 } from "lucide-react";
+import { ArrowLeft, Loader2, SkipForward, Undo2 } from "lucide-react";
 
 export default function Home() {
   const {
@@ -61,6 +61,11 @@ export default function Home() {
 
   const [latestReport, setLatestReport] = useState<PersonalityReport | null>(null);
   const [isReportGenerating, setIsReportGenerating] = useState(false);
+  // Per-session record of factsCount snapshots whose /api/summary call
+  // failed. Without this, the milestone effect re-fires every render
+  // (because no report ever lands in profile.reports), retrying the
+  // 500 indefinitely → dev-overlay spam + visible flicker.
+  const failedReportFactsRef = useRef<Set<number>>(new Set());
 
   const answeredCount = profile.facts.length;
   const chunkProgress = ((answeredCount % CHUNK_SIZE) / CHUNK_SIZE) * 100;
@@ -157,7 +162,14 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userProfile: profile, mode: "full" }),
         });
-        if (!res.ok) throw new Error(`summary ${res.status}`);
+        if (!res.ok) {
+          failedReportFactsRef.current.add(factsCountSnapshot);
+          // console.warn (not error) so this doesn't trigger the Next.js
+          // dev-overlay every time the API key is missing or the server
+          // hiccups. Caller has already finally{}'d isReportGenerating.
+          console.warn(`[Tastemaker] summary ${res.status}; skipping milestone @ ${factsCountSnapshot}`);
+          return;
+        }
         const data: {
           summary: string;
           portrait: string;
@@ -178,7 +190,8 @@ export default function Home() {
         });
         setLatestReport(stored);
       } catch (e) {
-        console.error("[Tastemaker] Failed to generate report:", e);
+        failedReportFactsRef.current.add(factsCountSnapshot);
+        console.warn("[Tastemaker] Failed to generate report:", e);
       } finally {
         setIsReportGenerating(false);
       }
@@ -198,6 +211,7 @@ export default function Home() {
     if (answeredCount === 0) return;
     if (answeredCount % CHUNK_SIZE !== 0) return;
     if (isReportGenerating) return;
+    if (failedReportFactsRef.current.has(answeredCount)) return;
     const alreadyReported = (profile.reports ?? []).some(
       (r) => r.factsCount === answeredCount
     );
@@ -432,6 +446,15 @@ export default function Home() {
               title="Undo"
             >
               <Undo2 className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={handleSkip}
+              className="fixed top-4 right-[136px] z-50 w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95"
+              aria-label="Skip question"
+              title="Skip"
+            >
+              <SkipForward className="w-5 h-5" />
             </button>
 
             <SettingsGear onClick={() => setIsSettingsOpen(true)} />

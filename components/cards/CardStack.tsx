@@ -13,7 +13,6 @@ import { SwipeableCard } from "./SwipeableCard";
 import { AskCard } from "./AskCard";
 import { ResultCard } from "./ResultCard";
 import { InterstitialCard } from "./InterstitialCard";
-import { Star } from "lucide-react";
 
 type Gesture =
   | "swipe_left"
@@ -46,8 +45,10 @@ export function CardStack({
   void _canUndo;
   void _onUndo;
 
-  const containerClass = "w-full max-w-[360px] flex flex-col gap-5";
-  const cardAreaClass = "relative w-full h-[380px]";
+  // Standard playing-card aspect ratio (poker: 2.5 x 3.5 = 5/7), portrait.
+  const containerClass = "w-full max-w-[360px] flex flex-col";
+  const cardAreaWrapperClass = "relative w-full";
+  const cardAreaClass = "relative w-full aspect-[5/7]";
   const activeRef = useRef<HTMLDivElement | null>(null);
   const peekRef = useRef<HTMLDivElement | null>(null);
   const actionRowRef = useRef<HTMLDivElement | null>(null);
@@ -80,7 +81,6 @@ export function CardStack({
       const leftBtn = actionRowRef.current.querySelector<HTMLElement>("[data-btn=left]");
       const rightBtn = actionRowRef.current.querySelector<HTMLElement>("[data-btn=right]");
       const centerBtn = actionRowRef.current.querySelector<HTMLElement>("[data-btn=center]");
-      const superBtn = actionRowRef.current.querySelector<HTMLElement>("[data-btn=super]");
       if (leftBtn)
         gsap.to(leftBtn, {
           scale: 1 + Math.max(0, -p.x) * 0.12,
@@ -96,12 +96,6 @@ export function CardStack({
       if (centerBtn && Math.abs(p.x) < 0.05)
         gsap.to(centerBtn, { scale: 1.03, duration: 0.15, overwrite: "auto" });
       else if (centerBtn) gsap.to(centerBtn, { scale: 1, duration: 0.15, overwrite: "auto" });
-      if (superBtn)
-        gsap.to(superBtn, {
-          scale: 1 + Math.max(0, -p.y) * 0.15,
-          duration: 0.15,
-          overwrite: "auto",
-        });
     }
   };
 
@@ -130,14 +124,16 @@ export function CardStack({
   if (isLoading) {
     return (
       <div className={containerClass}>
-        <div className={cardAreaClass}>
-          <div className="bg-white rounded-[28px] p-8 shadow-[0_10px_36px_rgba(0,0,0,0.06)] w-full h-full flex flex-col items-center justify-center gap-4">
-            <div className="animate-spin text-[#171717]">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-              </svg>
+        <div className={cardAreaWrapperClass}>
+          <div className={cardAreaClass}>
+            <div className="bg-white rounded-[28px] p-8 shadow-[0_10px_36px_rgba(0,0,0,0.06)] w-full h-full flex flex-col items-center justify-center gap-4">
+              <div className="animate-spin text-[#171717]">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+              </div>
+              <p className="text-gray-500 text-sm font-medium">Loading…</p>
             </div>
-            <p className="text-gray-500 text-sm font-medium">Loading…</p>
           </div>
         </div>
       </div>
@@ -147,9 +143,11 @@ export function CardStack({
   if (!card) {
     return (
       <div className={containerClass}>
-        <div className={cardAreaClass}>
-          <div className="bg-white rounded-[28px] p-8 shadow-[0_10px_36px_rgba(0,0,0,0.06)] w-full h-full flex items-center justify-center">
-            <p className="text-gray-400">No cards available</p>
+        <div className={cardAreaWrapperClass}>
+          <div className={cardAreaClass}>
+            <div className="bg-white rounded-[28px] p-8 shadow-[0_10px_36px_rgba(0,0,0,0.06)] w-full h-full flex items-center justify-center">
+              <p className="text-gray-400">No cards available</p>
+            </div>
           </div>
         </div>
       </div>
@@ -159,178 +157,170 @@ export function CardStack({
   if (card.type === "interstitial") {
     return (
       <div className={containerClass}>
-        <div className={cardAreaClass}>
-          <InterstitialCard
-            content={card.content as InterstitialContent}
-            onContinue={() => onAnswer("continue")}
-          />
+        <div className={cardAreaWrapperClass}>
+          <div className={cardAreaClass}>
+            <InterstitialCard
+              content={card.content as InterstitialContent}
+              onContinue={() => onAnswer("continue")}
+            />
+          </div>
         </div>
       </div>
     );
   }
 
   const question = card.type === "ask" ? (card.content as Question) : null;
-  const superLikeEnabled = question?.superLikeEnabled ?? false;
   const labels = question?.answerLabels ?? [];
+
+  const askFooter =
+    card.type === "ask" && question ? (
+      <div ref={actionRowRef} className="w-full flex items-center justify-center">
+        {question.answerType === "yes_no_maybe" ? (
+          <YesNoMaybeActions
+            labels={[
+              labels[0] ?? "No",
+              labels[1] ?? "Maybe",
+              labels[2] ?? "Yes",
+            ]}
+            onNo={() =>
+              triggerDismissAndCommit("left", () =>
+                onAnswer(labels[0] ?? "No", { index: 0, gesture: "tap_left" })
+              )
+            }
+            onMaybe={() =>
+              onAnswer(labels[1] ?? "Maybe", {
+                index: 1,
+                gesture: "tap_center",
+              })
+            }
+            onYes={() =>
+              triggerDismissAndCommit("right", () =>
+                onAnswer(labels[2] ?? "Yes", {
+                  index: 2,
+                  gesture: "tap_right",
+                })
+              )
+            }
+          />
+        ) : (
+          <YesNoActions
+            labels={[labels[0] ?? "No", labels[labels.length - 1] ?? "Yes"]}
+            onNo={() =>
+              triggerDismissAndCommit("left", () =>
+                onAnswer(labels[0] ?? "No", { index: 0, gesture: "tap_left" })
+              )
+            }
+            onYes={() => {
+              const lastIdx = labels.length - 1;
+              triggerDismissAndCommit("right", () =>
+                onAnswer(labels[lastIdx] ?? "Yes", { index: lastIdx, gesture: "tap_right" })
+              );
+            }}
+          />
+        )}
+      </div>
+    ) : null;
 
   return (
     <div className={containerClass}>
-      <div className={cardAreaClass}>
-        {nextCard && (
-          <div
-            key={`peek-${peekKey(nextCard)}`}
-            ref={peekRef}
-            className="absolute inset-0 pointer-events-none"
-            style={{ filter: "blur(1.5px)", transform: "scale(0.94) translateY(10px)" }}
-            aria-hidden
-          >
-            {nextCard.type === "ask" && <AskCard question={nextCard.content as Question} disabled />}
-            {nextCard.type === "result" && (
-              <ResultCard item={nextCard.content as ResultItem} onAnswer={() => {}} />
+      <div className={cardAreaWrapperClass}>
+        <div className={cardAreaClass}>
+          {nextCard && (
+            <div
+              key={`peek-${peekKey(nextCard)}`}
+              ref={peekRef}
+              className="absolute inset-0 pointer-events-none"
+              style={{ filter: "blur(1.5px)", transform: "scale(0.94) translateY(10px)" }}
+              aria-hidden
+            >
+              {nextCard.type === "ask" && (
+                <AskCard question={nextCard.content as Question} disabled />
+              )}
+              {nextCard.type === "result" && (
+                <ResultCard item={nextCard.content as ResultItem} onAnswer={() => {}} />
+              )}
+            </div>
+          )}
+
+          <div ref={activeRef} className="absolute inset-0">
+            {card.type === "ask" && question && (
+              <SwipeableCard
+                key={`active-${question.id}`}
+                enabled
+                superLikeEnabled={false}
+                onSwipe={(direction) => {
+                  if (!question) return;
+                  if (direction === "left") {
+                    onAnswer(labels[0] ?? "No", { index: 0, gesture: "swipe_left" });
+                  } else if (direction === "right") {
+                    const lastIdx = labels.length - 1;
+                    onAnswer(labels[lastIdx] ?? "Yes", { index: lastIdx, gesture: "swipe_right" });
+                  } else if (direction === "down") {
+                    onSkip?.();
+                  }
+                }}
+                onDragProgress={handleDragProgress}
+              >
+                <AskCard question={question} footer={askFooter} />
+              </SwipeableCard>
+            )}
+
+            {card.type === "result" && (
+              <SwipeableCard
+                key={`active-result-${(card.content as ResultItem).id}`}
+                enabled
+                superLikeEnabled={false}
+                onSwipe={(direction) => {
+                  if (direction === "left") onAnswer("dislike", { index: 0, gesture: "swipe_left" });
+                  else if (direction === "right") onAnswer("like", { index: 1, gesture: "swipe_right" });
+                }}
+                onDragProgress={handleDragProgress}
+              >
+                <ResultCard item={card.content as ResultItem} onAnswer={onAnswer} />
+              </SwipeableCard>
             )}
           </div>
-        )}
-
-        <div ref={activeRef} className="absolute inset-0">
-          {card.type === "ask" && question && (
-            <SwipeableCard
-              key={`active-${question.id}`}
-              enabled
-              superLikeEnabled={superLikeEnabled}
-              onSwipe={(direction) => {
-                if (!question) return;
-                if (direction === "left") {
-                  onAnswer(labels[0] ?? "No", { index: 0, gesture: "swipe_left" });
-                } else if (direction === "right") {
-                  const lastIdx = labels.length - 1;
-                  onAnswer(labels[lastIdx] ?? "Yes", { index: lastIdx, gesture: "swipe_right" });
-                } else if (direction === "up") {
-                  const lastIdx = labels.length - 1;
-                  onAnswer("super_yes", { index: lastIdx, gesture: "swipe_up" });
-                } else if (direction === "down") {
-                  onSkip?.();
-                }
-              }}
-              onDragProgress={handleDragProgress}
-            >
-              <AskCard question={question} />
-            </SwipeableCard>
-          )}
-
-          {card.type === "result" && (
-            <SwipeableCard
-              key={`active-result-${(card.content as ResultItem).id}`}
-              enabled
-              superLikeEnabled
-              onSwipe={(direction) => {
-                if (direction === "left") onAnswer("dislike", { index: 0, gesture: "swipe_left" });
-                else if (direction === "right") onAnswer("like", { index: 1, gesture: "swipe_right" });
-                else if (direction === "up") onAnswer("superlike", { index: 1, gesture: "swipe_up" });
-              }}
-              onDragProgress={handleDragProgress}
-            >
-              <ResultCard item={card.content as ResultItem} onAnswer={onAnswer} />
-            </SwipeableCard>
-          )}
         </div>
       </div>
-
-      {card.type === "ask" && question && (
-        <div ref={actionRowRef} className="w-full flex flex-col items-center gap-2.5">
-          {question.answerType === "yes_no_maybe" ? (
-            <YesNoMaybeActions
-              labels={[
-                labels[0] ?? "No",
-                labels[1] ?? "Maybe",
-                labels[2] ?? "Yes",
-              ]}
-              superLikeEnabled={superLikeEnabled}
-              onNo={() =>
-                triggerDismissAndCommit("left", () =>
-                  onAnswer(labels[0] ?? "No", { index: 0, gesture: "tap_left" })
-                )
-              }
-              onMaybe={() =>
-                onAnswer(labels[1] ?? "Maybe", {
-                  index: 1,
-                  gesture: "tap_center",
-                })
-              }
-              onYes={() =>
-                triggerDismissAndCommit("right", () =>
-                  onAnswer(labels[2] ?? "Yes", {
-                    index: 2,
-                    gesture: "tap_right",
-                  })
-                )
-              }
-              onSuper={() => {
-                const lastIdx = labels.length - 1;
-                triggerDismissAndCommit("up", () =>
-                  onAnswer("super_yes", { index: lastIdx, gesture: "swipe_up" })
-                );
-              }}
-            />
-          ) : (
-            <YesNoActions
-              labels={[labels[0] ?? "No", labels[labels.length - 1] ?? "Yes"]}
-              superLikeEnabled={superLikeEnabled}
-              onNo={() => triggerDismissAndCommit("left", () => onAnswer(labels[0] ?? "No", { index: 0, gesture: "tap_left" }))}
-              onYes={() => {
-                const lastIdx = labels.length - 1;
-                triggerDismissAndCommit("right", () => onAnswer(labels[lastIdx] ?? "Yes", { index: lastIdx, gesture: "tap_right" }));
-              }}
-              onSuper={() => {
-                const lastIdx = labels.length - 1;
-                triggerDismissAndCommit("up", () => onAnswer("super_yes", { index: lastIdx, gesture: "swipe_up" }));
-              }}
-            />
-          )}
-
-          <button
-            onClick={() => onSkip?.()}
-            className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 hover:text-gray-700 transition-colors"
-          >
-            Skip
-          </button>
-        </div>
-      )}
     </div>
   );
 }
 
 /* ---------- Action variants ---------- */
 
+const NO_GLYPH = (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
+);
+
+const YES_GLYPH = (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 6 9 17l-5-5" />
+  </svg>
+);
+
+const MAYBE_GLYPH = (
+  <span className="text-[36px] leading-none font-bold translate-y-[7px]">~</span>
+);
+
 function YesNoActions({
   labels,
-  superLikeEnabled,
   onNo,
   onYes,
-  onSuper,
 }: {
   labels: [string, string];
-  superLikeEnabled: boolean;
   onNo: () => void;
   onYes: () => void;
-  onSuper: () => void;
 }) {
   return (
-    <div className="flex items-center justify-center gap-4">
+    <div className="flex items-center justify-center gap-6">
       <IconBtn dataBtn="left" tint="#ef4444" size={66} onClick={onNo} ariaLabel={labels[0]}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-          <path d="M18 6 6 18" />
-          <path d="m6 6 12 12" />
-        </svg>
+        {NO_GLYPH}
       </IconBtn>
-      {superLikeEnabled && (
-        <IconBtn dataBtn="super" tint="#f59e0b" size={52} onClick={onSuper} ariaLabel="Super Yes">
-          <Star className="w-5 h-5 fill-current" />
-        </IconBtn>
-      )}
       <IconBtn dataBtn="right" tint="#10b981" size={66} onClick={onYes} ariaLabel={labels[1]}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
+        {YES_GLYPH}
       </IconBtn>
     </div>
   );
@@ -338,41 +328,25 @@ function YesNoActions({
 
 function YesNoMaybeActions({
   labels,
-  superLikeEnabled,
   onNo,
   onMaybe,
   onYes,
-  onSuper,
 }: {
   labels: [string, string, string];
-  superLikeEnabled: boolean;
   onNo: () => void;
   onMaybe: () => void;
   onYes: () => void;
-  onSuper: () => void;
 }) {
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div className="flex items-center justify-center gap-[18px]">
       <IconBtn dataBtn="left" tint="#ef4444" size={62} onClick={onNo} ariaLabel={labels[0]}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-          <path d="M18 6 6 18" />
-          <path d="m6 6 12 12" />
-        </svg>
+        {NO_GLYPH}
       </IconBtn>
-      <IconBtn dataBtn="center" tint="#f59e0b" size={56} onClick={onMaybe} ariaLabel={labels[1]}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
-          <path d="M5 12h14" />
-        </svg>
+      <IconBtn dataBtn="center" tint="#f59e0b" size={62} onClick={onMaybe} ariaLabel={labels[1]}>
+        {MAYBE_GLYPH}
       </IconBtn>
-      {superLikeEnabled && (
-        <IconBtn dataBtn="super" tint="#8b5cf6" size={48} onClick={onSuper} ariaLabel="Super Yes">
-          <Star className="w-5 h-5 fill-current" />
-        </IconBtn>
-      )}
       <IconBtn dataBtn="right" tint="#10b981" size={62} onClick={onYes} ariaLabel={labels[2]}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
+        {YES_GLYPH}
       </IconBtn>
     </div>
   );
@@ -395,36 +369,31 @@ function IconBtn({
   onClick?: () => void;
   disabled?: boolean;
   ariaLabel: string;
-  dataBtn?: "left" | "center" | "right" | "super";
+  dataBtn?: "left" | "center" | "right";
 }) {
   const ref = useRef<HTMLButtonElement | null>(null);
-  const press = () => {
-    if (!ref.current || disabled) return;
-    gsap.fromTo(
-      ref.current,
-      { scale: 1 },
-      { scale: 0.92, duration: 0.08, yoyo: true, repeat: 1, ease: "power2.out" }
-    );
-  };
+  void ref;
   return (
     <button
       ref={ref}
       data-btn={dataBtn}
       aria-label={ariaLabel}
-      onClick={() => {
-        press();
-        onClick?.();
-      }}
+      onClick={() => onClick?.()}
       disabled={disabled}
-      style={{
-        width: size,
-        height: size,
-        color: tint,
-        borderColor: `${tint}40`,
-      }}
-      className="flex items-center justify-center rounded-full bg-white shadow-[0_4px_14px_rgba(0,0,0,0.08)] border-2 disabled:opacity-30 disabled:cursor-not-allowed active:shadow-[0_2px_6px_rgba(0,0,0,0.06)] transition-shadow"
+      style={
+        {
+          width: size,
+          height: size,
+          borderColor: tint,
+          borderWidth: 4,
+          "--tint": tint,
+        } as React.CSSProperties
+      }
+      className="group flex items-center justify-center rounded-full bg-white text-[color:var(--tint)] transition-colors duration-75 active:bg-[var(--tint)] active:text-white disabled:opacity-30 disabled:cursor-not-allowed"
     >
-      {children}
+      <span className="inline-flex items-center justify-center transition-transform duration-75 group-active:scale-[1.4]">
+        {children}
+      </span>
     </button>
   );
 }

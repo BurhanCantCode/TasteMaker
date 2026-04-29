@@ -17,12 +17,17 @@ import {
 // swap this for a client-side static fallback so the wait is truly zero).
 const MAX_PREFETCH_WAIT_MS = 1500;
 
-// Pre-pivot cached batches may contain multiple_choice / yes_no_maybe
-// cards that the new UI no longer renders. Refuse to hydrate such a
-// batch — the caller will trigger a fresh fetch that returns yes_no only.
+// Pre-pivot cached batches may contain answer types the swipe UI can't
+// render (multiple_choice, want_scale, etc.). The current UI renders
+// yes_no AND yes_no_maybe (MBTI / indirect probes), so both are
+// acceptable. Anything else means a stale batch — drop it and let the
+// caller refetch.
+const RENDERABLE_ANSWER_TYPES = new Set(["yes_no", "yes_no_maybe"]);
 function isPrePivotBatch(batch: PendingCardsBatch): boolean {
   return batch.cards.some(
-    (c) => c.type === "ask" && (c.content as Question).answerType !== "yes_no"
+    (c) =>
+      c.type === "ask" &&
+      !RENDERABLE_ANSWER_TYPES.has((c.content as Question).answerType)
   );
 }
 
