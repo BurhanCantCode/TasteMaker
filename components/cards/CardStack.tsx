@@ -234,7 +234,15 @@ export function CardStack({
               aria-hidden
             >
               {nextCard.type === "ask" && (
-                <AskCard question={nextCard.content as Question} disabled />
+                <AskCard
+                  question={nextCard.content as Question}
+                  disabled
+                  // Ghost footer keeps the peek's text vertically anchored
+                  // exactly where the active card's text sits; without it,
+                  // the title is centered in the WHOLE card on the peek and
+                  // then jumps when buttons appear at commit time.
+                  footer={renderGhostFooter(nextCard.content as Question)}
+                />
               )}
               {nextCard.type === "result" && (
                 <ResultCard item={nextCard.content as ResultItem} onAnswer={() => {}} />
@@ -389,7 +397,7 @@ function IconBtn({
           "--tint": tint,
         } as React.CSSProperties
       }
-      className="group flex items-center justify-center rounded-full bg-white text-[color:var(--tint)] transition-colors duration-75 active:bg-[var(--tint)] active:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+      className="group flex items-center justify-center rounded-full bg-white text-[color:var(--tint)] transition-all duration-100 hover:scale-110 active:bg-[var(--tint)] active:text-white disabled:opacity-30 disabled:cursor-not-allowed"
     >
       <span className="inline-flex items-center justify-center transition-transform duration-75 group-active:scale-[1.4]">
         {children}
@@ -402,4 +410,26 @@ function peekKey(c: Card): string {
   if (c.type === "ask") return (c.content as Question).id;
   if (c.type === "result") return (c.content as ResultItem).id;
   return (c.content as InterstitialContent).id;
+}
+
+// Ghost footer for the peek card. Same shape and dimensions as the
+// active card's action row but with no-op handlers and no actionRowRef
+// — the peek is wrapped in pointer-events-none anyway, but we still
+// avoid sharing the ref with the active card.
+function renderGhostFooter(q: Question) {
+  const noop = () => {};
+  return (
+    <div className="w-full flex items-center justify-center">
+      {q.answerType === "yes_no_maybe" ? (
+        <YesNoMaybeActions
+          labels={["No", "Maybe", "Yes"]}
+          onNo={noop}
+          onMaybe={noop}
+          onYes={noop}
+        />
+      ) : (
+        <YesNoActions labels={["No", "Yes"]} onNo={noop} onYes={noop} />
+      )}
+    </div>
+  );
 }

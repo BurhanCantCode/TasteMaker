@@ -118,15 +118,15 @@ test.describe("Card UI is yes/no only", () => {
       }
     );
 
-    await page.getByRole("button", { name: /^Questions$/i }).click();
+    await page.getByRole("button", { name: /^Answer$/i }).click();
 
-    const noBtn = page.locator('button[aria-label="No"]');
-    const yesBtn = page.locator('button[aria-label="Yes"]');
+    const noBtn = page.locator('[data-tm-swipeable] button[aria-label="No"]').first();
+    const yesBtn = page.locator('[data-tm-swipeable] button[aria-label="Yes"]').first();
     await expect(noBtn).toBeVisible();
     await expect(yesBtn).toBeVisible();
 
     // Super button + super badge + super data attribute must all be gone.
-    expect(await page.locator('button[aria-label="Super Yes"]').count()).toBe(0);
+    expect(await page.locator('[data-tm-swipeable] button[aria-label="Super Yes"]').count()).toBe(0);
     expect(await page.locator('[data-btn="super"]').count()).toBe(0);
     expect(await page.getByText(/^Super$/).count()).toBe(0);
 
@@ -134,7 +134,7 @@ test.describe("Card UI is yes/no only", () => {
     await yesBtn.click();
     await expect(noBtn).toBeVisible();
     await expect(yesBtn).toBeVisible();
-    expect(await page.locator('button[aria-label="Super Yes"]').count()).toBe(0);
+    expect(await page.locator('[data-tm-swipeable] button[aria-label="Super Yes"]').count()).toBe(0);
   });
 
   test("non-starred yes_no card renders exactly 2 actions: no, yes", async ({
@@ -165,14 +165,14 @@ test.describe("Card UI is yes/no only", () => {
       }
     );
 
-    await page.getByRole("button", { name: /^Questions$/i }).click();
+    await page.getByRole("button", { name: /^Answer$/i }).click();
 
-    await expect(page.locator('button[aria-label="No"]')).toBeVisible();
-    await expect(page.locator('button[aria-label="Yes"]')).toBeVisible();
+    await expect(page.locator('[data-tm-swipeable] button[aria-label="No"]').first()).toBeVisible();
+    await expect(page.locator('[data-tm-swipeable] button[aria-label="Yes"]').first()).toBeVisible();
 
     // No super, no maybe, no MC pills.
-    expect(await page.locator('button[aria-label="Super Yes"]').count()).toBe(0);
-    expect(await page.locator('button[aria-label="Maybe"]').count()).toBe(0);
+    expect(await page.locator('[data-tm-swipeable] button[aria-label="Super Yes"]').count()).toBe(0);
+    expect(await page.locator('[data-tm-swipeable] button[aria-label="Maybe"]').count()).toBe(0);
   });
 
   test("yes_no_maybe card renders no/maybe/yes with the ~ glyph in the center button", async ({
@@ -203,7 +203,7 @@ test.describe("Card UI is yes/no only", () => {
       }
     );
 
-    await page.getByRole("button", { name: /^Questions$/i }).click();
+    await page.getByRole("button", { name: /^Answer$/i }).click();
 
     // Wait for the seeded title before asserting buttons — guards against
     // a fresh-batch fetch that would otherwise replace our stub.
@@ -211,9 +211,9 @@ test.describe("Card UI is yes/no only", () => {
       timeout: 15_000,
     });
 
-    const noBtn = page.locator('button[aria-label="No"]');
-    const maybeBtn = page.locator('button[aria-label="Maybe"]');
-    const yesBtn = page.locator('button[aria-label="Yes"]');
+    const noBtn = page.locator('[data-tm-swipeable] button[aria-label="No"]').first();
+    const maybeBtn = page.locator('[data-tm-swipeable] button[aria-label="Maybe"]').first();
+    const yesBtn = page.locator('[data-tm-swipeable] button[aria-label="Yes"]').first();
     await expect(noBtn).toBeVisible();
     await expect(maybeBtn).toBeVisible();
     await expect(yesBtn).toBeVisible();
@@ -221,11 +221,14 @@ test.describe("Card UI is yes/no only", () => {
     // The center button must contain a literal ~ glyph (not a horizontal
     // line SVG). Anchor on the data-btn attribute so we don't depend on
     // text inside neighbour buttons.
-    const centerText = await page.locator('[data-btn="center"]').innerText();
+    const centerText = await page
+      .locator('[data-tm-swipeable] [data-btn="center"]')
+      .first()
+      .innerText();
     expect(centerText.trim()).toBe("~");
 
     // Super UI is still absent on the ternary variant.
-    expect(await page.locator('button[aria-label="Super Yes"]').count()).toBe(0);
+    expect(await page.locator('[data-tm-swipeable] button[aria-label="Super Yes"]').count()).toBe(0);
     expect(await page.locator('[data-btn="super"]').count()).toBe(0);
 
     // Tapping Maybe commits an answer and advances; the 3-button layout
@@ -267,8 +270,8 @@ test.describe("Card UI is yes/no only", () => {
         })),
       }
     );
-    await page.getByRole("button", { name: /^Questions$/i }).click();
-    await expect(page.locator('button[aria-label="Yes"]')).toBeVisible();
+    await page.getByRole("button", { name: /^Answer$/i }).click();
+    await expect(page.locator('[data-tm-swipeable] button[aria-label="Yes"]').first()).toBeVisible();
 
     const inside = await page
       .locator('[data-tm-swipeable] button[aria-label="Yes"]')
@@ -312,7 +315,7 @@ test.describe("Card UI is yes/no only", () => {
       }
     );
 
-    await page.getByRole("button", { name: /^Questions$/i }).click();
+    await page.getByRole("button", { name: /^Answer$/i }).click();
     // Active card lives inside [data-tm-swipeable]; peek does not. We
     // need to assert on the *active* card title because peek always
     // shows the NEXT card's title and would falsely satisfy a global
@@ -382,7 +385,7 @@ test.describe("Card UI is yes/no only", () => {
       }
     );
 
-    await page.getByRole("button", { name: /^Questions$/i }).click();
+    await page.getByRole("button", { name: /^Answer$/i }).click();
     const activeCard = page.locator('[data-tm-swipeable]');
     await expect(activeCard.getByText("Nudge stub 0?")).toBeVisible({ timeout: 15_000 });
 
@@ -440,7 +443,7 @@ test.describe("Card UI is yes/no only", () => {
       }
     );
 
-    await page.getByRole("button", { name: /^Questions$/i }).click();
+    await page.getByRole("button", { name: /^Answer$/i }).click();
     await expect(page.getByText("Skip stub 0?").first()).toBeVisible({ timeout: 15_000 });
 
     // Header Skip button must exist.

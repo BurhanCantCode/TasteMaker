@@ -140,7 +140,7 @@ test.describe("question flow sends correct batch source", () => {
     await clearAndSeed(page, profile);
     generateBodies.length = 0;
 
-    await page.getByRole("button", { name: /^Questions$/i }).click();
+    await page.getByRole("button", { name: /^Answer$/i }).click();
 
     // Wait for the background prefetch (source=dynamic) to fire. The
     // user's foreground batch is served client-side from the static

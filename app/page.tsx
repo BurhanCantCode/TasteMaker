@@ -438,24 +438,34 @@ export default function Home() {
               <ArrowLeft className="w-5 h-5" />
             </button>
 
-            <button
-              onClick={handleUndo}
-              disabled={answeredCount === 0}
-              className="fixed top-4 right-[76px] z-50 w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-              aria-label="Undo last answer"
-              title="Undo"
-            >
-              <Undo2 className="w-5 h-5" />
-            </button>
+            <div className="fixed top-4 left-[76px] z-50 flex flex-col items-center gap-1">
+              <button
+                onClick={handleUndo}
+                disabled={answeredCount === 0}
+                className="w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Undo last answer"
+                title="Undo"
+              >
+                <Undo2 className="w-5 h-5" />
+              </button>
+              <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                Undo
+              </span>
+            </div>
 
-            <button
-              onClick={handleSkip}
-              className="fixed top-4 right-[136px] z-50 w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95"
-              aria-label="Skip question"
-              title="Skip"
-            >
-              <SkipForward className="w-5 h-5" />
-            </button>
+            <div className="fixed top-4 right-[76px] z-50 flex flex-col items-center gap-1">
+              <button
+                onClick={handleSkip}
+                className="w-12 h-12 rounded-full bg-white shadow-[0_4px_12px_rgb(0,0,0,0.08)] flex items-center justify-center text-gray-600 hover:text-gray-900 transition-all duration-200 hover:shadow-[0_6px_16px_rgb(0,0,0,0.12)] active:scale-95"
+                aria-label="Skip question"
+                title="Skip"
+              >
+                <SkipForward className="w-5 h-5" />
+              </button>
+              <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                Skip
+              </span>
+            </div>
 
             <SettingsGear onClick={() => setIsSettingsOpen(true)} />
 

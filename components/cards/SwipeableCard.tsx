@@ -22,6 +22,16 @@ const VELOCITY_THRESHOLD = 600;
 const DISMISS_DISTANCE = 600;
 const MAX_ROTATION = 10; // spec: card rotates ~10° max
 
+// Module-scope sliding lockout for wheel events. Set after a wheel-driven
+// commit and EXTENDED on every wheel event that arrives during the lock
+// — trackpad momentum tails can fire for 600ms+ after the user lifts
+// their fingers, and the commit dismisses the card mid-tail. The newly
+// mounted SwipeableCard would otherwise see those trailing events and
+// commit a second card from one physical gesture. Module-scope so it
+// survives the unmount/mount when the active card swaps.
+let wheelLockUntilMs = 0;
+const WHEEL_LOCK_MS = 600;
+
 export function SwipeableCard({
   children,
   onSwipe,
@@ -267,12 +277,14 @@ export function SwipeableCard({
     let wheelAccX = 0;
     let wheelAccY = 0;
     let wheelIdleTimer: ReturnType<typeof setTimeout> | null = null;
-    // Wait long enough for trackpad momentum to fully settle. ~280ms
-    // covers a typical Mac inertial tail without feeling laggy.
-    const WHEEL_IDLE_MS = 280;
-    // Wheel needs a longer travel than touch — light momentum bursts
-    // shouldn't dismiss. Touch drag still uses SWIPE_THRESHOLD (110px).
-    const WHEEL_COMMIT_THRESHOLD = 180;
+    // Idle window: short enough that an honest gesture commits quickly,
+    // long enough to bridge a small mid-gesture hesitation. 200ms is
+    // tighter than v2's 280ms; the post-commit lockout above absorbs
+    // any momentum tail so we don't need the idle to wait it out.
+    const WHEEL_IDLE_MS = 200;
+    // Wheel commit threshold. Touch drag still uses SWIPE_THRESHOLD
+    // (110px); wheel sits a hair higher to demand intent.
+    const WHEEL_COMMIT_THRESHOLD = 140;
     const VERTICAL_NUDGE_RATIO = 0.1; // ±10% of card height
     const VERTICAL_DAMPING = 0.35;
 
@@ -287,16 +299,26 @@ export function SwipeableCard({
       if (committed || !enabled || state.dragging) return;
       // Ignore vanishingly small noise (some trackpads emit zero-deltas).
       if (Math.abs(e.deltaX) < 0.1 && Math.abs(e.deltaY) < 0.1) return;
+
+      // Sliding lockout: after a wheel-driven commit, swallow any
+      // wheel events arriving in the next WHEEL_LOCK_MS. Each event
+      // during the lock EXTENDS the lock — momentum that keeps firing
+      // never escapes the window. Only a real pause releases it.
+      const now = performance.now();
+      if (now < wheelLockUntilMs) {
+        wheelLockUntilMs = now + WHEEL_LOCK_MS;
+        e.preventDefault();
+        return;
+      }
+
       e.preventDefault();
 
-      // Gentle ramp: 1× while |acc| ≤ 100px, easing to 1.5× by |acc|
-      // = 240px. Keeps small flicks near 1:1 with subtle assist on
-      // sustained input. Lower multiplier than v1 because we now wait
-      // for finger-up before committing — there's no need for a strong
-      // ramp to "snap" through the threshold.
+      // Gentle multiplier: 1× while |acc| ≤ 80px, easing to 1.6× by
+      // |acc| = 200px. Keeps flicks near 1:1 with a subtle assist
+      // once you commit to a sustained scroll.
       const absAccX = Math.abs(wheelAccX);
-      const ramp = gsap.utils.clamp(0, 1, (absAccX - 100) / 140);
-      const mult = 1 + ramp * 0.5;
+      const ramp = gsap.utils.clamp(0, 1, (absAccX - 80) / 120);
+      const mult = 1 + ramp * 0.6;
       wheelAccX += e.deltaX * mult;
 
       // Vertical nudge: damped, capped at ±10% of card height, bidirectional.
@@ -307,8 +329,8 @@ export function SwipeableCard({
       setters.y(wheelAccY);
       setters.rot(gsap.utils.clamp(-MAX_ROTATION, MAX_ROTATION, wheelAccX / 18));
 
-      const leftP = gsap.utils.clamp(0, 1, -wheelAccX / 200);
-      const rightP = gsap.utils.clamp(0, 1, wheelAccX / 200);
+      const leftP = gsap.utils.clamp(0, 1, -wheelAccX / 160);
+      const rightP = gsap.utils.clamp(0, 1, wheelAccX / 160);
       setters.leftOpacity?.(leftP * 0.7);
       setters.rightOpacity?.(rightP * 0.7);
       setters.noOpacity?.(leftP);
@@ -322,13 +344,13 @@ export function SwipeableCard({
 
       // Decision deferred to idle: when the wheel stops firing for
       // WHEEL_IDLE_MS, treat the gesture as complete. Past threshold →
-      // commit. Otherwise → snap back. Resetting this timer on every
-      // event means momentum keeps the card "live" until it actually
-      // settles, then we decide once.
+      // commit and arm the post-commit lockout to absorb the momentum
+      // tail. Otherwise → snap back.
       clearWheelIdle();
       wheelIdleTimer = setTimeout(() => {
         if (committed) return;
         if (Math.abs(wheelAccX) >= WHEEL_COMMIT_THRESHOLD) {
+          wheelLockUntilMs = performance.now() + WHEEL_LOCK_MS;
           dismiss(wheelAccX > 0 ? "right" : "left", true);
           return;
         }
